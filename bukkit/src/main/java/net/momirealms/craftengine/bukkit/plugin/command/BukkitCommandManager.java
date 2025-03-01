@@ -30,9 +30,15 @@ public class BukkitCommandManager extends AbstractCommandManager<CommandSender> 
         this.INDEX = Index.create(CommandFeature::getFeatureID, List.of(
                 new ReloadCommand(this, plugin),
                 new GetItemCommand(this, plugin),
-                new DebugStateCommand(this, plugin),
+                new GiveItemCommand(this, plugin),
+                new ItemBrowserCommand(this, plugin),
                 new TestCommand(this, plugin),
-                new SetBlockCommand(this, plugin)
+                new DebugGetBlockStateRegistryIdCommand(this, plugin),
+                new DebugGetBlockInternalIdCommand(this, plugin),
+                new DebugAppearanceStateUsageCommand(this, plugin),
+                new DebugRealStateUsageCommand(this, plugin),
+                new DebugItemDataCommand(this, plugin),
+                new DebugSetBlockCommand(this, plugin)
         ));
         final LegacyPaperCommandManager<CommandSender> manager = (LegacyPaperCommandManager<CommandSender>) getCommandManager();
         manager.settings().set(ManagerSetting.ALLOW_UNSAFE_REGISTRATION, true);

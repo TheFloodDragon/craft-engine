@@ -6,8 +6,9 @@
 </h1>
 
 <p align="center">
-    <a target="_blank" href="/README.md">English</a>
-    <a target="_blank" href="/readme/README_zh-CN.md">中文</a>
+    <a target="_blank" href="/README.md">English</a> |
+    <a target="_blank" href="/readme/README_zh-CN.md">简体中文</a> |
+    <a target="_blank" href="/readme/README_zh-TW.md">繁體中文</a>
 </p>
 
 ## 📌 关于 CraftEngine
@@ -125,7 +126,7 @@ repositories {
 ```
 ```kotlin
 dependencies {
-    compileOnly("net.momirealms:craft-engine-core:0.0.16")
-    compileOnly("net.momirealms:craft-engine-bukkit:0.0.16")
+    compileOnly("net.momirealms:craft-engine-core:0.0.22")
+    compileOnly("net.momirealms:craft-engine-bukkit:0.0.22")
 }
 ```

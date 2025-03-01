@@ -15,11 +15,11 @@ import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.item.behavior.ItemBehaviors;
 import net.momirealms.craftengine.core.item.modifier.CustomModelDataModifier;
 import net.momirealms.craftengine.core.item.modifier.IdModifier;
+import net.momirealms.craftengine.core.item.modifier.ItemModelModifier;
 import net.momirealms.craftengine.core.pack.LegacyOverridesModel;
 import net.momirealms.craftengine.core.pack.Pack;
 import net.momirealms.craftengine.core.pack.generator.ModelGeneration;
 import net.momirealms.craftengine.core.pack.model.*;
-import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.config.ConfigManager;
 import net.momirealms.craftengine.core.registry.BuiltInRegistries;
 import net.momirealms.craftengine.core.registry.Holder;
@@ -27,12 +27,15 @@ import net.momirealms.craftengine.core.registry.WritableRegistry;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
 import net.momirealms.craftengine.core.util.ResourceKey;
+import net.momirealms.craftengine.core.util.VersionHelper;
+import net.momirealms.craftengine.core.util.context.ContextHolder;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.incendo.cloud.suggestion.Suggestion;
 import org.incendo.cloud.type.Either;
 import org.jetbrains.annotations.Nullable;
 
@@ -65,6 +68,10 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
     private final Map<Key, List<Holder<Key>>> vanillaItemTags;
     private final Map<Key, List<Holder<Key>>> customItemTags;
     private final Map<Key, Map<Integer, Key>> cmdConflictChecker;
+    private final Map<Key, ItemModel> modernItemModels1_21_4;
+    private final Map<Key, List<LegacyOverridesModel>> modernItemModels1_21_2;
+    // Cached command suggestions
+    private final List<Suggestion> cachedSuggestions = new ArrayList<>();
 
     public BukkitItemManager(BukkitCraftEngine plugin) {
         super(plugin);
@@ -75,6 +82,8 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
         this.vanillaItemTags = new HashMap<>();
         this.customItemTags = new HashMap<>();
         this.cmdConflictChecker = new HashMap<>();
+        this.modernItemModels1_21_4 = new HashMap<>();
+        this.modernItemModels1_21_2 = new HashMap<>();
         this.itemEventListener = new ItemEventListener(plugin);
         this.debugStickListener = new DebugStickListener(plugin);
         this.registerAllVanillaItems();
@@ -91,7 +100,7 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
         if (material == null) {
             return Optional.empty();
         }
-        return Optional.of(new CloneableConstantItem(new ItemStack(material)));
+        return Optional.of(new CloneableConstantItem(key, new ItemStack(material)));
     }
 
     @Override
@@ -131,6 +140,11 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
     }
 
     @Override
+    public Collection<Suggestion> cachedSuggestions() {
+        return this.cachedSuggestions;
+    }
+
+    @Override
     public void load() {
         super.load();
         Bukkit.getPluginManager().registerEvents(this.itemEventListener, plugin.bootstrap());
@@ -140,6 +154,7 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
     @Override
     public void unload() {
         super.unload();
+        this.cachedSuggestions.clear();
         this.legacyOverrides.clear();
         this.modernOverrides.clear();
         this.customItemTags.clear();
@@ -150,7 +165,7 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
 
     @Override
     public ItemStack buildCustomItemStack(Key id, Player player) {
-        return Optional.ofNullable(customItems.get(id)).map(it -> it.buildItemStack(player, 1)).orElse(null);
+        return Optional.ofNullable(customItems.get(id)).map(it -> it.buildItemStack(new ItemBuildContext(player, ContextHolder.EMPTY), 1)).orElse(null);
     }
 
     @Override
@@ -166,12 +181,12 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
     private ItemStack createVanillaItemStack(Key id) {
         NamespacedKey key = NamespacedKey.fromString(id.toString());
         if (key == null) {
-            CraftEngine.instance().logger().warn(id + " is not a valid namespaced key");
+            this.plugin.logger().warn(id + " is not a valid namespaced key");
             return new ItemStack(Material.AIR);
         }
         Material material = Registry.MATERIAL.get(key);
         if (material == null) {
-            CraftEngine.instance().logger().warn(id + " is not a valid material");
+            this.plugin.logger().warn(id + " is not a valid material");
             return new ItemStack(Material.AIR);
         }
         return new ItemStack(material);
@@ -200,7 +215,7 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
     @Override
     public Key customItemId(ItemStack itemStack) {
         Item<ItemStack> wrapped = wrap(itemStack);
-        if (!wrapped.hasTag("craftengine:id")) return null;
+        if (!wrapped.hasTag(IdModifier.CRAFT_ENGINE_ID)) return null;
         return wrapped.id();
     }
 
@@ -245,14 +260,22 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
             return;
         }
         Key materialId = Key.of(material.getKey().namespace(), material.getKey().value());
-        int customModelData = MiscUtils.getAsInt(section.getOrDefault("custom-model-data", 0));
 
-        // Sets some basic tags
+        int customModelData = MiscUtils.getAsInt(section.getOrDefault("custom-model-data", 0));
+        Key itemModelKey = null;
+
         CustomItem.Builder<ItemStack> itemBuilder = BukkitCustomItem.builder().id(id).material(materialId);
+        itemBuilder.modifier(new IdModifier<>(id));
+
+        // Sets some basic model info
         if (customModelData != 0) {
             itemBuilder.modifier(new CustomModelDataModifier<>(customModelData));
+        } else if (section.containsKey("model") && VersionHelper.isVersionNewerThan1_21_2()) {
+            // check server version here because components require 1.21.2+
+            // customize or use the id
+            itemModelKey = Key.from(section.getOrDefault("item-model", id.toString()).toString());
+            itemBuilder.modifier(new ItemModelModifier<>(itemModelKey));
         }
-        itemBuilder.modifier(new IdModifier<>(id));
 
         // Get item behavior
         Map<String, Object> behaviorSection = MiscUtils.castToMap(section.get("behavior"), true);
@@ -281,60 +304,95 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
 
         CustomItem<ItemStack> customItem = itemBuilder.build();
         this.customItems.put(id, customItem);
+        this.cachedSuggestions.add(Suggestion.suggestion(id.toString()));
 
+        // regitser tags
         Set<Key> tags = customItem.settings().tags();
         for (Key tag : tags) {
             this.customItemTags.computeIfAbsent(tag, k -> new ArrayList<>()).add(holder);
         }
 
         // model part, can be null
+        // but if it exists, either custom model data or item model should be configured
         Map<String, Object> modelSection = MiscUtils.castToMap(section.get("model"), true);
         if (modelSection == null) {
             return;
         }
-        // custom model data is required for generating models
-        if (customModelData == 0) {
-            plugin.logger().warn(path, "custom-model-data should be nonnull for item " + id);
-            return;
-        }
 
-        // check conflict
-        Map<Integer, Key> conflict = this.cmdConflictChecker.computeIfAbsent(materialId, k -> new HashMap<>());
-        if (conflict.containsKey(customModelData)) {
-            plugin.logger().warn(path, "Failed to create model for " + id + " because custom-model-data " + customModelData + " already occupied by item " + conflict.get(customModelData).toString());
-            return;
-        }
+        if (customModelData != 0) {
+            // use custom model data
+            // check conflict
+            Map<Integer, Key> conflict = this.cmdConflictChecker.computeIfAbsent(materialId, k -> new HashMap<>());
+            if (conflict.containsKey(customModelData)) {
+                plugin.logger().warn(path, "Failed to create model for " + id + " because custom-model-data " + customModelData + " already occupied by item " + conflict.get(customModelData).toString());
+                return;
+            }
 
-        conflict.put(customModelData, id);
+            conflict.put(customModelData, id);
 
-        // Parse models
-        ItemModel model = ItemModels.fromMap(modelSection);
-        for (ModelGeneration generation : model.modelsToGenerate()) {
-            prepareModelGeneration(generation);
-        }
+            // Parse models
+            ItemModel model = ItemModels.fromMap(modelSection);
+            for (ModelGeneration generation : model.modelsToGenerate()) {
+                prepareModelGeneration(generation);
+            }
 
-        if (ConfigManager.packMaxVersion() > 21.39f) {
-            TreeMap<Integer, ItemModel> map = modernOverrides.computeIfAbsent(materialId, k -> new TreeMap<>());
-            map.put(customModelData, model);
-        }
+            if (ConfigManager.packMaxVersion() > 21.39f) {
+                TreeMap<Integer, ItemModel> map = this.modernOverrides.computeIfAbsent(materialId, k -> new TreeMap<>());
+                map.put(customModelData, model);
+            }
 
-        if (ConfigManager.packMinVersion() < 21.39f) {
-            // TODO `charged` and `fallback`
-            List<LegacyOverridesModel> legacyOverridesModels = new ArrayList<>();
-            processModelRecursively(model, new LinkedHashMap<>(), legacyOverridesModels, materialId, customModelData);
-            TreeSet<LegacyOverridesModel> lom = legacyOverrides.computeIfAbsent(materialId, k -> new TreeSet<>());
-            lom.addAll(legacyOverridesModels);
+            if (ConfigManager.packMinVersion() < 21.39f) {
+                List<LegacyOverridesModel> legacyOverridesModels = new ArrayList<>();
+                processModelRecursively(model, new LinkedHashMap<>(), legacyOverridesModels, materialId, customModelData);
+                TreeSet<LegacyOverridesModel> lom = this.legacyOverrides.computeIfAbsent(materialId, k -> new TreeSet<>());
+                lom.addAll(legacyOverridesModels);
+            }
+        } else if (itemModelKey != null) {
+            // use components
+            ItemModel model = ItemModels.fromMap(modelSection);
+            for (ModelGeneration generation : model.modelsToGenerate()) {
+                prepareModelGeneration(generation);
+            }
+
+            if (ConfigManager.packMaxVersion() > 21.39f) {
+                this.modernItemModels1_21_4.put(itemModelKey, model);
+            }
+
+            if (ConfigManager.packMaxVersion() > 21.19f && ConfigManager.packMinVersion() < 21.39f) {
+                List<LegacyOverridesModel> legacyOverridesModels = new ArrayList<>();
+                processModelRecursively(model, new LinkedHashMap<>(), legacyOverridesModels, materialId, 0);
+                if (legacyOverridesModels.isEmpty()) {
+                    plugin.logger().warn(path, "Can't convert " + id + "'s model to legacy format.");
+                    return;
+                }
+                legacyOverridesModels.sort(LegacyOverridesModel::compareTo);
+                this.modernItemModels1_21_2.put(itemModelKey, legacyOverridesModels);
+            }
+        } else {
+            if (!VersionHelper.isVersionNewerThan1_21_2()) {
+                plugin.logger().warn(path, "No custom-model-data configured for " + id);
+            }
         }
+    }
+
+    @Override
+    public Map<Key, ItemModel> modernItemModels1_21_4() {
+        return this.modernItemModels1_21_4;
+    }
+
+    @Override
+    public Map<Key, List<LegacyOverridesModel>> modernItemModels1_21_2() {
+        return this.modernItemModels1_21_2;
     }
 
     @Override
     public Map<Key, TreeSet<LegacyOverridesModel>> legacyItemOverrides() {
-        return legacyOverrides;
+        return this.legacyOverrides;
     }
 
     @Override
     public Map<Key, TreeMap<Integer, ItemModel>> modernItemOverrides() {
-        return modernOverrides;
+        return this.modernOverrides;
     }
 
     private void processModelRecursively(

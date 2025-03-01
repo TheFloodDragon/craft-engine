@@ -40,7 +40,7 @@ public class VanillaRecipeReader1_20 extends AbstractRecipeReader {
                 readCookingCategory(json),
                 readGroup(json),
                 readCookingResult(json.get("result")),
-                readCookingIngredients(json.get("ingredient")),
+                readSingleIngredient(json.get("ingredient")),
                 readExperience(json),
                 readCookingTime(json)
         );
@@ -52,7 +52,7 @@ public class VanillaRecipeReader1_20 extends AbstractRecipeReader {
                 readCookingCategory(json),
                 readGroup(json),
                 readCookingResult(json.get("result")),
-                readCookingIngredients(json.get("ingredient")),
+                readSingleIngredient(json.get("ingredient")),
                 readExperience(json),
                 readCookingTime(json)
         );
@@ -64,7 +64,7 @@ public class VanillaRecipeReader1_20 extends AbstractRecipeReader {
                 readCookingCategory(json),
                 readGroup(json),
                 readCookingResult(json.get("result")),
-                readCookingIngredients(json.get("ingredient")),
+                readSingleIngredient(json.get("ingredient")),
                 readExperience(json),
                 readCookingTime(json)
         );
@@ -76,13 +76,22 @@ public class VanillaRecipeReader1_20 extends AbstractRecipeReader {
                 readCookingCategory(json),
                 readGroup(json),
                 readCookingResult(json.get("result")),
-                readCookingIngredients(json.get("ingredient")),
+                readSingleIngredient(json.get("ingredient")),
                 readExperience(json),
                 readCookingTime(json)
         );
     }
 
-    protected List<String> readCookingIngredients(JsonElement json) {
+    @Override
+    public VanillaStoneCuttingRecipe readStoneCutting(JsonObject json) {
+        return new VanillaStoneCuttingRecipe(
+                readGroup(json),
+                readCraftingResult(json.getAsJsonObject("result")),
+                readSingleIngredient(json.get("ingredient"))
+        );
+    }
+
+    protected List<String> readSingleIngredient(JsonElement json) {
         List<String> ingredients = new ArrayList<>();
         if (json.isJsonObject()) {
             JsonObject argument = json.getAsJsonObject();

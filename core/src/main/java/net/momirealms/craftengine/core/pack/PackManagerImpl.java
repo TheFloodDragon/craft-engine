@@ -4,7 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
 import dev.dejvokep.boostedyaml.YamlDocument;
 import dev.dejvokep.boostedyaml.block.implementation.Section;
 import net.momirealms.craftengine.core.font.BitmapImage;
@@ -119,17 +118,39 @@ public class PackManagerImpl implements PackManager {
     private void saveDefaultConfigs() {
         // internal
         plugin.saveResource("resources/internal/resourcepack/assets/minecraft/models/block/default_chorus_plant.json");
-        // pack info
-        plugin.saveResource("resources/default/pack.yml");
         plugin.saveResource("resources/internal/pack.yml");
+        // offset
+        plugin.saveResource("resources/internal/configuration/offset_chars.yml");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/font/offset/space_split.png");
+        // gui
+        plugin.saveResource("resources/internal/configuration/gui.yml");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/font/gui/custom/item_browser.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/font/gui/custom/category.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/font/gui/custom/blasting.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/font/gui/custom/smoking.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/font/gui/custom/smelting.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/font/gui/custom/campfire.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/font/gui/custom/stonecutting_recipe.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/font/gui/custom/cooking_recipe.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/font/gui/custom/crafting_recipe.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/font/gui/custom/no_recipe.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/item/custom/gui/get_item.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/item/custom/gui/next_page_0.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/item/custom/gui/next_page_1.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/item/custom/gui/previous_page_0.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/item/custom/gui/previous_page_1.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/item/custom/gui/return.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/item/custom/gui/cooking_info.png");
+        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/item/custom/gui/cooking_info.png.mcmeta");
+        // default pack
+        plugin.saveResource("resources/default/pack.yml");
         // pack meta
         plugin.saveResource("resources/default/resourcepack/pack.mcmeta");
         plugin.saveResource("resources/default/resourcepack/pack.png");
         // templates
         plugin.saveResource("resources/default/configuration/templates.yml");
-        // offset
-        plugin.saveResource("resources/internal/configuration/offset_chars.yml");
-        plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/font/offset/space_split.png");
+        // categories
+        plugin.saveResource("resources/default/configuration/categories.yml");
         // icons
         plugin.saveResource("resources/default/configuration/icons.yml");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/font/image/icons.png");
@@ -299,6 +320,8 @@ public class PackManagerImpl implements PackManager {
         this.generateFonts(generatedPackPath);
         this.generateLegacyItemOverrides(generatedPackPath);
         this.generateModernItemOverrides(generatedPackPath);
+        this.generateModernItemModels1_21_2(generatedPackPath);
+        this.generateModernItemModels1_21_4(generatedPackPath);
         this.generateBlockOverrides(generatedPackPath);
         this.generateItemModels(generatedPackPath, this.plugin.itemManager());
         this.generateItemModels(generatedPackPath, this.plugin.blockManager());
@@ -447,6 +470,108 @@ public class PackManagerImpl implements PackManager {
         }
     }
 
+    private void generateModernItemModels1_21_2(Path generatedPackPath) {
+        if (ConfigManager.packMaxVersion() < 21.19f) return;
+        if (ConfigManager.packMinVersion() > 21.39f) return;
+
+        boolean has = false;
+        for (Map.Entry<Key, List<LegacyOverridesModel>> entry : plugin.itemManager().modernItemModels1_21_2().entrySet()) {
+            has = true;
+            Key key = entry.getKey();
+            List<LegacyOverridesModel> legacyOverridesModels = entry.getValue();
+            boolean first = true;
+            JsonObject jsonObject = new JsonObject();
+            JsonArray overrides = new JsonArray();
+            for (LegacyOverridesModel model : legacyOverridesModels) {
+                if (first) {
+                    jsonObject.addProperty("parent", model.model());
+                    if (model.hasPredicate()) {
+                        overrides.add(model.toLegacyPredicateElement());
+                    }
+                    first = false;
+                } else {
+                    overrides.add(model.toLegacyPredicateElement());
+                }
+            }
+            if (!overrides.isEmpty()) {
+                jsonObject.add("overrides", overrides);
+            }
+
+            Path itemPath = generatedPackPath
+                    .resolve("assets")
+                    .resolve(key.namespace())
+                    .resolve("models")
+                    .resolve("item")
+                    .resolve(key.value() + ".json");
+            if (Files.exists(itemPath)) {
+                plugin.logger().warn("Failed to generate item model for [" + key + "] because " + itemPath.toAbsolutePath() + " already exists");
+            } else {
+                try (InputStream inputStream = plugin.resourceStream("internal/templates_" + LEGACY_TEMPLATES + "/" + key.namespace() + "/items/" + key.value() + ".json")) {
+                    if (inputStream != null) {
+                        plugin.logger().warn("Failed to generate item model for [" + key + "] because it conflicts with vanilla item");
+                        continue;
+                    }
+                } catch (IOException e) {
+                    plugin.logger().warn("Failed to load item model", e);
+                    continue;
+                }
+            }
+            try {
+                Files.createDirectories(itemPath.getParent());
+            } catch (IOException e) {
+                plugin.logger().severe("Error creating " + itemPath.toAbsolutePath());
+                continue;
+            }
+            try (BufferedWriter writer = Files.newBufferedWriter(itemPath)) {
+                GsonHelper.get().toJson(jsonObject, writer);
+            } catch (IOException e) {
+                plugin.logger().warn("Failed to save item model for [" + key + "]");
+            }
+        }
+
+        if (ConfigManager.packMinVersion() < 21.19f && has) {
+            plugin.logger().warn("You are using item-model component for models which requires 1.21.2+. But the min supported version is " + "1." + ConfigManager.packMinVersion());
+        }
+    }
+
+    private void generateModernItemModels1_21_4(Path generatedPackPath) {
+        if (ConfigManager.packMaxVersion() < 21.39f) return;
+        for (Map.Entry<Key, ItemModel> entry : plugin.itemManager().modernItemModels1_21_4().entrySet()) {
+            Key key = entry.getKey();
+            Path itemPath = generatedPackPath
+                    .resolve("assets")
+                    .resolve(key.namespace())
+                    .resolve("items")
+                    .resolve(key.value() + ".json");
+            if (Files.exists(itemPath)) {
+                plugin.logger().warn("Failed to generate item model for [" + key + "] because " + itemPath.toAbsolutePath() + " already exists");
+            } else {
+                try (InputStream inputStream = plugin.resourceStream("internal/templates_" + LATEST_TEMPLATES + "/" + key.namespace() + "/items/" + key.value() + ".json")) {
+                    if (inputStream != null) {
+                        plugin.logger().warn("Failed to generate item model for [" + key + "] because it conflicts with vanilla item");
+                        continue;
+                    }
+                } catch (IOException e) {
+                    plugin.logger().warn("Failed to load item model", e);
+                    continue;
+                }
+            }
+            try {
+                Files.createDirectories(itemPath.getParent());
+            } catch (IOException e) {
+                plugin.logger().severe("Error creating " + itemPath.toAbsolutePath());
+                continue;
+            }
+            JsonObject model = new JsonObject();
+            model.add("model", entry.getValue().get());
+            try (BufferedWriter writer = Files.newBufferedWriter(itemPath)) {
+                GsonHelper.get().toJson(model, writer);
+            } catch (IOException e) {
+                plugin.logger().warn("Failed to save item model for [" + key + "]");
+            }
+        }
+    }
+
     private void generateModernItemOverrides(Path generatedPackPath) {
         if (ConfigManager.packMaxVersion() < 21.39f) return;
         for (Map.Entry<Key, TreeMap<Integer, ItemModel>> entry : plugin.itemManager().modernItemOverrides().entrySet()) {
@@ -556,7 +681,7 @@ public class PackManagerImpl implements PackManager {
             }
             Collection<LegacyOverridesModel> legacyOverridesModels = entry.getValue();
             for (LegacyOverridesModel model : legacyOverridesModels) {
-                overrides.add(model.toJson());
+                overrides.add(model.toLegacyPredicateElement());
             }
             try {
                 Files.createDirectories(overridedItemPath.getParent());

@@ -2,9 +2,9 @@ package net.momirealms.craftengine.bukkit.item;
 
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.util.MaterialUtils;
-import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.CustomItem;
 import net.momirealms.craftengine.core.item.Item;
+import net.momirealms.craftengine.core.item.ItemBuildContext;
 import net.momirealms.craftengine.core.item.ItemSettings;
 import net.momirealms.craftengine.core.item.behavior.EmptyItemBehavior;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
@@ -15,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class BukkitCustomItem implements CustomItem<ItemStack> {
@@ -50,7 +51,7 @@ public class BukkitCustomItem implements CustomItem<ItemStack> {
     }
 
     @Override
-    public ItemStack buildItemStack(Player player, int count) {
+    public ItemStack buildItemStack(ItemBuildContext context, int count) {
         ItemStack item = new ItemStack(material);
         if (this.modifiers.isEmpty()) {
             return item;
@@ -58,7 +59,7 @@ public class BukkitCustomItem implements CustomItem<ItemStack> {
         Item<ItemStack> wrapped = BukkitCraftEngine.instance().itemManager().wrap(item);
         wrapped.count(count);
         for (ItemModifier<ItemStack> modifier : this.modifiers) {
-            modifier.apply(wrapped, player);
+            modifier.apply(wrapped, context);
         }
         return wrapped.load();
     }
@@ -69,12 +70,13 @@ public class BukkitCustomItem implements CustomItem<ItemStack> {
     }
 
     @Override
-    public Item<ItemStack> buildItem(Player player) {
+    public Item<ItemStack> buildItem(ItemBuildContext context) {
         ItemStack item = new ItemStack(material);
         Item<ItemStack> wrapped = BukkitCraftEngine.instance().itemManager().wrap(item);
         for (ItemModifier<ItemStack> modifier : modifiers()) {
-            modifier.apply(wrapped, player);
+            modifier.apply(wrapped, context);
         }
+        wrapped.load();
         return wrapped;
     }
 
@@ -134,7 +136,8 @@ public class BukkitCustomItem implements CustomItem<ItemStack> {
 
         @Override
         public CustomItem<ItemStack> build() {
-            return new BukkitCustomItem(id, materialKey, material, modifiers, behavior, settings);
+            this.modifiers.addAll(this.settings.modifiers());
+            return new BukkitCustomItem(id, materialKey, material, Collections.unmodifiableList(modifiers), behavior, settings);
         }
     }
 }

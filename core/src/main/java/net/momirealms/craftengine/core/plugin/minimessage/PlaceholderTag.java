@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 public class PlaceholderTag implements TagResolver {
     private final Player player;
 
-    public PlaceholderTag(Player player) {
+    public PlaceholderTag(@Nullable Player player) {
         this.player = player;
     }
 

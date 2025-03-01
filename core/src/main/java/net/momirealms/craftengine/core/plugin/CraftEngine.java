@@ -17,6 +17,9 @@ import net.momirealms.craftengine.core.plugin.dependency.Dependencies;
 import net.momirealms.craftengine.core.plugin.dependency.Dependency;
 import net.momirealms.craftengine.core.plugin.dependency.DependencyManager;
 import net.momirealms.craftengine.core.plugin.dependency.DependencyManagerImpl;
+import net.momirealms.craftengine.core.plugin.gui.GuiManager;
+import net.momirealms.craftengine.core.plugin.gui.category.ItemBrowserManager;
+import net.momirealms.craftengine.core.plugin.gui.category.ItemBrowserManagerImpl;
 import net.momirealms.craftengine.core.plugin.locale.TranslationManager;
 import net.momirealms.craftengine.core.plugin.locale.TranslationManagerImpl;
 import net.momirealms.craftengine.core.plugin.logger.PluginLogger;
@@ -28,6 +31,8 @@ import org.apache.logging.log4j.LogManager;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public abstract class CraftEngine implements Plugin {
     public static final String MOD_CLASS = "net.momirealms.craftengine.mod.CraftEnginePlugin";
@@ -49,7 +54,10 @@ public abstract class CraftEngine implements Plugin {
     protected CraftEngineCommandManager<?> commandManager;
     protected SenderFactory<? extends Plugin, ?> senderFactory;
     protected TemplateManager templateManager;
+    protected ItemBrowserManager itemBrowserManager;
+    protected GuiManager guiManager;
     protected PluginLogger logger;
+    protected Consumer<Supplier<String>> debugger = (s) -> {};
     private boolean isReloading;
 
     protected CraftEngine() {
@@ -80,10 +88,18 @@ public abstract class CraftEngine implements Plugin {
             this.fontManager.reload();
             this.itemManager.reload();
             this.recipeManager.reload();
+            this.itemBrowserManager.reload();
             this.blockManager.reload();
             this.worldManager.reload();
             this.packManager.reload();
+            this.guiManager.reload();
             this.blockManager.delayedLoad();
+            this.itemBrowserManager.delayedLoad();
+            if (ConfigManager.debug()) {
+                this.debugger = (s) -> logger.info("[Debug] " + s.get());
+            } else {
+                this.debugger = (s) -> {};
+            }
         } finally {
             this.recipeManager.delayedLoad().thenRun(() -> this.isReloading = false);
         }
@@ -94,6 +110,7 @@ public abstract class CraftEngine implements Plugin {
         this.networkManager.enable();
         this.fontManager = new FontManagerImpl(this);
         this.templateManager = new TemplateManagerImpl(this);
+        this.itemBrowserManager = new ItemBrowserManagerImpl(this);
         this.commandManager.registerDefaultFeatures();
         // delay the reload so other plugins can register some parsers
         this.scheduler.sync().runDelayed(() -> {
@@ -101,6 +118,7 @@ public abstract class CraftEngine implements Plugin {
             this.reload();
             this.worldManager.delayedLoad();
             this.furnitureManager.delayedLoad();
+            this.delayedEnable();
         });
     }
 
@@ -116,8 +134,14 @@ public abstract class CraftEngine implements Plugin {
         if (this.furnitureManager != null) this.furnitureManager.disable();
         if (this.templateManager != null) this.templateManager.disable();
         if (this.worldManager != null) this.worldManager.disable();
+        if (this.recipeManager != null) this.recipeManager.disable();
+        if (this.itemBrowserManager != null) this.itemBrowserManager.disable();
+        if (this.guiManager != null) this.guiManager.disable();
         if (this.scheduler != null) this.scheduler.shutdownScheduler();
         if (this.scheduler != null) this.scheduler.shutdownExecutor();
+    }
+
+    protected void delayedEnable() {
     }
 
     protected abstract void registerParsers();
@@ -148,9 +172,10 @@ public abstract class CraftEngine implements Plugin {
         return dependencyManager;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public SchedulerAdapter<?> scheduler() {
-        return scheduler;
+    public <W> SchedulerAdapter<W> scheduler() {
+        return (SchedulerAdapter<W>) scheduler;
     }
 
     @Override
@@ -209,6 +234,12 @@ public abstract class CraftEngine implements Plugin {
         return packManager;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> RecipeManager<T> recipeManager() {
+        return (RecipeManager<T>) recipeManager;
+    }
+
     @Override
     public SenderFactory<? extends Plugin, ?> senderFactory() {
         return senderFactory;
@@ -217,6 +248,21 @@ public abstract class CraftEngine implements Plugin {
     @Override
     public WorldManager worldManager() {
         return worldManager;
+    }
+
+    @Override
+    public ItemBrowserManager itemBrowserManager() {
+        return itemBrowserManager;
+    }
+
+    @Override
+    public GuiManager guiManager() {
+        return guiManager;
+    }
+
+    @Override
+    public void debug(Supplier<String> message) {
+        debugger.accept(message);
     }
 
     public boolean isReloading() {

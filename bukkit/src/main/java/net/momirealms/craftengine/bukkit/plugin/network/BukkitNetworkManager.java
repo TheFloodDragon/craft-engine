@@ -9,6 +9,7 @@ import io.netty.util.internal.logging.InternalLoggerFactory;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.plugin.network.impl.*;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
+import net.momirealms.craftengine.bukkit.util.PlayerUtils;
 import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.network.ConnectionState;
@@ -21,6 +22,7 @@ import net.momirealms.craftengine.core.util.VersionHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -99,7 +101,9 @@ public class BukkitNetworkManager implements NetworkManager, Listener {
         };
         this.immediatePacketConsumer = (serverPlayer, packet) -> {
             try {
-                Reflections.method$Connection$sendPacketImmediate.invoke(Reflections.field$ServerCommonPacketListenerImpl$connection.get(Reflections.field$ServerPlayer$connection.get(serverPlayer)),
+                Reflections.method$Connection$sendPacketImmediate.invoke(
+                        Reflections.field$ServerCommonPacketListenerImpl$connection.get(
+                                Reflections.field$ServerPlayer$connection.get(serverPlayer)),
                         packet, null, true
                 );
             } catch (ReflectiveOperationException e) {
@@ -126,6 +130,9 @@ public class BukkitNetworkManager implements NetworkManager, Listener {
         registerNMSPacketConsumer(PacketConsumers.MOVE_ENTITY, Reflections.clazz$ClientboundMoveEntityPacket$Pos);
         registerNMSPacketConsumer(PacketConsumers.PICK_ITEM_FROM_ENTITY, Reflections.clazz$ServerboundPickItemFromEntityPacket);
         registerNMSPacketConsumer(PacketConsumers.SOUND, Reflections.clazz$ClientboundSoundPacket);
+        //registerNMSPacketConsumer(PacketConsumers.CONFIG_ACKNOWLEDGE, Reflections.clazz$ServerboundConfigurationAcknowledgedPacket);
+        if (VersionHelper.isVersionNewerThan1_20_2()) registerNMSPacketConsumer(PacketConsumers.CONFIG_FINISH, Reflections.clazz$ClientboundFinishConfigurationPacket);
+        registerNMSPacketConsumer(PacketConsumers.PACK_RESPONSE, Reflections.clazz$ServerboundResourcePackPacket);
         registerByteBufPacketConsumer(PacketConsumers.SECTION_BLOCK_UPDATE, this.packetIds.clientboundSectionBlocksUpdatePacket());
         registerByteBufPacketConsumer(PacketConsumers.BLOCK_UPDATE, this.packetIds.clientboundBlockUpdatePacket());
         registerByteBufPacketConsumer(PacketConsumers.LEVEL_PARTICLE, this.packetIds.clientboundLevelParticlesPacket());
@@ -136,11 +143,12 @@ public class BukkitNetworkManager implements NetworkManager, Listener {
         return instance;
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         BukkitServerPlayer user = (BukkitServerPlayer) getUser(player);
         if (user != null) {
+            user.setJoining(false);
             user.setPlayer(player);
             this.onlineUsers.put(player.getUniqueId(), user);
         }
@@ -240,6 +248,15 @@ public class BukkitNetworkManager implements NetworkManager, Listener {
                             )
                     )
             );
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Channel getChannel(Player player, boolean joining) {
+        if (!joining) getChannel(player);
+        try {
+            return (Channel) Reflections.field$Channel.get(PlayerUtils.getPlayerConnection(player, false));
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

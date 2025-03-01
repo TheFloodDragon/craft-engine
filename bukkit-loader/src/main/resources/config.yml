@@ -20,6 +20,35 @@ resource-pack:
     max: LATEST
   merge-external-folders:
     - ModelEngine/resource pack
+  host:
+    enable: true
+    kick-if-declined: true
+    prompt: "This is a Resource Pack Server"
+    # 1.20.3+ The folder of your server resource pack
+    uuid: 12345678-1234-abcd-1234-12345678abcd
+    # 1.20.2+
+    send-before-join: true
+    methods:
+      - type: local
+        enable: true
+        ip: localhost
+        port: 12345
+      - type: external
+        enable: true
+        url: "http://pack1.com"
+      - type: external
+        enable: true
+        url: "http://pack2.com"
+    # Not yet implement
+    status:
+      accepted: {}
+      downloaded: {}
+      failed_download: {}
+      invalid_url: {}
+      failed_reload: {}
+      declined: {}
+      discarded: {}
+      successfully_loaded: {}
 
 block:
   sound-system:

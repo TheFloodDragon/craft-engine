@@ -9,10 +9,12 @@ import dev.dejvokep.boostedyaml.settings.general.GeneralSettings;
 import dev.dejvokep.boostedyaml.settings.loader.LoaderSettings;
 import dev.dejvokep.boostedyaml.settings.updater.UpdaterSettings;
 import dev.dejvokep.boostedyaml.utils.format.NodeRole;
+import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.PluginProperties;
 import net.momirealms.craftengine.core.plugin.Reloadable;
 import net.momirealms.craftengine.core.plugin.locale.TranslationManager;
+import net.momirealms.craftengine.core.util.AdventureHelper;
 import net.momirealms.craftengine.core.util.ReflectionUtils;
 
 import java.io.File;
@@ -23,9 +25,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ConfigManager implements Reloadable {
     private static ConfigManager instance;
@@ -60,7 +60,14 @@ public class ConfigManager implements Reloadable {
     protected boolean enableSoundSystem;
     protected boolean enableRecipeSystem;
     protected List<String> foldersToMerge;
-    protected boolean restoreVanillaBlocks;
+	protected boolean restoreVanillaBlocks;
+    protected boolean enableHost;
+    protected boolean kickDeclined;
+    protected Component resourcePack$prompt;
+    protected UUID uuid;
+    protected boolean beforeJoin;
+    protected boolean configuration;
+    protected List<Map<String, Object>> resourcePack$methods;
 
     public ConfigManager(CraftEngine plugin) {
         this.plugin = plugin;
@@ -120,6 +127,26 @@ public class ConfigManager implements Reloadable {
         packMinVersion = getVersion(config.get("resource-pack.supported-version.min", "1.20").toString());
         packMaxVersion = getVersion(config.get("resource-pack.supported-version.max", "LATEST").toString());
         foldersToMerge = config.getStringList("resource-pack.merge-external-folders");
+        enableHost = config.getBoolean("resource-pack.host.enable-host", true);
+        kickDeclined = config.getBoolean("resource-pack.host.kick-if-declined", true);
+        resourcePack$prompt = AdventureHelper.miniMessage(config.getString("resource-pack.host.prompt", "This is a Resource Pack Server"));
+        uuid = UUID.fromString(config.getString("resource-pack.host.uuid", "12345678-1234-abcd-1234-12345678abcd"));
+        beforeJoin = config.getBoolean("resource-pack.host.send-before-join", true);
+        configuration = config.getBoolean("resource-pack.host.enter-configuration-on-reload", false);
+        resourcePack$methods = new ArrayList<>();
+        List<Map<?, ?>> rawMethodsList = config.getMapList("resource-pack.host.methods");
+
+        for (Map<?, ?> rawMap : rawMethodsList) {
+            Map<String, Object> convertedMap = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+                if (entry.getKey() instanceof String key) {
+                    convertedMap.put(key, entry.getValue());
+                } else {
+                    CraftEngine.instance().logger().warn("Invalid key type in config: " + entry.getKey());
+                }
+            }
+            resourcePack$methods.add(convertedMap);
+        }
         // performance
         maxChainUpdate = config.getInt("performance.max-block-chain-update-limit", 64);
         forceUpdateLight = config.getBoolean("performance.light-system.force-update-light", false);
@@ -228,6 +255,34 @@ public class ConfigManager implements Reloadable {
 
     public static List<String> foldersToMerge() {
         return instance.foldersToMerge;
+    }
+
+    public static boolean enableHost() {
+        return instance.enableHost;
+    }
+
+    public static boolean kickOnDeclined() {
+        return instance.kickDeclined;
+    }
+
+    public static Component resourcePack$prompt() {
+        return instance.resourcePack$prompt;
+    }
+
+    public static UUID uuid() {
+        return instance.uuid;
+    }
+
+    public static boolean beforeJoin() {
+        return instance.beforeJoin;
+    }
+
+    public static boolean configuration() {
+        return instance.configuration;
+    }
+
+    public static List<Map<String, Object>> resourcePack$methods() {
+        return instance().resourcePack$methods;
     }
 
     public YamlDocument loadOrCreateYamlData(String fileName) {

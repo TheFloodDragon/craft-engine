@@ -71,6 +71,8 @@ public interface Plugin extends Reloadable {
 
     WorldManager worldManager();
 
+    int serverPort();
+
     ItemBrowserManager itemBrowserManager();
 
     GuiManager guiManager();

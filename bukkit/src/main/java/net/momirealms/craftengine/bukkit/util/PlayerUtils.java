@@ -1,15 +1,23 @@
 package net.momirealms.craftengine.bukkit.util;
 
+import net.kyori.adventure.text.Component;
+import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
+import net.momirealms.craftengine.core.plugin.CraftEngine;
+import net.momirealms.craftengine.core.plugin.network.NetWorkUser;
 import net.momirealms.craftengine.core.util.RandomUtils;
+import net.momirealms.craftengine.core.util.VersionHelper;
 import org.bukkit.Location;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
@@ -139,5 +147,71 @@ public class PlayerUtils {
         }
 
         return actualAmount;
+    }
+
+    public static Object getPlayerConnection(Player player, boolean isListener) {
+        try {
+            if (VersionHelper.isVersionNewerThan1_20_5()) {
+                  Object packetListener = Reflections.field$ServerPlayer$transferCookieConnection.get(
+                          Reflections.method$CraftPlayer$getHandle.invoke(player));
+                  if (isListener) return packetListener;
+                  if (Reflections.clazz$ServerCommonPacketListenerImpl.isInstance(packetListener)) {
+                      return Reflections.field$ServerCommonPacketListenerImpl$connection.get(packetListener);
+                  } else {
+                      return Reflections.field$ServerLoginPacketListenerImpl$connection.get(packetListener);
+                  }
+            } else if (VersionHelper.isVersionNewerThan1_20_2()) {
+                Object server = Reflections.method$MinecraftServer$getServer.invoke(null);
+                Object connectionListener = Reflections.field$MinecraftServer$connection.get(server);
+                Object rawConnections = Reflections.field$ServerConnectionListener$connections.get(connectionListener);
+
+                if (rawConnections instanceof List<?> connections) {
+                    for (Object obj : connections) {
+                        if (Reflections.clazz$Connection.isInstance(obj)) {
+                            Object packetListener = Reflections.field$Connection$packListener.get(obj);
+                            if (Reflections.clazz$ServerConfigurationPacketListenerImpl.isInstance(packetListener)) {
+                                Object profile = Reflections.field$ServerConfigurationPacketListenerImpl$gameProfile.get(packetListener);
+                                if (player.getUniqueId().equals(Reflections.field$GameProfile$id.get(profile))) {
+                                    return isListener ? packetListener : obj;
+                                }
+                            } else if (Reflections.clazz$ServerLoginPacketListenerImpl.isInstance(packetListener)) {
+                                Object profile = Reflections.field$ServerLoginPacketListenerImpl$gameProfile.get(packetListener);
+                                if (player.getUniqueId().equals(Reflections.field$GameProfile$id.get(profile))) {
+                                    return isListener ? packetListener : obj;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            BukkitCraftEngine.instance().logger().warn("Failed to get player connection", e);
+        }
+        return null;
+	}
+
+    public static void sendPacketBeforeJoin(NetWorkUser user, Object packet) {
+        Player player = ((Player) user.platformPlayer());
+        try {
+            Reflections.method$Connection$sendPacketImmediate.invoke(
+                    getPlayerConnection(player, false),
+                    packet,
+                    null,
+                    true);
+        } catch (ReflectiveOperationException e) {
+            CraftEngine.instance().logger().warn("Failed to invoke send packet", e);
+        }
+    }
+
+    public static void kickPlayer(NetWorkUser user, String reason, PlayerKickEvent.Cause cause) {
+        Player player = ((Player) user.platformPlayer());
+        try {
+            Reflections.method$ServerCommonPacketListenerImpl$disconnect.invoke(
+                    PlayerUtils.getPlayerConnection(player, true),
+                    ComponentUtils.adventureToMinecraft(Component.translatable(reason)),
+                    cause);
+        } catch (Exception e) {
+            CraftEngine.instance().logger().warn("Failed to kick player", e);
+        }
     }
 }

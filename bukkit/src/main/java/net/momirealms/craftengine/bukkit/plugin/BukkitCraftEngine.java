@@ -9,6 +9,7 @@ import net.momirealms.craftengine.bukkit.entity.furniture.BukkitFurnitureManager
 import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.item.behavior.BukkitItemBehaviors;
 import net.momirealms.craftengine.bukkit.item.recipe.BukkitRecipeManager;
+import net.momirealms.craftengine.bukkit.pack.BukkitPackManager;
 import net.momirealms.craftengine.bukkit.plugin.command.BukkitCommandManager;
 import net.momirealms.craftengine.bukkit.plugin.command.BukkitSenderFactory;
 import net.momirealms.craftengine.bukkit.plugin.gui.BukkitGuiManager;
@@ -24,7 +25,6 @@ import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.bukkit.world.BukkitWorldManager;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.ItemManager;
-import net.momirealms.craftengine.core.pack.PackManagerImpl;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.classpath.ReflectionClassPathAppender;
 import net.momirealms.craftengine.core.plugin.command.sender.SenderFactory;
@@ -125,10 +125,7 @@ public class BukkitCraftEngine extends CraftEngine {
         }
         BukkitBlockBehaviors.init();
         BukkitItemBehaviors.init();
-        super.packManager = new PackManagerImpl(this, (rf, zp) -> {
-            AsyncResourcePackGenerateEvent endEvent = new AsyncResourcePackGenerateEvent(rf, zp);
-            EventUtils.fireAndForget(endEvent);
-        });
+        super.packManager = new BukkitPackManager(this);
         super.senderFactory = new BukkitSenderFactory(this);
         super.itemManager = new BukkitItemManager(this);
         super.recipeManager = new BukkitRecipeManager(this);
@@ -276,6 +273,11 @@ public class BukkitCraftEngine extends CraftEngine {
         return (BukkitNetworkManager) networkManager;
     }
 
+    @Override
+    public BukkitPackManager packManager() {
+        return (BukkitPackManager) packManager;
+    }
+
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
     public void saveResource(String resourcePath) {
@@ -336,5 +338,10 @@ public class BukkitCraftEngine extends CraftEngine {
                     .build();
         }
         return this.antiGrief;
+    }
+
+    @Override
+    public int serverPort() {
+        return Bukkit.getServer().getPort();
     }
 }

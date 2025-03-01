@@ -7,6 +7,8 @@ import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -178,5 +180,22 @@ public class ZipUtils {
             zos.write(buffer, 0, bytesRead);
         }
         zos.closeEntry();
+    }
+
+    public static String computeSHA1(Path path) throws IOException, NoSuchAlgorithmException {
+        InputStream file = Files.newInputStream(path);
+        MessageDigest digest = MessageDigest.getInstance("SHA-1");
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        while ((bytesRead = file.read(buffer)) != -1) {
+            digest.update(buffer, 0, bytesRead);
+        }
+        file.close();
+
+        StringBuilder hexString = new StringBuilder(40);
+        for (byte b : digest.digest()) {
+            hexString.append(String.format("%02x", b));
+        }
+        return hexString.toString();
     }
 }

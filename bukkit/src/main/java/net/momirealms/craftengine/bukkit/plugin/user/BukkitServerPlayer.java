@@ -38,6 +38,7 @@ public class BukkitServerPlayer extends Player {
     private ConnectionState decoderState;
     private ConnectionState encoderState;
 
+    private boolean joining = true;
     private Reference<org.bukkit.entity.Player> playerRef;
     private Reference<Object> serverPlayerRef;
 
@@ -59,6 +60,8 @@ public class BukkitServerPlayer extends Player {
     private int resentSwingTick;
 
     private Key lastUsedRecipe = null;
+
+    private int packIndex;
 
     public BukkitServerPlayer(BukkitCraftEngine plugin, Channel channel) {
         this.channel = channel;
@@ -570,5 +573,25 @@ public class BukkitServerPlayer extends Player {
 
     public void setLastUsedRecipe(Key lastUsedRecipe) {
         this.lastUsedRecipe = lastUsedRecipe;
+    }
+
+    public boolean isJoining() {
+        return this.joining;
+    }
+
+    public void setJoining(boolean joining) {
+        this.joining = joining;
+	}
+
+    public int packIndex() {
+        return this.packIndex;
+    }
+
+    public void setPackIndex(int packIndex) {
+        this.packIndex = packIndex;
+    }
+
+    public void setPack() {
+        plugin.packManager().sendResourcePack(this);
     }
 }

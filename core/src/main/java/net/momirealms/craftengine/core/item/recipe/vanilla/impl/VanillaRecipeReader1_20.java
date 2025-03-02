@@ -86,7 +86,7 @@ public class VanillaRecipeReader1_20 extends AbstractRecipeReader {
     public VanillaStoneCuttingRecipe readStoneCutting(JsonObject json) {
         return new VanillaStoneCuttingRecipe(
                 readGroup(json),
-                readCraftingResult(json.getAsJsonObject("result")),
+                readStoneCuttingResult(json),
                 readSingleIngredient(json.get("ingredient"))
         );
     }
@@ -105,6 +105,13 @@ public class VanillaRecipeReader1_20 extends AbstractRecipeReader {
             ingredients.addAll(items);
         }
         return ingredients;
+    }
+
+    @NotNull
+    protected RecipeResult readStoneCuttingResult(JsonObject json) {
+        int count = json.has("count") ? json.get("count").getAsInt() : 1;
+        String result = json.get("result").getAsString();
+        return new RecipeResult(result, count, null);
     }
 
     @NotNull

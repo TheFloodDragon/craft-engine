@@ -9,13 +9,11 @@ import net.momirealms.craftengine.bukkit.api.event.FurnitureInteractEvent;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.entity.furniture.BukkitFurnitureManager;
 import net.momirealms.craftengine.bukkit.entity.furniture.LoadedFurniture;
-import net.momirealms.craftengine.bukkit.pack.BukkitPackManager;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.bukkit.util.*;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.entity.player.InteractionHand;
-import net.momirealms.craftengine.core.pack.host.AbstractPackHost;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.config.ConfigManager;
 import net.momirealms.craftengine.core.plugin.network.ConnectionState;
@@ -28,7 +26,6 @@ import net.momirealms.craftengine.core.world.chunk.packet.MCSection;
 import org.bukkit.*;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.util.RayTraceResult;
@@ -36,7 +33,6 @@ import org.bukkit.util.RayTraceResult;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiConsumer;
@@ -663,81 +659,6 @@ public class PacketConsumers {
             }
         } catch (Exception e) {
             CraftEngine.instance().logger().warn("Failed to handle ClientboundSoundPacket", e);
-        }
-    };
-
-    public static final TriConsumer<NetWorkUser, NMSPacketEvent, Object> CONFIG_FINISH = (user, event, packet) -> {
-        try {
-            if (!ConfigManager.enableHost() || !ConfigManager.beforeJoin()) return;
-            BukkitServerPlayer player = (BukkitServerPlayer) user;
-            if (!player.isJoining()) return;
-            player.setPack();
-            event.setCancelled(true);
-        } catch (Exception e) {
-            CraftEngine.instance().logger().warn("Failed to handle ClientboundConfigurationFinishPacket", e);
-        }
-    };
-
-    public static final TriConsumer<NetWorkUser, NMSPacketEvent, Object> PACK_RESPONSE = (user, event, packet) -> {
-        try {
-            if (!ConfigManager.enableHost()) return;
-
-            if (VersionHelper.isVersionNewerThan1_20_3()) {
-                Object uuid = Reflections.field$ServerboundResourcePackPacket$id.get(packet);
-                if (!ConfigManager.uuid().equals(uuid)) return;
-            }
-            event.setCancelled(true);
-
-            String action = Reflections.field$ServerboundResourcePackPacket$action.get(packet).toString();
-            BukkitServerPlayer player = (BukkitServerPlayer) user;
-            boolean joining = player.isJoining();
-            BukkitPackManager packManager = BukkitCraftEngine.instance().packManager();
-            if ("ACCEPTED".equals(action)) {
-                if (VersionHelper.isVersionNewerThan1_20()
-                        && !VersionHelper.isVersionNewerThan1_20_3()
-                        && !joining
-                        && !packManager.isPlayerFrozen(player.platformPlayer().getUniqueId())) {
-                    packManager.startReceivingPack(player);
-                }
-                return;
-            }
-
-            if("DOWNLOADED".equals(action)) {
-                if (!joining && !packManager.isPlayerFrozen(player.platformPlayer().getUniqueId())) {
-                    packManager.startReceivingPack(player);
-                }
-                //TODO trigger certain event and behaviour
-                return;
-            }
-
-            if ("SUCCESSFULLY_LOADED".equals(action) || "DECLINED".equals(action) && !ConfigManager.kickOnDeclined()) {
-                packManager.returnToWorld(player);
-                //TODO trigger certain event and behaviour
-                return;
-            }
-
-            if ("DECLINED".equals(action)) {
-                PlayerUtils.kickPlayer(user, "multiplayer.requiredTexturePrompt.disconnect", PlayerKickEvent.Cause.RESOURCE_PACK_REJECTION);
-                //TODO trigger certain event and behaviour
-                return;
-            }
-
-            List<AbstractPackHost> hosts = packManager.hosts();
-            // Attempted All Methods
-            if (player.packIndex() == hosts.size() - 1) {
-                if (ConfigManager.kickOnDeclined())
-                    PlayerUtils.kickPlayer(user, "multiplayer.requiredTexturePrompt.disconnect", PlayerKickEvent.Cause.RESOURCE_PACK_REJECTION);
-                else
-                    packManager.returnToWorld(player);
-                //TODO trigger certain event and behaviour
-                return;
-            }
-
-            player.setPackIndex(player.packIndex() + 1);
-            player.setPack();
-            //TODO trigger certain event and behaviour
-        } catch (Exception e) {
-            CraftEngine.instance().logger().warn("Failed to handle ServerboundResourcepackPacket", e);
         }
     };
 }

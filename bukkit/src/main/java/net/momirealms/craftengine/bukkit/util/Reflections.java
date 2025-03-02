@@ -20,7 +20,6 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.block.BlockPhysicsEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.inventory.*;
 import sun.misc.Unsafe;
 
@@ -4742,41 +4741,6 @@ public class Reflections {
             )
     );
 
-    public static final Class<?> clazz$PacketListener = requireNonNull(
-            ReflectionUtils.getClazz(
-                    BukkitReflectionUtils.assembleMCClass("network.PacketListener")
-            )
-    );
-
-    public static final Field field$Connection$packListener = requireNonNull(
-            VersionHelper.isVersionNewerThan1_20_2() ?
-            ReflectionUtils.getDeclaredField(clazz$Connection, clazz$PacketListener, 1) :
-            ReflectionUtils.getDeclaredField(clazz$Connection, clazz$PacketListener, 0)
-    );
-
-    public static final Class<?> clazz$GameProfile = requireNonNull(
-            ReflectionUtils.getClazz("com.mojang.authlib.GameProfile")
-    );
-
-    public static final Field field$GameProfile$id = requireNonNull(
-            ReflectionUtils.getDeclaredField(clazz$GameProfile, UUID.class, 0)
-    );
-
-    public static final Class<?> clazz$ServerLoginPacketListenerImpl = requireNonNull(
-            ReflectionUtils.getClazz(
-                    BukkitReflectionUtils.assembleMCClass("server.network.ServerLoginPacketListenerImpl"),
-                    BukkitReflectionUtils.assembleMCClass("server.network.LoginListener")
-            )
-    );
-
-    public static final Field field$ServerLoginPacketListenerImpl$connection = requireNonNull(
-            ReflectionUtils.getDeclaredField(clazz$ServerLoginPacketListenerImpl, clazz$Connection, 0)
-    );
-
-    public static final Field field$ServerLoginPacketListenerImpl$gameProfile = requireNonNull(
-            ReflectionUtils.getDeclaredField(clazz$ServerLoginPacketListenerImpl, clazz$GameProfile, 0)
-    );
-
     public static final Class<?> clazz$ClientboundResourcePackPushPacket = requireNonNull(
             ReflectionUtils.getClazz(
                     BukkitReflectionUtils.assembleMCClass("network.protocol.common.ClientboundResourcePackPushPacket"),
@@ -4799,113 +4763,58 @@ public class Reflections {
             )
     );
 
-    public static final Class<?> clazz$ServerboundResourcePackPacket = requireNonNull(
+    public static final Class<?> clazz$DedicatedServerProperties = requireNonNull(
             ReflectionUtils.getClazz(
-                    BukkitReflectionUtils.assembleMCClass("network.protocol.common.ServerboundResourcePackPacket"),
-                    BukkitReflectionUtils.assembleMCClass("network.protocol.game.PacketPlayInResourcePackStatus")
+                    BukkitReflectionUtils.assembleMCClass("server.dedicated.DedicatedServerProperties")
             )
     );
 
-    public static final Class<?> clazz$ServerboundResourcePackPacket$Action = requireNonNull(
+    public static final Class<?> clazz$DedicatedServerSettings = requireNonNull(
             ReflectionUtils.getClazz(
-                    BukkitReflectionUtils.assembleMCClass("network.protocol.common.ServerboundResourcePackPacket$Action"),
-                    BukkitReflectionUtils.assembleMCClass("network.protocol.common.ServerboundResourcePackPacket$a"),
-                    BukkitReflectionUtils.assembleMCClass("network.protocol.game.PacketPlayInResourcePackStatus$EnumResourcePackStatus")
+                    BukkitReflectionUtils.assembleMCClass("server.dedicated.DedicatedServerSettings")
             )
     );
 
-    public static final Field field$ServerboundResourcePackPacket$id = VersionHelper.isVersionNewerThan1_20_3()
-            ? requireNonNull(ReflectionUtils.getDeclaredField(clazz$ServerboundResourcePackPacket, UUID.class, 0))
-            : null;
-
-    public static final Field field$ServerboundResourcePackPacket$action = requireNonNull(
-            ReflectionUtils.getDeclaredField(clazz$ServerboundResourcePackPacket, clazz$ServerboundResourcePackPacket$Action, 0)
-    );
-
-    public static final Class<?> clazz$ServerConfigurationPacketListenerImpl = VersionHelper.isVersionNewerThan1_20_2()
-            ? requireNonNull(ReflectionUtils.getClazz(BukkitReflectionUtils.assembleMCClass("server.network.ServerConfigurationPacketListenerImpl")))
-            : null;
-
-    public static final Field field$ServerConfigurationPacketListenerImpl$gameProfile = VersionHelper.isVersionNewerThan1_20_2()
-            ? requireNonNull(ReflectionUtils.getDeclaredField(clazz$ServerConfigurationPacketListenerImpl, clazz$GameProfile, 0))
-            : null;
-
-    public static final Class<?> clazz$ClientboundFinishConfigurationPacket = VersionHelper.isVersionNewerThan1_20_2()
-            ? requireNonNull(ReflectionUtils.getClazz(BukkitReflectionUtils.assembleMCClass("network.protocol.configuration.ClientboundFinishConfigurationPacket")))
-            : null;
-
-    public static final Constructor<?> constructor$ClientboundFinishConfigurationPacket = VersionHelper.isVersionNewerThan1_20_2() && !VersionHelper.isVersionNewerThan1_20_5()
-            ? requireNonNull(ReflectionUtils.getConstructor(clazz$ClientboundFinishConfigurationPacket))
-            : null;
-
-    public static final Field field$ClientboundFinishConfigurationPacket$INSTANCE = VersionHelper.isVersionNewerThan1_20_5()
-            ? requireNonNull(ReflectionUtils.getDeclaredField(clazz$ClientboundFinishConfigurationPacket, clazz$ClientboundFinishConfigurationPacket, 0))
-            : null;
-
-    public static final Field field$ServerPlayer$transferCookieConnection = VersionHelper.isVersionNewerThan1_20_5()
-            ? requireNonNull(ReflectionUtils.getDeclaredField(clazz$ServerPlayer, "transferCookieConnection"))
-            : null;
-
-    public static final Method method$ServerCommonPacketListenerImpl$disconnect = requireNonNull(
-            VersionHelper.isVersionNewerThan1_20_2() ?
-            ReflectionUtils.getMethod(clazz$ServerCommonPacketListenerImpl, void.class, clazz$Component, PlayerKickEvent.Cause.class) :
-            ReflectionUtils.getMethod(clazz$ServerGamePacketListenerImpl, void.class, clazz$Component, PlayerKickEvent.Cause.class)
-    );
-
-    public static final Class<?> clazz$ClientboundSetCameraPacket = requireNonNull(
+    public static final Class<?> clazz$DedicatedServer = requireNonNull(
             ReflectionUtils.getClazz(
-                    BukkitReflectionUtils.assembleMCClass("network.protocol.game.ClientboundSetCameraPacket"),
-                    BukkitReflectionUtils.assembleMCClass("network.protocol.game.PacketPlayOutCamera")
+                    BukkitReflectionUtils.assembleMCClass("server.dedicated.DedicatedServer")
             )
     );
 
-    public static final Constructor<?> constructor$ClientboundSetCameraPacket = requireNonNull(
-            ReflectionUtils.getDeclaredConstructor(clazz$ClientboundSetCameraPacket, clazz$FriendlyByteBuf)
-    );
-
-    // Configuration
-    /*public static final Method method$ServerGamePacketListenerImpl$switchToConfig = requireNonNull(
-            ReflectionUtils.getMethod(
-                    clazz$ServerGamePacketListenerImpl,
-                    void.class,
-                    new String[]{"switchToConfig"}
+    public static final Field field$DedicatedServerSettings$properties = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$DedicatedServerSettings, clazz$DedicatedServerProperties, 0
             )
     );
 
-    public static final Method method$ServerConfigurationPacketListenerImpl$returnToWorld = requireNonNull(
-            ReflectionUtils.getMethod(
-                    clazz$ServerConfigurationPacketListenerImpl,
-                    void.class,
-                    new String[]{"returnToWorld"}
+    public static final Field field$DedicatedServer$settings = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$DedicatedServer, clazz$DedicatedServerSettings, 0
             )
     );
 
-    public static final Class<?> clazz$ServerboundConfigurationAcknowledgedPacket = requireNonNull(
+    public static final Class<?> clazz$MinecraftServer$ServerResourcePackInfo = requireNonNull(
             ReflectionUtils.getClazz(
-                    BukkitReflectionUtils.assembleMCClass("network.protocol.game.ServerboundConfigurationAcknowledgedPacket")
+                    BukkitReflectionUtils.assembleMCClass("server.MinecraftServer$ServerResourcePackInfo")
             )
     );
 
-    Solving Return to World ISSUE
-    public static final Class<?> clazz$PlayerList = requireNonNull(
+    public static final Field field$DedicatedServerProperties$serverResourcePackInfo = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$DedicatedServerProperties, Optional.class, 0
+            )
+    );
+
+    public static final Constructor<?> constructor$ServerResourcePackInfo = requireNonNull(
+            ReflectionUtils.getConstructor(clazz$MinecraftServer$ServerResourcePackInfo, 0)
+    );
+
+    public static final Class<?> clazz$ClientboundResourcePackPopPacket =
             ReflectionUtils.getClazz(
-                    BukkitReflectionUtils.assembleMCClass("server.players.PlayerList")
-            )
-    );
+                    BukkitReflectionUtils.assembleMCClass("network.protocol.common.ClientboundResourcePackPopPacket")
+            );
 
-    public static final Method method$unsetRemoved = requireNonNull(
-            ReflectionUtils.getMethod(clazz$Entity, new String[] {"unsetRemoved"})
-    );
-
-    public static final Class<?> clazz$EntityScheduler = requireNonNull(
-            ReflectionUtils.getClazz("io.papermc.paper.threadedregions.EntityScheduler")
-    );
-
-    public static final Field field$EntityScheduler$tickCount = requireNonNull(
-            ReflectionUtils.getDeclaredField(clazz$EntityScheduler, long.class, 0)
-    );
-
-    public static final Field field$CraftEntity$taskScheduler = requireNonNull(
-            ReflectionUtils.getDeclaredField(clazz$CraftEntity, clazz$EntityScheduler, 0)
-    ); */
+    public static final Constructor<?> constructor$ClientboundResourcePackPopPacket = Optional.ofNullable(clazz$ClientboundResourcePackPopPacket)
+            .map(it -> ReflectionUtils.getConstructor(it, Optional.class))
+            .orElse(null);
 }

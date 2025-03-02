@@ -1,7 +1,6 @@
 package net.momirealms.craftengine.bukkit.plugin;
 
 import net.momirealms.antigrieflib.AntiGriefLib;
-import net.momirealms.craftengine.bukkit.api.event.AsyncResourcePackGenerateEvent;
 import net.momirealms.craftengine.bukkit.api.event.CraftEngineReloadEvent;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.block.behavior.BukkitBlockBehaviors;
@@ -338,10 +337,5 @@ public class BukkitCraftEngine extends CraftEngine {
                     .build();
         }
         return this.antiGrief;
-    }
-
-    @Override
-    public int serverPort() {
-        return Bukkit.getServer().getPort();
     }
 }

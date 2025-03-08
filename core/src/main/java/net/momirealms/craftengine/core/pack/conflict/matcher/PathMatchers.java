@@ -13,6 +13,7 @@ import java.util.Map;
 
 public class PathMatchers {
     public static final Key EXACT = Key.of("craftengine:exact");
+    public static final Key CONTAINS = Key.of("craftengine:contains");
     public static final Key FILENAME = Key.of("craftengine:filename");
     public static final Key PARENT_PATH_SUFFIX = Key.of("craftengine:parent_path_suffix");
     public static final Key PARENT_PATH_PREFIX = Key.of("craftengine:parent_path_prefix");
@@ -30,6 +31,7 @@ public class PathMatchers {
         register(ANY_OF, AnyOfPathMatcher.FACTORY);
         register(ALL_OF, AllOfPathMatcher.FACTORY);
         register(INVERTED, InvertedPathMatcher.FACTORY);
+        register(CONTAINS, PathContainsMatcher.FACTORY);
     }
 
     public static void register(Key key, PathMatcherFactory factory) {

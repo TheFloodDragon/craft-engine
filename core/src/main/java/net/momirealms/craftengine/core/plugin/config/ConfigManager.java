@@ -10,12 +10,14 @@ import dev.dejvokep.boostedyaml.settings.loader.LoaderSettings;
 import dev.dejvokep.boostedyaml.settings.updater.UpdaterSettings;
 import dev.dejvokep.boostedyaml.utils.format.NodeRole;
 import net.kyori.adventure.text.Component;
+import net.momirealms.craftengine.core.pack.conflict.resolution.ConditionalResolution;
 import net.momirealms.craftengine.core.pack.host.HostMode;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.PluginProperties;
 import net.momirealms.craftengine.core.plugin.Reloadable;
 import net.momirealms.craftengine.core.plugin.locale.TranslationManager;
 import net.momirealms.craftengine.core.util.AdventureHelper;
+import net.momirealms.craftengine.core.util.MiscUtils;
 import net.momirealms.craftengine.core.util.ReflectionUtils;
 
 import java.io.File;
@@ -79,7 +81,7 @@ public class ConfigManager implements Reloadable {
     protected UUID packUUID;
     protected int requestRate;
     protected long requestInterval;
-
+    protected List<ConditionalResolution> resolutions;
 
     public ConfigManager(CraftEngine plugin) {
         this.plugin = plugin;
@@ -155,6 +157,15 @@ public class ConfigManager implements Reloadable {
         requestInterval = config.getLong("resource-pack.send.self-host.rate-limit.reset-interval", 30L);
         requestRate = config.getInt("resource-pack.send.self-host.rate-limit.max-requests", 3);
         denyNonMinecraftRequest = config.getBoolean("resource-pack.send.deny-non-minecraft-request", true);
+        try {
+            resolutions = config.getMapList("resource-pack.duplicated-files-handler").stream().map(it -> {
+                Map<String, Object> args = MiscUtils.castToMap(it, false);
+                return ConditionalResolution.FACTORY.create(args);
+            }).toList();
+        } catch (Exception e) {
+            this.plugin.logger().warn("Failed to load resource pack duplicated files handler", e);
+            resolutions = List.of();
+        }
 
         // performance
         maxChainUpdate = config.getInt("performance.max-block-chain-update-limit", 64);
@@ -329,6 +340,10 @@ public class ConfigManager implements Reloadable {
 
     public static String hostResourcePackPath() {
         return instance.hostResourcePackPath;
+    }
+
+    public static List<ConditionalResolution> resolutions() {
+        return instance.resolutions;
     }
 
     public YamlDocument loadOrCreateYamlData(String fileName) {

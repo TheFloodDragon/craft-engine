@@ -15,7 +15,7 @@ public class PathPatternMatcher implements PathMatcher {
 
     @Override
     public boolean test(Path path) {
-        String pathStr = path.toString();
+        String pathStr = path.toString().replace("\\", "/");
         return pathStr.matches(pattern);
     }
 

@@ -8,17 +8,20 @@ import dev.dejvokep.boostedyaml.YamlDocument;
 import dev.dejvokep.boostedyaml.block.implementation.Section;
 import net.momirealms.craftengine.core.font.BitmapImage;
 import net.momirealms.craftengine.core.font.Font;
-import net.momirealms.craftengine.core.pack.generator.ModelGeneration;
-import net.momirealms.craftengine.core.pack.generator.ModelGenerator;
 import net.momirealms.craftengine.core.pack.host.HostMode;
 import net.momirealms.craftengine.core.pack.host.ResourcePackHost;
 import net.momirealms.craftengine.core.pack.model.ItemModel;
+import net.momirealms.craftengine.core.pack.model.generator.ModelGeneration;
+import net.momirealms.craftengine.core.pack.model.generator.ModelGenerator;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.PluginProperties;
 import net.momirealms.craftengine.core.plugin.config.ConfigManager;
 import net.momirealms.craftengine.core.plugin.config.ConfigSectionParser;
 import net.momirealms.craftengine.core.plugin.config.StringKeyConstructor;
 import net.momirealms.craftengine.core.plugin.config.template.TemplateManager;
+import net.momirealms.craftengine.core.plugin.locale.I18NData;
+import net.momirealms.craftengine.core.sound.AbstractSoundManager;
+import net.momirealms.craftengine.core.sound.SoundEvent;
 import net.momirealms.craftengine.core.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.LoaderOptions;
@@ -33,6 +36,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import static net.momirealms.craftengine.core.util.MiscUtils.castToMap;
@@ -51,7 +55,6 @@ public abstract class AbstractPackManager implements PackManager {
     public AbstractPackManager(CraftEngine plugin, BiConsumer<Path, Path> eventDispatcher) {
         this.plugin = plugin;
         this.eventDispatcher = eventDispatcher;
-        this.calculateHash();
     }
 
     @Override
@@ -65,8 +68,11 @@ public abstract class AbstractPackManager implements PackManager {
     public void load() {
         this.loadPacks();
         this.loadConfigs();
+        this.calculateHash();
         if (ConfigManager.hostMode() == HostMode.SELF_HOST) {
-            ResourcePackHost.instance().enable(ConfigManager.hostIP(), ConfigManager.hostPort(), resourcePackPath());
+            Path path = ConfigManager.hostResourcePackPath().startsWith(".") ? plugin.dataFolderPath().resolve(ConfigManager.hostResourcePackPath()) : Path.of(ConfigManager.hostResourcePackPath());
+            ResourcePackHost.instance().enable(ConfigManager.hostIP(), ConfigManager.hostPort(), path);
+            ResourcePackHost.instance().setRateLimit(ConfigManager.requestRate(), ConfigManager.requestInterval(), TimeUnit.SECONDS);
         } else {
             ResourcePackHost.instance().disable();
         }
@@ -96,6 +102,10 @@ public abstract class AbstractPackManager implements PackManager {
         if (!this.sectionParsers.containsKey(id)) return false;
         this.sectionParsers.remove(id);
         return true;
+    }
+
+    public Path selfHostPackPath() {
+        return ConfigManager.hostResourcePackPath().startsWith(".") ? plugin.dataFolderPath().resolve(ConfigManager.hostResourcePackPath()) : Path.of(ConfigManager.hostResourcePackPath());
     }
 
     private void loadPacks() {
@@ -138,6 +148,8 @@ public abstract class AbstractPackManager implements PackManager {
         // internal
         plugin.saveResource("resources/internal/resourcepack/assets/minecraft/models/block/default_chorus_plant.json");
         plugin.saveResource("resources/internal/pack.yml");
+        // i18n
+        plugin.saveResource("resources/internal/configuration/i18n.yml");
         // offset
         plugin.saveResource("resources/internal/configuration/offset_chars.yml");
         plugin.saveResource("resources/internal/resourcepack/assets/minecraft/textures/font/offset/space_split.png");
@@ -168,6 +180,8 @@ public abstract class AbstractPackManager implements PackManager {
         plugin.saveResource("resources/default/resourcepack/pack.png");
         // templates
         plugin.saveResource("resources/default/configuration/templates.yml");
+        // i18n
+        plugin.saveResource("resources/default/configuration/i18n.yml");
         // categories
         plugin.saveResource("resources/default/configuration/categories.yml");
         // icons
@@ -232,6 +246,11 @@ public abstract class AbstractPackManager implements PackManager {
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/table_lamp.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/wooden_chair.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/bench.png");
+        // tooltip
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/gui/sprites/tooltip/topaz_background.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/gui/sprites/tooltip/topaz_background.png.mcmeta");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/gui/sprites/tooltip/topaz_frame.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/gui/sprites/tooltip/topaz_frame.png.mcmeta");
     }
 
     private void loadConfigs() {
@@ -344,7 +363,9 @@ public abstract class AbstractPackManager implements PackManager {
         this.generateBlockOverrides(generatedPackPath);
         this.generateItemModels(generatedPackPath, this.plugin.itemManager());
         this.generateItemModels(generatedPackPath, this.plugin.blockManager());
-        this.generateSounds(generatedPackPath);
+        this.generateOverrideSounds(generatedPackPath);
+        this.generateCustomSounds(generatedPackPath);
+        this.generateClientLang(generatedPackPath);
 
         Path zipFile = resourcePackPath();
         try {
@@ -361,7 +382,7 @@ public abstract class AbstractPackManager implements PackManager {
     }
 
     private void calculateHash() {
-        Path zipFile = resourcePackPath();
+        Path zipFile = selfHostPackPath();
         if (Files.exists(zipFile)) {
             try {
                 this.packHash = computeSHA1(zipFile);
@@ -375,7 +396,71 @@ public abstract class AbstractPackManager implements PackManager {
         }
     }
 
-    private void generateSounds(Path generatedPackPath) {
+    private void generateClientLang(Path generatedPackPath) {
+        for (Map.Entry<String, I18NData> entry : this.plugin.translationManager().clientLangManager().langData().entrySet()) {
+            JsonObject json = new JsonObject();
+            for (Map.Entry<String, String> pair : entry.getValue().translations.entrySet()) {
+                json.addProperty(pair.getKey(), pair.getValue());
+            }
+            Path langPath = generatedPackPath
+                    .resolve("assets")
+                    .resolve("minecraft")
+                    .resolve("lang")
+                    .resolve(entry.getKey() + ".json");
+            try {
+                Files.createDirectories(langPath.getParent());
+            } catch (IOException e) {
+                plugin.logger().severe("Error creating " + langPath.toAbsolutePath());
+                return;
+            }
+            try {
+                GsonHelper.writeJsonFile(json, langPath);
+            } catch (IOException e) {
+                this.plugin.logger().severe("Error writing language file", e);
+            }
+        }
+    }
+
+    private void generateCustomSounds(Path generatedPackPath) {
+        AbstractSoundManager soundManager = (AbstractSoundManager) plugin.soundManager();
+        for (Map.Entry<String, List<SoundEvent>> entry : soundManager.soundsByNamespace().entrySet()) {
+            Path soundPath = generatedPackPath
+                    .resolve("assets")
+                    .resolve(entry.getKey())
+                    .resolve("sounds.json");
+
+            JsonObject soundJson;
+            if (Files.exists(soundPath)) {
+                try (BufferedReader reader = Files.newBufferedReader(soundPath)) {
+                    soundJson = JsonParser.parseReader(reader).getAsJsonObject();
+                } catch (IOException e) {
+                    plugin.logger().warn("Failed to load existing sounds.json", e);
+                    return;
+                }
+            } else {
+                soundJson = new JsonObject();
+            }
+
+            for (SoundEvent soundEvent : entry.getValue()) {
+                soundJson.add(soundEvent.id().value(), soundEvent.get());
+            }
+
+            try {
+                Files.createDirectories(soundPath.getParent());
+            } catch (IOException e) {
+                plugin.logger().severe("Error creating " + soundPath.toAbsolutePath());
+                return;
+            }
+
+            try (BufferedWriter writer = Files.newBufferedWriter(soundPath)) {
+                GsonHelper.get().toJson(soundJson, writer);
+            } catch (IOException e) {
+                plugin.logger().warn("Failed to generate sounds.json: " + soundPath.toAbsolutePath(), e);
+            }
+        }
+    }
+
+    private void generateOverrideSounds(Path generatedPackPath) {
         if (!ConfigManager.enableSoundSystem()) return;
 
         Path soundPath = generatedPackPath
@@ -616,8 +701,8 @@ public abstract class AbstractPackManager implements PackManager {
 
             JsonObject originalItemModel;
             if (Files.exists(overridedItemPath)) {
-                try (BufferedReader reader = Files.newBufferedReader(overridedItemPath)) {
-                    originalItemModel = JsonParser.parseReader(reader).getAsJsonObject();
+                try {
+                    originalItemModel = GsonHelper.readJsonFile(overridedItemPath).getAsJsonObject();
                 } catch (IOException e) {
                     plugin.logger().warn("Failed to load existing item model", e);
                     continue;

@@ -63,6 +63,7 @@ public class ConfigManager implements Reloadable {
     protected boolean enableRecipeSystem;
     protected List<String> foldersToMerge;
 	protected boolean restoreVanillaBlocks;
+	protected boolean restoreCustomBlocks;
     protected HostMode hostMode;
     protected int hostPort;
     protected String hostIP;
@@ -70,10 +71,15 @@ public class ConfigManager implements Reloadable {
     protected boolean kickDeclined;
     protected boolean sendPackOnJoin;
     protected boolean sendPackOnReload;
+    protected boolean denyNonMinecraftRequest;
     protected Component resourcePackPrompt;
     protected String packUrl;
     protected String packSha1;
+    protected String hostResourcePackPath;
     protected UUID packUUID;
+    protected int requestRate;
+    protected long requestInterval;
+
 
     public ConfigManager(CraftEngine plugin) {
         this.plugin = plugin;
@@ -136,6 +142,7 @@ public class ConfigManager implements Reloadable {
         hostMode = HostMode.valueOf(config.getString("resource-pack.send.mode", "self-host").replace("-", "_").toUpperCase(Locale.ENGLISH));
         hostPort = config.getInt("resource-pack.send.self-host.port", 8163);
         hostIP = config.getString("resource-pack.send.self-host.ip", "localhost");
+        hostResourcePackPath = config.getString("resource-pack.send.self-host.local-file-path", "./generated/resource_pack.zip");
         hostProtocol = config.getString("resource-pack.send.self-host.protocol", "http");
         sendPackOnJoin = config.getBoolean("resource-pack.send.send-on-join", true);
         sendPackOnReload = config.getBoolean("resource-pack.send.send-on-reload", true);
@@ -145,12 +152,16 @@ public class ConfigManager implements Reloadable {
         String packUUIDStr = config.getString("resource-pack.send.external-host.uuid", "");
         packUUID = packUUIDStr.isEmpty() ? UUID.nameUUIDFromBytes(packUrl.getBytes(StandardCharsets.UTF_8)) : UUID.fromString(packUUIDStr);
         resourcePackPrompt = AdventureHelper.miniMessage(config.getString("resource-pack.send.prompt", "<yellow>To fully experience our server, please accept our custom resource pack.</yellow>"));
+        requestInterval = config.getLong("resource-pack.send.self-host.rate-limit.reset-interval", 30L);
+        requestRate = config.getInt("resource-pack.send.self-host.rate-limit.max-requests", 3);
+        denyNonMinecraftRequest = config.getBoolean("resource-pack.send.deny-non-minecraft-request", true);
 
         // performance
         maxChainUpdate = config.getInt("performance.max-block-chain-update-limit", 64);
         forceUpdateLight = config.getBoolean("performance.light-system.force-update-light", false);
         enableLightSystem = config.getBoolean("performance.light-system.enable", true);
         restoreVanillaBlocks = config.getBoolean("performance.chunk-system.restore-vanilla-blocks-on-chunk-unload", true);
+        restoreCustomBlocks = config.getBoolean("performance.chunk-system.restore-custom-blocks-on-chunk-load", true);
         // compatibility
         hasPAPI = plugin.isPluginEnabled("PlaceholderAPI");
         // furniture
@@ -249,7 +260,15 @@ public class ConfigManager implements Reloadable {
     }
 
     public static boolean restoreVanillaBlocks() {
-        return instance.restoreVanillaBlocks;
+        return instance.restoreVanillaBlocks && instance.restoreCustomBlocks;
+    }
+
+    public static boolean denyNonMinecraftRequest() {
+        return instance.denyNonMinecraftRequest;
+    }
+
+    public static boolean restoreCustomBlocks() {
+        return instance.restoreCustomBlocks;
     }
 
     public static List<String> foldersToMerge() {
@@ -298,6 +317,18 @@ public class ConfigManager implements Reloadable {
 
     public static boolean sendPackOnReload() {
         return instance.sendPackOnReload;
+    }
+
+    public static int requestRate() {
+        return instance.requestRate;
+    }
+
+    public static long requestInterval() {
+        return instance.requestInterval;
+    }
+
+    public static String hostResourcePackPath() {
+        return instance.hostResourcePackPath;
     }
 
     public YamlDocument loadOrCreateYamlData(String fileName) {

@@ -32,10 +32,49 @@ resource-pack:
       ip: localhost
       port: 8163
       protocol: http
+      deny-non-minecraft-request: true
+      local-file-path: "./generated/resource_pack.zip"
+      rate-limit:
+        max-requests: 3
+        reset-interval: 30 # seconds
     external-host:
       url: ""
       sha1: ""
       uuid: ""
+# Unfinished
+#  duplicated-files-handler:
+#    - matcher:
+#        type: any_of
+#        terms:
+#          - type: parent_path_suffix
+#            suffix: "minecraft/items/" # 1.21.4+
+#          - type: parent_path_suffix
+#            suffix: "minecraft/models/item/" # 1.20-1.21.3
+#      resolution:
+#        type: merge_json
+#        deeply: true
+#    - matcher:
+#        type: exact_match
+#        path: "pack.mcmeta"
+#      resolution:
+#        type: retain_matching
+#        term:
+#          type: path_pattern
+#          pattern: "resources/default/resourcepack"
+#    - matcher:
+#        type: filename
+#        name: "sounds.json"
+#      resolution:
+#        type: merge_json
+#        deeply: false
+#    - matcher:
+#        type: exact_match
+#        path: "pack.png"
+#      resolution:
+#        type: retain_matching
+#        term:
+#          type: path_pattern
+#          pattern: "resources/default/resourcepack"
 
 block:
   sound-system:
@@ -115,9 +154,11 @@ performance:
     # Disabling this option prevents the plugin from converting custom blocks to vanilla states when chunks are unloaded.
     # While this can improve performance, custom blocks will turn into air if the plugin is uninstalled.
     restore-vanilla-blocks-on-chunk-unload: true
+    # If you disable this, it's a must to disable the above option.
+    restore-custom-blocks-on-chunk-load: true
 
 offset-characters:
-  font: minecraft:default
+  font: minecraft:offset_chars
   -1: '\uf800'
   -2: '\uf801'
   -3: '\uf802'

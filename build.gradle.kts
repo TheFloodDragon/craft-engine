@@ -2,10 +2,8 @@ plugins {
     id("java")
 }
 
-val git : String = versionBanner()
-val builder : String = builder()
-ext["git_version"] = git
-ext["builder"] = builder
+ext["git_version"] = "git_version"
+ext["builder"] = "Github CI"
 
 subprojects {
 
@@ -38,9 +36,9 @@ subprojects {
 }
 
 fun versionBanner() = project.providers.exec {
-    commandLine("cmd", "git", "rev-parse", "--short=8", "HEAD")
+    commandLine("git", "rev-parse", "--short=8", "HEAD")
 }.standardOutput.asText.map { it.trim() }.getOrElse("Unknown")
 
 fun builder() = project.providers.exec {
-    commandLine("cmd" ,"git", "config", "user.name")
+    commandLine("git", "config", "user.name")
 }.standardOutput.asText.map { it.trim() }.getOrElse("Unknown")

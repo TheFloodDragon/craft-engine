@@ -162,6 +162,10 @@ public class BukkitPackManager extends AbstractPackManager implements Listener {
 	}
 
 	private void updateResourcePackSettings(UUID uuid, String url, String sha1, boolean required, Component prompt) {
+		if (!ConfigManager.sendPackOnJoin()) {
+			resetResourcePackSettings();
+			return;
+		}
 		try {
 			Object settings = Reflections.field$DedicatedServer$settings.get(Reflections.method$MinecraftServer$getServer.invoke(null));
 			Object properties = Reflections.field$DedicatedServerSettings$properties.get(settings);

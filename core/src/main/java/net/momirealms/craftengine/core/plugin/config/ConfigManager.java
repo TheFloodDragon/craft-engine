@@ -65,6 +65,8 @@ public class ConfigManager implements Reloadable {
     protected List<String> resource_pack$protection$obfuscation$resource_location$bypass_textures;
     protected List<String> resource_pack$protection$obfuscation$resource_location$bypass_models;
     protected List<String> resource_pack$protection$obfuscation$resource_location$bypass_sounds;
+    protected List<String> resource_pack$protection$obfuscation$resource_location$bypass_equipments;
+
 
     protected float resource_pack$supported_version$min;
     protected float resource_pack$supported_version$max;
@@ -210,6 +212,7 @@ public class ConfigManager implements Reloadable {
         resource_pack$protection$obfuscation$resource_location$bypass_textures = config.getStringList("resource-pack.protection.obfuscation.resource-location.bypass-textures");
         resource_pack$protection$obfuscation$resource_location$bypass_models = config.getStringList("resource-pack.protection.obfuscation.resource-location.bypass-models");
         resource_pack$protection$obfuscation$resource_location$bypass_sounds = config.getStringList("resource-pack.protection.obfuscation.resource-location.bypass-sounds");
+        resource_pack$protection$obfuscation$resource_location$bypass_equipments = config.getStringList("resource-pack.protection.obfuscation.resource-location.bypass-equipments");
 
         try {
             resource_pack$duplicated_files_handler = config.getMapList("resource-pack.duplicated-files-handler").stream().map(it -> {
@@ -474,6 +477,10 @@ public class ConfigManager implements Reloadable {
 
     public static List<String> bypassSounds() {
         return instance.resource_pack$protection$obfuscation$resource_location$bypass_sounds;
+    }
+
+    public static List<String> bypassEquipments() {
+        return instance.resource_pack$protection$obfuscation$resource_location$bypass_equipments;
     }
 
     public YamlDocument loadOrCreateYamlData(String fileName) {

@@ -26,7 +26,8 @@ public class CustomShapelessRecipe<T> extends CustomCraftingTableRecipe<T> {
         return placementInfo;
     }
 
-    public List<Ingredient<T>> ingredients() {
+    @Override
+    public List<Ingredient<T>> ingredientsInUse() {
         return ingredients;
     }
 

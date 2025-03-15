@@ -4,8 +4,9 @@ import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.pack.LegacyOverridesModel;
 import net.momirealms.craftengine.core.pack.LoadingSequence;
+import net.momirealms.craftengine.core.pack.misc.EquipmentGeneration;
 import net.momirealms.craftengine.core.pack.model.ItemModel;
-import net.momirealms.craftengine.core.pack.model.generator.ModelGenerator;
+import net.momirealms.craftengine.core.pack.model.generation.ModelGenerator;
 import net.momirealms.craftengine.core.plugin.Reloadable;
 import net.momirealms.craftengine.core.plugin.config.ConfigSectionParser;
 import net.momirealms.craftengine.core.registry.Holder;
@@ -25,6 +26,8 @@ public interface ItemManager<T> extends Reloadable, ModelGenerator, ConfigSectio
     Map<Key, TreeSet<LegacyOverridesModel>> legacyItemOverrides();
 
     Map<Key, TreeMap<Integer, ItemModel>> modernItemOverrides();
+
+    Collection<EquipmentGeneration> equipmentsToGenerate();
 
     Map<Key, ItemModel> modernItemModels1_21_4();
 

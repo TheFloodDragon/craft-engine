@@ -84,7 +84,7 @@ public class BukkitRecipeManager implements RecipeManager<ItemStack> {
             if (ceRecipe.category() != null) {
                 shapelessRecipe.setCategory(CraftingBookCategory.valueOf(Objects.requireNonNull(ceRecipe.category()).name()));
             }
-            for (Ingredient<ItemStack> ingredient : ceRecipe.ingredients()) {
+            for (Ingredient<ItemStack> ingredient : ceRecipe.ingredientsInUse()) {
                 shapelessRecipe.addIngredient(new RecipeChoice.MaterialChoice(ingredientToBukkitMaterials(ingredient)));
             }
             try {
@@ -207,6 +207,7 @@ public class BukkitRecipeManager implements RecipeManager<ItemStack> {
     private final Map<Key, List<Recipe<ItemStack>>> byType;
     private final Map<Key, Recipe<ItemStack>> byId;
     private final Map<Key, List<Recipe<ItemStack>>> byResult;
+    private final Map<Key, List<Recipe<ItemStack>>> byIngredient;
     private final VanillaRecipeReader recipeReader;
     private final List<NamespacedKey> injectedDataPackRecipes;
     private final List<NamespacedKey> registeredCustomRecipes;
@@ -220,6 +221,7 @@ public class BukkitRecipeManager implements RecipeManager<ItemStack> {
         this.plugin = plugin;
         this.byType = new HashMap<>();
         this.byId = new HashMap<>();
+        this.byIngredient = new HashMap<>();
         this.byResult = new HashMap<>();
         this.injectedDataPackRecipes = new ArrayList<>();
         this.registeredCustomRecipes = new ArrayList<>();
@@ -285,6 +287,7 @@ public class BukkitRecipeManager implements RecipeManager<ItemStack> {
         this.byType.clear();
         this.byId.clear();
         this.byResult.clear();
+        this.byIngredient.clear();
         this.dataPackRecipes.clear();
 
         try {
@@ -338,9 +341,7 @@ public class BukkitRecipeManager implements RecipeManager<ItemStack> {
         BUKKIT_RECIPE_FACTORIES.get(recipe.type()).accept(key, recipe);
         try {
             this.registeredCustomRecipes.add(key);
-            this.byType.computeIfAbsent(recipe.type(), k -> new ArrayList<>()).add(recipe);
-            this.byId.put(id, recipe);
-            this.byResult.computeIfAbsent(recipe.result().item().id(), k -> new ArrayList<>()).add(recipe);
+            addInternalRecipe(id, recipe);
         } catch (Exception e) {
             plugin.logger().warn("Failed to add custom recipe " + id, e);
         }
@@ -356,11 +357,20 @@ public class BukkitRecipeManager implements RecipeManager<ItemStack> {
         return this.byResult.getOrDefault(result, List.of());
     }
 
-    // example: stone button
-    public void addVanillaInternalRecipe(Key id, Recipe<ItemStack> recipe) {
+    @Override
+    public List<Recipe<ItemStack>> getRecipeByIngredient(Key ingredient) {
+        return this.byIngredient.getOrDefault(ingredient, List.of());
+    }
+
+    private void addInternalRecipe(Key id, Recipe<ItemStack> recipe) {
         this.byType.computeIfAbsent(recipe.type(), k -> new ArrayList<>()).add(recipe);
         this.byId.put(id, recipe);
         this.byResult.computeIfAbsent(recipe.result().item().id(), k -> new ArrayList<>()).add(recipe);
+        for (Ingredient<ItemStack> ingredient : recipe.ingredientsInUse()) {
+            for (Holder<Key> holder : ingredient.items()) {
+                this.byIngredient.computeIfAbsent(holder.value(), k -> new ArrayList<>()).add(recipe);
+            }
+        }
     }
 
     @Nullable
@@ -561,7 +571,7 @@ public class BukkitRecipeManager implements RecipeManager<ItemStack> {
             });
             this.injectedDataPackRecipes.add(key);
         }
-        this.addVanillaInternalRecipe(id, ceRecipe);
+        this.addInternalRecipe(id, ceRecipe);
     }
 
     private void handleDataPackStoneCuttingRecipe(Key id, VanillaStoneCuttingRecipe recipe) {
@@ -583,7 +593,7 @@ public class BukkitRecipeManager implements RecipeManager<ItemStack> {
                 Ingredient.of(holders),
                 new CustomRecipeResult<>(new CloneableConstantItem(recipe.result().isCustom() ? Key.of("!internal:custom") : Key.of(recipe.result().id()), result), recipe.result().count())
         );
-        this.addVanillaInternalRecipe(id, ceRecipe);
+        this.addInternalRecipe(id, ceRecipe);
     }
 
     private void handleDataPackShapedRecipe(Key id, VanillaShapedRecipe recipe, Consumer<Runnable> callback) {
@@ -641,7 +651,7 @@ public class BukkitRecipeManager implements RecipeManager<ItemStack> {
             });
             this.injectedDataPackRecipes.add(key);
         }
-        this.addVanillaInternalRecipe(id, ceRecipe);
+        this.addInternalRecipe(id, ceRecipe);
     }
 
     private void handleDataPackCookingRecipe(Key id,
@@ -701,7 +711,7 @@ public class BukkitRecipeManager implements RecipeManager<ItemStack> {
             });
             this.injectedDataPackRecipes.add(key);
         }
-        this.addVanillaInternalRecipe(id, ceRecipe);
+        this.addInternalRecipe(id, ceRecipe);
     }
 
     private List<Material> tagToMaterials(Key tag) {
@@ -802,7 +812,7 @@ public class BukkitRecipeManager implements RecipeManager<ItemStack> {
 
     @SuppressWarnings("unchecked")
     private static void injectShapelessRecipe(Key id, CustomShapelessRecipe<ItemStack> recipe) throws ReflectiveOperationException {
-        List<Ingredient<ItemStack>> actualIngredients = recipe.ingredients();
+        List<Ingredient<ItemStack>> actualIngredients = recipe.ingredientsInUse();
 
         Object shapelessRecipe = getNMSRecipe(id);
         recipeToMcRecipeHolder.put(recipe, shapelessRecipe);

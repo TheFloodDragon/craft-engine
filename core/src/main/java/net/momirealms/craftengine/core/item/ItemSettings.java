@@ -1,10 +1,11 @@
 package net.momirealms.craftengine.core.item;
 
-import net.momirealms.craftengine.core.entity.EquipmentSlot;
 import net.momirealms.craftengine.core.item.modifier.EquippableModifier;
 import net.momirealms.craftengine.core.item.modifier.ItemModifier;
+import net.momirealms.craftengine.core.pack.misc.EquipmentGeneration;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
+import net.momirealms.craftengine.core.util.VersionHelper;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -14,13 +15,15 @@ public class ItemSettings {
     int fuelTime;
     Set<Key> tags = Set.of();
     @Nullable
-    EquipmentData equipmentData;
+    EquipmentGeneration equipment;
 
     private ItemSettings() {}
 
     public <I> List<ItemModifier<I>> modifiers() {
-        if (this.equipmentData == null) return Collections.emptyList();
-        return List.of(new EquippableModifier<>(this.equipmentData));
+        ArrayList<ItemModifier<I>> modifiers = new ArrayList<>();
+        if (VersionHelper.isVersionNewerThan1_21_2() && this.equipment != null && this.equipment.modernData() != null) modifiers.add(new EquippableModifier<>(this.equipment.modernData()));
+
+        return modifiers;
     }
 
     public static ItemSettings of() {
@@ -35,7 +38,7 @@ public class ItemSettings {
         ItemSettings newSettings = of();
         newSettings.fuelTime = settings.fuelTime;
         newSettings.tags = settings.tags;
-        newSettings.equipmentData = settings.equipmentData;
+        newSettings.equipment = settings.equipment;
         return newSettings;
     }
 
@@ -60,8 +63,8 @@ public class ItemSettings {
     }
 
     @Nullable
-    public EquipmentData equipmentData() {
-        return equipmentData;
+    public EquipmentGeneration equipment() {
+        return equipment;
     }
 
     public ItemSettings fuelTime(int fuelTime) {
@@ -74,8 +77,8 @@ public class ItemSettings {
         return this;
     }
 
-    public ItemSettings equipmentData(EquipmentData equipmentData) {
-        this.equipmentData = equipmentData;
+    public ItemSettings equipment(EquipmentGeneration equipment) {
+        this.equipment = equipment;
         return this;
     }
 
@@ -104,20 +107,21 @@ public class ItemSettings {
                 return settings -> settings.tags(tags.stream().map(Key::of).collect(Collectors.toSet()));
             }));
             registerFactory("equippable", (value -> {
-                Map<String, Object> data = MiscUtils.castToMap(value, false);
-                String slot = (String) data.get("slot");
-                if (slot == null) {
-                    throw new IllegalArgumentException("No slot specified");
-                }
-                EquipmentSlot slotEnum = EquipmentSlot.valueOf(slot.toUpperCase(Locale.ENGLISH));
-                EquipmentData.Builder builder = EquipmentData.builder().slot(slotEnum);
-                if (data.containsKey("asset-id")) {
-                    builder.assetId(Key.of(data.get("asset-id").toString()));
-                }
-                if (data.containsKey("camera-overlay")) {
-                    builder.cameraOverlay(Key.of(data.get("camera-overlay").toString()));
-                }
-                return settings -> settings.equipmentData(builder.build());
+                Map<String, Object> args = MiscUtils.castToMap(value, false);
+                EquipmentData data;
+                if (VersionHelper.isVersionNewerThan1_21_2() && args.containsKey("slot")) data = EquipmentData.fromMap(args);
+                else data = null;
+                EquipmentGeneration equipment = new EquipmentGeneration(
+                        EquipmentGeneration.Layer.fromConfig(args.get("humanoid")),
+                        EquipmentGeneration.Layer.fromConfig(args.get("humanoid-leggings")),
+                        EquipmentGeneration.Layer.fromConfig(args.get("llama-body")),
+                        EquipmentGeneration.Layer.fromConfig(args.get("horse-body")),
+                        EquipmentGeneration.Layer.fromConfig(args.get("wolf-body")),
+                        EquipmentGeneration.Layer.fromConfig(args.get("wings")),
+                        data,
+                        MiscUtils.getAsInt(args.getOrDefault("trim", -1))
+                );
+                return settings -> settings.equipment(equipment);
             }));
         }
 

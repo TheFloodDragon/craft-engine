@@ -38,6 +38,10 @@ categories:
       - default:topaz_bow
       - default:topaz_crossbow
       - default:topaz_rod
+      - default:topaz_helmet
+      - default:topaz_chestplate
+      - default:topaz_leggings
+      - default:topaz_boots
   default:furniture:
     name: "<!i><#FFD700><i18n:category.furniture></#FFD700>"
     hidden: true

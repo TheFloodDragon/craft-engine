@@ -17,7 +17,7 @@ public class UniformNumberProvider implements NumberProvider {
 
     @Override
     public int getInt(LootContext context) {
-        return context.randomSource().nextInt(this.min.getInt(context), this.max.getInt(context));
+        return context.randomSource().nextInt(this.min.getInt(context), this.max.getInt(context) + 1);
     }
 
     @Override

@@ -42,7 +42,7 @@ public class SetCountFunction<T> extends AbstractLootConditionalFunction<T> {
         @Override
         public LootFunction<A> create(Map<String, Object> arguments) {
             Object value = arguments.get("count");
-            boolean add = (boolean) arguments.getOrDefault("add", true);
+            boolean add = (boolean) arguments.getOrDefault("add", false);
             List<LootCondition> conditions = Optional.ofNullable(arguments.get("conditions"))
                     .map(it -> LootConditions.fromMapList((List<Map<String, Object>>) it))
                     .orElse(Collections.emptyList());

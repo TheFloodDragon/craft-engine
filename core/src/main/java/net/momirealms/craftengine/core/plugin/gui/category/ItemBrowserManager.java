@@ -8,6 +8,7 @@ import net.momirealms.craftengine.core.plugin.config.ConfigManager;
 import net.momirealms.craftengine.core.plugin.config.ConfigSectionParser;
 import net.momirealms.craftengine.core.util.Key;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.TreeSet;
 
@@ -27,6 +28,8 @@ public interface ItemBrowserManager extends Reloadable, ConfigSectionParser {
     }
 
     void delayedLoad();
+
+    void addExternalCategoryMember(Key item, List<Key> category);
 
     void open(Player player);
 

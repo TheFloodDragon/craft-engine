@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class EquipmentData {
@@ -22,7 +23,13 @@ public class EquipmentData {
     @Nullable
     private final Key cameraOverlay;
 
-    public EquipmentData(@NotNull EquipmentSlot slot, @Nullable Key assetId, boolean dispensable, boolean swappable, boolean damageOnHurt, boolean equipOnInteract, @Nullable Key cameraOverlay) {
+    public EquipmentData(@NotNull EquipmentSlot slot,
+                         @Nullable Key assetId,
+                         boolean dispensable,
+                         boolean swappable,
+                         boolean damageOnHurt,
+                         boolean equipOnInteract,
+                         @Nullable Key cameraOverlay) {
         this.slot = slot;
         this.assetId = assetId;
         this.dispensable = dispensable;
@@ -30,6 +37,34 @@ public class EquipmentData {
         this.damageOnHurt = damageOnHurt;
         this.equipOnInteract = equipOnInteract;
         this.cameraOverlay = cameraOverlay;
+    }
+
+    public static EquipmentData fromMap(@NotNull final Map<String, Object> data) {
+        String slot = (String) data.get("slot");
+        if (slot == null) {
+            throw new IllegalArgumentException("No `slot` option set for `equippable`");
+        }
+        EquipmentSlot slotEnum = EquipmentSlot.valueOf(slot.toUpperCase(Locale.ENGLISH));
+        EquipmentData.Builder builder = EquipmentData.builder().slot(slotEnum);
+        if (data.containsKey("asset-id")) {
+            builder.assetId(Key.of(data.get("asset-id").toString()));
+        }
+        if (data.containsKey("camera-overlay")) {
+            builder.cameraOverlay(Key.of(data.get("camera-overlay").toString()));
+        }
+        if (data.containsKey("dispensable")) {
+            builder.dispensable((boolean) data.get("dispensable"));
+        }
+        if (data.containsKey("swappable")) {
+            builder.swappable((boolean) data.get("swappable"));
+        }
+        if (data.containsKey("equip-on-interact")) {
+            builder.equipOnInteract((boolean) data.get("equip-on-interact"));
+        }
+        if (data.containsKey("damage-on-hurt")) {
+            builder.damageOnHurt((boolean) data.get("damage-on-hurt"));
+        }
+        return builder.build();
     }
 
     public EquipmentSlot slot() {
@@ -62,7 +97,7 @@ public class EquipmentData {
 
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
-        map.put("slot", this.slot.toString());
+        map.put("slot", this.slot.toString().toLowerCase(Locale.ENGLISH));
         if (this.assetId != null) {
             map.put("asset_id", this.assetId.toString());
         }

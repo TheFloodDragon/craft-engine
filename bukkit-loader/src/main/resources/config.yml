@@ -12,10 +12,6 @@ forced-locale: ''
 resource-pack:
   # Should those images in minecraft:default font also work in minecraft:uniform
   override-uniform-font: true
-
-  # Do not use this feature for the moment as it's under development
-  # Do not use this feature for the moment as it's under development
-  # Do not use this feature for the moment as it's under development
   # Resource pack protection
   protection:
     # Warning: Do not attempt to unzip the resource pack with crash tools enabled.
@@ -47,15 +43,23 @@ resource-pack:
         # Sometimes, some vanilla files that have been overwritten might be mistakenly obfuscated.
         # Please add the ignored textures/models/sounds here.
         bypass-textures:
-          - minecraft:block/farmland
+          # - minecraft:block/farmland
+          - "@legacy_unicode"
+          - "@vanilla_font_textures"
+          - "@vanilla_item_textures"
+          - "@vanilla_block_textures"
         bypass-models: []
         bypass-sounds: []
+        bypass-equipments: []
 
   supported-version:
     min: "1.20"
     max: LATEST
   merge-external-folders:
     - ModelEngine/resource pack
+    - CustomNameplates/ResourcePack
+    - BetterModel/build
+    - BetterHud/build
   send:
     send-on-join: true
     send-on-reload: true
@@ -96,10 +100,8 @@ resource-pack:
         type: exact
         path: "pack.mcmeta"
       resolution:
-        type: retain_matching
-        term:
-          type: contains
-          path: "resources/default/resourcepack/"
+        type: merge_pack_mcmeta
+        description: "<gray>CraftEngine ResourcePack"
     - term:
         type: exact
         path: "pack.png"

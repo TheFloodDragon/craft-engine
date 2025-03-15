@@ -33,6 +33,11 @@ public class CustomShapedRecipe<T> extends CustomCraftingTableRecipe<T> {
     }
 
     @Override
+    public List<Ingredient<T>> ingredientsInUse() {
+        return new ArrayList<>(this.pattern.ingredients().values());
+    }
+
+    @Override
     public @NotNull Key type() {
         return RecipeTypes.SHAPED;
     }

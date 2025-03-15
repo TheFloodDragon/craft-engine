@@ -18,8 +18,9 @@ import net.momirealms.craftengine.core.item.modifier.IdModifier;
 import net.momirealms.craftengine.core.item.modifier.ItemModelModifier;
 import net.momirealms.craftengine.core.pack.LegacyOverridesModel;
 import net.momirealms.craftengine.core.pack.Pack;
+import net.momirealms.craftengine.core.pack.misc.EquipmentGeneration;
 import net.momirealms.craftengine.core.pack.model.*;
-import net.momirealms.craftengine.core.pack.model.generator.ModelGeneration;
+import net.momirealms.craftengine.core.pack.model.generation.ModelGeneration;
 import net.momirealms.craftengine.core.plugin.config.ConfigManager;
 import net.momirealms.craftengine.core.registry.BuiltInRegistries;
 import net.momirealms.craftengine.core.registry.Holder;
@@ -41,12 +42,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Stream;
 
 public class BukkitItemManager extends AbstractItemManager<ItemStack> {
-    private static final Map<Key, List<ItemBehavior>> VANILLA_ITEM_EXTRA_BEHAVIORS = new HashMap<>();
-    private static final List<Key> VANILLA_ITEMS = new ArrayList<>();
-
     static {
         registerVanillaItemExtraBehavior(AxeItemBehavior.INSTANCE, ItemKeys.AXES);
         registerVanillaItemExtraBehavior(WaterBucketItemBehavior.INSTANCE, ItemKeys.WATER_BUCKETS);
@@ -54,38 +51,16 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
         registerVanillaItemExtraBehavior(BoneMealBehavior.INSTANCE, ItemKeys.BONE_MEAL);
     }
 
-    private static void registerVanillaItemExtraBehavior(ItemBehavior behavior, Key... items) {
-        for (Key key : items) {
-            VANILLA_ITEM_EXTRA_BEHAVIORS.computeIfAbsent(key, k -> new ArrayList<>()).add(behavior);
-        }
-    }
-
     private static BukkitItemManager instance;
     private final BukkitItemFactory factory;
-    private final Map<Key, TreeSet<LegacyOverridesModel>> legacyOverrides;
-    private final Map<Key, TreeMap<Integer, ItemModel>> modernOverrides;
     private final BukkitCraftEngine plugin;
     private final ItemEventListener itemEventListener;
     private final DebugStickListener debugStickListener;
-    private final Map<Key, List<Holder<Key>>> vanillaItemTags;
-    private final Map<Key, List<Holder<Key>>> customItemTags;
-    private final Map<Key, Map<Integer, Key>> cmdConflictChecker;
-    private final Map<Key, ItemModel> modernItemModels1_21_4;
-    private final Map<Key, List<LegacyOverridesModel>> modernItemModels1_21_2;
-    // Cached command suggestions
-    private final List<Suggestion> cachedSuggestions = new ArrayList<>();
 
     public BukkitItemManager(BukkitCraftEngine plugin) {
         super(plugin);
         this.plugin = plugin;
         this.factory = BukkitItemFactory.create(plugin);
-        this.legacyOverrides = new HashMap<>();
-        this.modernOverrides = new HashMap<>();
-        this.vanillaItemTags = new HashMap<>();
-        this.customItemTags = new HashMap<>();
-        this.cmdConflictChecker = new HashMap<>();
-        this.modernItemModels1_21_4 = new HashMap<>();
-        this.modernItemModels1_21_2 = new HashMap<>();
         this.itemEventListener = new ItemEventListener(plugin);
         this.debugStickListener = new DebugStickListener(plugin);
         this.registerAllVanillaItems();
@@ -112,30 +87,6 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
     }
 
     @Override
-    public List<Holder<Key>> tagToItems(Key tag) {
-        List<Holder<Key>> items = new ArrayList<>();
-        List<Holder<Key>> holders = vanillaItemTags.get(tag);
-        if (holders != null) {
-            items.addAll(holders);
-        }
-        List<Holder<Key>> customItems = customItemTags.get(tag);
-        if (customItems != null) {
-            items.addAll(customItems);
-        }
-        return items;
-    }
-
-    @Override
-    public List<Holder<Key>> tagToVanillaItems(Key tag) {
-        return this.vanillaItemTags.getOrDefault(tag, List.of());
-    }
-
-    @Override
-    public List<Holder<Key>> tagToCustomItems(Key tag) {
-        return this.customItemTags.getOrDefault(tag, List.of());
-    }
-
-    @Override
     public int fuelTime(ItemStack itemStack) {
         if (ItemUtils.isEmpty(itemStack)) return 0;
         Optional<CustomItem<ItemStack>> customItem = wrap(itemStack).getCustomItem();
@@ -148,11 +99,6 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
     }
 
     @Override
-    public Collection<Suggestion> cachedSuggestions() {
-        return this.cachedSuggestions;
-    }
-
-    @Override
     public void load() {
         super.load();
     }
@@ -160,16 +106,11 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
     @Override
     public void unload() {
         super.unload();
-        this.cachedSuggestions.clear();
-        this.legacyOverrides.clear();
-        this.modernOverrides.clear();
-        this.customItemTags.clear();
-        this.cmdConflictChecker.clear();
     }
 
     @Override
     public void disable() {
-        unload();
+        this.unload();
         HandlerList.unregisterAll(this.itemEventListener);
         HandlerList.unregisterAll(this.debugStickListener);
     }
@@ -231,35 +172,8 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
     }
 
     @Override
-    public Optional<List<ItemBehavior>> getItemBehavior(Key key) {
-        Optional<CustomItem<ItemStack>> customItemOptional = getCustomItem(key);
-        if (customItemOptional.isPresent()) {
-            CustomItem<ItemStack> customItem = customItemOptional.get();
-            Key vanillaMaterial = customItem.material();
-            List<ItemBehavior> behavior = VANILLA_ITEM_EXTRA_BEHAVIORS.get(vanillaMaterial);
-            if (behavior != null) {
-                return Optional.of(Stream.concat(customItem.behaviors().stream(), behavior.stream()).toList());
-            } else {
-                return Optional.of(List.copyOf(customItem.behaviors()));
-            }
-        } else {
-            List<ItemBehavior> behavior = VANILLA_ITEM_EXTRA_BEHAVIORS.get(key);
-            if (behavior != null) {
-                return Optional.of(List.copyOf(behavior));
-            } else {
-                return Optional.empty();
-            }
-        }
-    }
-
-    @Override
-    public Collection<Key> items() {
-        return new ArrayList<>(customItems.keySet());
-    }
-
-    @Override
     public void parseSection(Pack pack, Path path, Key id, Map<String, Object> section) {
-        // just register and recipes
+        // just register for recipes
         Holder.Reference<Key> holder = BuiltInRegistries.OPTIMIZED_ITEM_ID.get(id)
                 .orElseGet(() -> ((WritableRegistry<Key>) BuiltInRegistries.OPTIMIZED_ITEM_ID)
                         .register(new ResourceKey<>(BuiltInRegistries.OPTIMIZED_ITEM_ID.key().location(), id), id));
@@ -278,13 +192,23 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
         CustomItem.Builder<ItemStack> itemBuilder = BukkitCustomItem.builder().id(id).material(materialId);
         itemBuilder.modifier(new IdModifier<>(id));
 
+        boolean hasItemModelSection = section.containsKey("item-model");
+
+        // To get at least one model provider
         // Sets some basic model info
         if (customModelData != 0) {
             itemBuilder.modifier(new CustomModelDataModifier<>(customModelData));
-        } else if (section.containsKey("model") && VersionHelper.isVersionNewerThan1_21_2()) {
+        }
+        // Requires the item to have model before apply item-model
+        else if (!hasItemModelSection && section.containsKey("model") && VersionHelper.isVersionNewerThan1_21_2()) {
             // check server version here because components require 1.21.2+
             // customize or use the id
             itemModelKey = Key.from(section.getOrDefault("item-model", id.toString()).toString());
+            itemBuilder.modifier(new ItemModelModifier<>(itemModelKey));
+        }
+
+        if (hasItemModelSection) {
+            itemModelKey = Key.from(section.get("item-model").toString());
             itemBuilder.modifier(new ItemModelModifier<>(itemModelKey));
         }
 
@@ -328,10 +252,27 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
         this.customItems.put(id, customItem);
         this.cachedSuggestions.add(Suggestion.suggestion(id.toString()));
 
-        // regitser tags
+        // post process
+        // register tags
         Set<Key> tags = customItem.settings().tags();
         for (Key tag : tags) {
             this.customItemTags.computeIfAbsent(tag, k -> new ArrayList<>()).add(holder);
+        }
+
+        // create trims
+        EquipmentGeneration equipment = customItem.settings().equipment();
+        if (equipment != null) {
+            EquipmentData modern = equipment.modernData();
+            // 1.21.2+
+            if (modern != null) {
+                this.equipmentsToGenerate.add(equipment);
+            }
+            // TODO 1.20
+        }
+
+        // add it to category
+        if (section.containsKey("category")) {
+            this.plugin.itemBrowserManager().addExternalCategoryMember(id, MiscUtils.getAsStringList(section.get("category")).stream().map(Key::of).toList());
         }
 
         // model part, can be null
@@ -341,7 +282,9 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
             return;
         }
 
+        boolean hasModel = false;
         if (customModelData != 0) {
+            hasModel= true;
             // use custom model data
             // check conflict
             Map<Integer, Key> conflict = this.cmdConflictChecker.computeIfAbsent(materialId, k -> new HashMap<>());
@@ -369,7 +312,9 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
                 TreeSet<LegacyOverridesModel> lom = this.legacyOverrides.computeIfAbsent(materialId, k -> new TreeSet<>());
                 lom.addAll(legacyOverridesModels);
             }
-        } else if (itemModelKey != null) {
+        }
+        if (itemModelKey != null) {
+            hasModel = true;
             // use components
             ItemModel model = ItemModels.fromMap(modelSection);
             for (ModelGeneration generation : model.modelsToGenerate()) {
@@ -390,36 +335,10 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
                 legacyOverridesModels.sort(LegacyOverridesModel::compareTo);
                 this.modernItemModels1_21_2.put(itemModelKey, legacyOverridesModels);
             }
-        } else {
-            if (!VersionHelper.isVersionNewerThan1_21_2()) {
-                plugin.logger().warn(path, "No custom-model-data configured for " + id);
-            }
         }
-    }
-
-    @Override
-    public Map<Key, ItemModel> modernItemModels1_21_4() {
-        return this.modernItemModels1_21_4;
-    }
-
-    @Override
-    public Map<Key, List<LegacyOverridesModel>> modernItemModels1_21_2() {
-        return this.modernItemModels1_21_2;
-    }
-
-    @Override
-    public Collection<Key> vanillaItems() {
-        return VANILLA_ITEMS;
-    }
-
-    @Override
-    public Map<Key, TreeSet<LegacyOverridesModel>> legacyItemOverrides() {
-        return this.legacyOverrides;
-    }
-
-    @Override
-    public Map<Key, TreeMap<Integer, ItemModel>> modernItemOverrides() {
-        return this.modernOverrides;
+        if (!hasModel) {
+            plugin.logger().warn(path, "No custom-model-data/item-model configured for " + id);
+        }
     }
 
     private void processModelRecursively(
@@ -603,7 +522,7 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
                         Set<Object> tags = (Set<Object>) Reflections.field$Holder$Reference$tags.get(mcHolder);
                         for (Object tag : tags) {
                             Key tagId = Key.of(Reflections.field$TagKey$location.get(tag).toString());
-                            this.vanillaItemTags.computeIfAbsent(tagId, (key) -> new ArrayList<>()).add(holder);
+                            VANILLA_ITEM_TAGS.computeIfAbsent(tagId, (key) -> new ArrayList<>()).add(holder);
                         }
                     }
                 }

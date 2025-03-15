@@ -6,6 +6,8 @@ import net.momirealms.craftengine.core.util.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 public interface Recipe<T> {
 
     boolean matches(RecipeInput input);
@@ -13,6 +15,8 @@ public interface Recipe<T> {
     T result(ItemBuildContext context);
 
     CustomRecipeResult<T> result();
+
+    List<Ingredient<T>> ingredientsInUse();
 
     @NotNull
     Key type();

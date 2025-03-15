@@ -4,6 +4,8 @@ import net.momirealms.craftengine.core.item.recipe.input.RecipeInput;
 import net.momirealms.craftengine.core.item.recipe.input.SingleItemInput;
 import net.momirealms.craftengine.core.util.Key;
 
+import java.util.List;
+
 public abstract class CustomCookingRecipe<T> extends AbstractRecipe<T> {
     protected final CookingRecipeCategory category;
     protected final Ingredient<T> ingredient;
@@ -48,5 +50,10 @@ public abstract class CustomCookingRecipe<T> extends AbstractRecipe<T> {
 
     public int cookingTime() {
         return cookingTime;
+    }
+
+    @Override
+    public List<Ingredient<T>> ingredientsInUse() {
+        return List.of(ingredient);
     }
 }

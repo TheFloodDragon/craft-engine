@@ -125,8 +125,49 @@ items:
         parent: "minecraft:item/handheld"
         textures:
           "layer0": "minecraft:item/custom/topaz_sword"
+  default:topaz_helmet:
+    template: default:topaz_armor
+    arguments:
+      part: helmet
+      slot: head
+  default:topaz_chestplate:
+    template: default:topaz_armor
+    arguments:
+      part: chestplate
+      slot: chest
+  default:topaz_leggings:
+    template: default:topaz_armor
+    arguments:
+      part: leggings
+      slot: legs
+  default:topaz_boots:
+    template: default:topaz_armor
+    arguments:
+      part: boots
+      slot: feet
 
-recipes:
+templates:
+  default:topaz_armor:
+    material: "chainmail_{part}"
+    custom-model-data: 1000
+    data:
+      display-name: "<!i><#FF8C00><i18n:item.topaz_{part}>"
+      tooltip-style: minecraft:topaz
+    model:
+      type: minecraft:model
+      path: "minecraft:item/custom/topaz_{part}"
+      generation:
+        parent: "minecraft:item/generated"
+        textures:
+          "layer0": "minecraft:item/custom/topaz_{part}"
+    settings:
+      equippable:
+        slot: "{slot}"
+        asset-id: topaz
+        humanoid: "minecraft:topaz"
+        humanoid-leggings: "minecraft:topaz"
+
+recipes#11:
   default:topaz_shovel:
     type: shaped
     pattern:

@@ -13,6 +13,11 @@ public class FileUtils {
 
     private FileUtils() {}
 
+    public static String pathWithoutExtension(String path) {
+        int i = path.lastIndexOf('.');
+        return i == -1 ? path : path.substring(0, i);
+    }
+
     public static void createDirectoriesSafe(Path path) throws IOException {
         Files.createDirectories(Files.exists(path) ? path.toRealPath() : path);
     }

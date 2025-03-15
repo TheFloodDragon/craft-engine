@@ -30,6 +30,11 @@ public class CustomStoneCuttingRecipe<T> extends AbstractRecipe<T> {
     }
 
     @Override
+    public List<Ingredient<T>> ingredientsInUse() {
+        return List.of(ingredient);
+    }
+
+    @Override
     public @NotNull Key type() {
         return RecipeTypes.STONE_CUTTING;
     }

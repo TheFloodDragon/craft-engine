@@ -12,6 +12,7 @@ import org.bukkit.event.block.BlockPhysicsEvent;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.IdentityHashMap;
+import java.util.List;
 
 public class BlockStateUtils {
     public static final IdentityHashMap<Object, Object> CLIENT_SIDE_NOTE_BLOCKS = new IdentityHashMap<>();
@@ -24,6 +25,17 @@ public class BlockStateUtils {
         }
         vanillaStateSize = size;
         hasInit = true;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static List<Object> getAllBlockStates(Key block) {
+        try {
+            Object blockIns = Reflections.method$Registry$get.invoke(Reflections.instance$BuiltInRegistries$BLOCK, Reflections.method$ResourceLocation$fromNamespaceAndPath.invoke(null, block.namespace(), block.value()));
+            Object definition = Reflections.field$Block$StateDefinition.get(blockIns);
+            return (List<Object>) Reflections.field$StateDefinition$states.get(definition);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get all block states for " + block, e);
+        }
     }
 
     public static Object createBlockUpdatePacket(BlockPos pos, ImmutableBlockState state) {

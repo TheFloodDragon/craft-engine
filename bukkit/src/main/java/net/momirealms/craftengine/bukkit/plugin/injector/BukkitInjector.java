@@ -85,8 +85,6 @@ public class BukkitInjector {
 
     public static void init() {
         try {
-            MethodHandles.Lookup lookup = MethodHandles.lookup();
-
             clazz$InjectedCacheChecker = byteBuddy
                     .subclass(Object.class, ConstructorStrategy.Default.IMITATE_SUPER_CLASS_OPENING)
                     .implement(Reflections.clazz$RecipeManager$CachedCheck)
@@ -349,7 +347,7 @@ public class BukkitInjector {
                 boolean isCustom = recipeManager.isCustomRecipe(recipeId);
                 if (!isCustom) {
                     field$InjectedCacheChecker$lastRecipe.set(thisObj, resourceLocation);
-                    return optionalRecipe;
+                    return Optional.of(pair.getSecond());
                 }
 
                 Item<ItemStack> wrappedItem = BukkitItemManager.instance().wrap(itemStack);
@@ -597,7 +595,7 @@ public class BukkitInjector {
                 int stateId = BlockStateUtils.blockStateToId(newState);
                 CESection section = holder.ceSection();
                 if (BlockStateUtils.isVanillaBlock(stateId)) {
-                    section.setBlockState(x, y, z, EmptyBlock.INSTANCE.getDefaultState());
+                    section.setBlockState(x, y, z, EmptyBlock.INSTANCE.defaultState());
                     if (ConfigManager.enableLightSystem() && ConfigManager.forceUpdateLight()) {
                         updateLightIfChanged(holder, previousState, newState, null, y, z, x);
                     }

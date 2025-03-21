@@ -54,6 +54,7 @@ public class ConfigManager implements Reloadable {
     protected long resource_pack$protection$obfuscation$seed;
     protected boolean resource_pack$protection$obfuscation$fake_directory;
     protected boolean resource_pack$protection$obfuscation$escape_unicode;
+    protected boolean resource_pack$protection$obfuscation$break_json;
     protected boolean resource_pack$protection$obfuscation$resource_location$enable;
     protected int resource_pack$protection$obfuscation$resource_location$random_namespace$length;
     protected int resource_pack$protection$obfuscation$resource_location$random_namespace$amount;
@@ -200,6 +201,7 @@ public class ConfigManager implements Reloadable {
         resource_pack$protection$obfuscation$seed = config.getLong("resource-pack.protection.obfuscation.seed", 0L);
         resource_pack$protection$obfuscation$fake_directory = config.getBoolean("resource-pack.protection.obfuscation.fake-directory", false);
         resource_pack$protection$obfuscation$escape_unicode = config.getBoolean("resource-pack.protection.obfuscation.escape-unicode", false);
+        resource_pack$protection$obfuscation$break_json = config.getBoolean("resource-pack.protection.obfuscation.break-json", false);
 
         resource_pack$protection$obfuscation$resource_location$enable = config.getBoolean("resource-pack.protection.obfuscation.resource-location.enable", false);
         resource_pack$protection$obfuscation$resource_location$random_namespace$amount = config.getInt("resource-pack.protection.obfuscation.resource-location.random-namespace.amount", 32);
@@ -433,6 +435,10 @@ public class ConfigManager implements Reloadable {
 
     public static boolean escapeUnicode() {
         return instance.resource_pack$protection$obfuscation$escape_unicode;
+    }
+
+    public static boolean breakJson() {
+        return instance.resource_pack$protection$obfuscation$break_json;
     }
 
     public static boolean enableRandomResourceLocation() {

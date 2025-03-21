@@ -1,6 +1,8 @@
 package net.momirealms.craftengine.core.item.recipe.vanilla;
 
 import net.momirealms.craftengine.core.item.recipe.CraftingRecipeCategory;
+import net.momirealms.craftengine.core.item.recipe.RecipeTypes;
+import net.momirealms.craftengine.core.util.Key;
 
 import java.util.List;
 import java.util.Map;
@@ -25,5 +27,10 @@ public class VanillaShapedRecipe extends VanillaCraftingRecipe {
 
     public String[] pattern() {
         return pattern;
+    }
+
+    @Override
+    public Key type() {
+        return RecipeTypes.SHAPED;
     }
 }

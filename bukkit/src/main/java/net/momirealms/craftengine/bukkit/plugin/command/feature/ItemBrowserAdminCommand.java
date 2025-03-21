@@ -7,26 +7,30 @@ import net.momirealms.craftengine.core.plugin.command.CraftEngineCommandManager;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.incendo.cloud.Command;
+import org.incendo.cloud.bukkit.data.MultiplePlayerSelector;
+import org.incendo.cloud.bukkit.parser.selector.MultiplePlayerSelectorParser;
 
-public class ItemBrowserCommand extends BukkitCommandFeature<CommandSender> {
+public class ItemBrowserAdminCommand extends BukkitCommandFeature<CommandSender> {
 
-    public ItemBrowserCommand(CraftEngineCommandManager<CommandSender> commandManager, CraftEngine plugin) {
+    public ItemBrowserAdminCommand(CraftEngineCommandManager<CommandSender> commandManager, CraftEngine plugin) {
         super(commandManager, plugin);
     }
 
     @Override
     public Command.Builder<? extends CommandSender> assembleCommand(org.incendo.cloud.CommandManager<CommandSender> manager, Command.Builder<CommandSender> builder) {
         return builder
-                .senderType(Player.class)
+                .required("players", MultiplePlayerSelectorParser.multiplePlayerSelectorParser(true))
                 .handler(context -> {
-                    Player player = context.sender();
-                    BukkitServerPlayer serverPlayer = plugin().adapt(player);
-                    plugin().itemBrowserManager().open(serverPlayer);
+                    MultiplePlayerSelector selector = context.get("players");
+                    for (Player player : selector.values()) {
+                        BukkitServerPlayer serverPlayer = plugin().adapt(player);
+                        plugin().itemBrowserManager().open(serverPlayer);
+                    }
                 });
     }
 
     @Override
     public String getFeatureID() {
-        return "item_browser";
+        return "item_browser_admin";
     }
 }

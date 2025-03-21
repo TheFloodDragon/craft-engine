@@ -11,32 +11,63 @@ config-version: "${config_version}"
 # Usage: [COMMAND]
 reload:
   enable: true
-  permission: ce.command.reload
+  permission: ce.command.admin.reload
   usage:
     - /craftengine reload
     - /ce reload
 
 get_item:
   enable: true
-  permission: ce.command.get_item
+  permission: ce.command.admin.get_item
   usage:
     - /craftengine item get
     - /ce item get
 
 give_item:
   enable: true
-  permission: ce.command.give_item
+  permission: ce.command.admin.give_item
   usage:
     - /craftengine item give
     - /ce item give
 
-item_browser:
+item_browser_player:
   enable: true
-  permission: ce.command.item_browser
+  permission: ce.command.player.item_browser
+  usage:
+    - /ce
+
+item_browser_admin:
+  enable: true
+  permission: ce.command.admin.item_browser
   usage:
     - /craftengine item browser
     - /ce item browser
-    - /ce
+
+search_usage_player:
+  enable: true
+  permission: ce.command.player.search_usage
+  usage:
+    - /search-usage
+
+search_recipe_player:
+  enable: true
+  permission: ce.command.player.search_recipe
+  usage:
+    - /search-recipe
+
+search_usage_admin:
+  enable: true
+  permission: ce.command.admin.search_usage
+  usage:
+    - /craftengine item search-usage
+    - /ce item search-usage
+
+search_recipe_admin:
+  enable: true
+  permission: ce.command.admin.search_recipe
+  usage:
+    - /craftengine item search-recipe
+    - /ce item search-recipe
 
 # Debug commands
 debug_set_block:

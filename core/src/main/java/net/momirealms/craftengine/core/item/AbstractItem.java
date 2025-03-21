@@ -27,6 +27,17 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     }
 
     @Override
+    public Item<I> repairCost(Integer data) {
+        this.factory.repairCost(this.item, data);
+        return this;
+    }
+
+    @Override
+    public Optional<Integer> repairCost() {
+        return this.factory.repairCost(this.item);
+    }
+
+    @Override
     public Item<I> maxDamage(Integer data) {
         this.factory.maxDamage(this.item, data);
         return this;
@@ -96,8 +107,8 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     }
 
     @Override
-    public Optional<String> displayName() {
-        return this.factory.displayName(this.item);
+    public Optional<String> customName() {
+        return this.factory.customName(this.item);
     }
 
     @Override
@@ -128,10 +139,11 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     }
 
     @Override
-    public Item<I> displayName(String displayName) {
-        this.factory.displayName(this.item, displayName);
+    public Item<I> customName(String displayName) {
+        this.factory.customName(this.item, displayName);
         return this;
     }
+
     @Override
     public Item<I> itemName(String itemName) {
         this.factory.itemName(this.item, itemName);
@@ -264,5 +276,11 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     @Override
     public Object getLiteralObject() {
         return this.item.getLiteralObject();
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Override
+    public Item<I> merge(Item<?> another) {
+        return new AbstractItem<>(this.factory, this.factory.merge(this.item, ((AbstractItem) another).item));
     }
 }

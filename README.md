@@ -4,11 +4,16 @@
   </div>
   CraftEngine
 </h1>
+
 <p align="center">
   <a href="https://mo-mi.gitbook.io/xiaomomi-plugins/plugin-wiki/craftengine" alt="GitBook">
-  <img src="https://img.shields.io/badge/Docs-User Manual-D2691E" alt="Gitbook"/>
+    <img src="https://img.shields.io/badge/Docs-User Manual-D2691E" alt="Gitbook"/>
+  </a>
+  <a href="https://github.com/Xiao-MoMi/craft-engine/">
+    <img src="https://sloc.xyz/github/Xiao-MoMi/craft-engine/?category=codes" alt="Scc Count Badge"/>
   </a>
 </p>
+
 <p align="center">
     <a target="_blank" href="/README.md">English</a> |
     <a target="_blank" href="/readme/README_zh-CN.md">简体中文</a> |
@@ -130,7 +135,7 @@ repositories {
 ```
 ```kotlin
 dependencies {
-    compileOnly("net.momirealms:craft-engine-core:0.0.29")
-    compileOnly("net.momirealms:craft-engine-bukkit:0.0.29")
+    compileOnly("net.momirealms:craft-engine-core:0.0.34")
+    compileOnly("net.momirealms:craft-engine-bukkit:0.0.34")
 }
 ```

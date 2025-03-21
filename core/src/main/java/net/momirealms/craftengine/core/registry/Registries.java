@@ -4,6 +4,7 @@ import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
 import net.momirealms.craftengine.core.block.properties.PropertyFactory;
 import net.momirealms.craftengine.core.item.behavior.ItemBehaviorFactory;
+import net.momirealms.craftengine.core.item.recipe.CustomSmithingTransformRecipe;
 import net.momirealms.craftengine.core.item.recipe.RecipeFactory;
 import net.momirealms.craftengine.core.loot.condition.LootConditionFactory;
 import net.momirealms.craftengine.core.loot.entry.LootEntryContainerFactory;
@@ -44,4 +45,5 @@ public class Registries {
     public static final ResourceKey<Registry<ApplyBonusCountFunction.FormulaFactory>> FORMULA_FACTORY = new ResourceKey<>(ROOT_REGISTRY, Key.withDefaultNamespace("formula_factory"));
     public static final ResourceKey<Registry<PathMatcherFactory>> PATH_MATCHER_FACTORY = new ResourceKey<>(ROOT_REGISTRY, Key.withDefaultNamespace("path_matcher_factory"));
     public static final ResourceKey<Registry<ResolutionFactory>> RESOLUTION_FACTORY = new ResourceKey<>(ROOT_REGISTRY, Key.withDefaultNamespace("resolution_factory"));
+    public static final ResourceKey<Registry<CustomSmithingTransformRecipe.ItemDataProcessor.Factory>> SMITHING_RESULT_PROCESSOR_FACTORY = new ResourceKey<>(ROOT_REGISTRY, Key.withDefaultNamespace("smithing_result_processor_factory"));
 }

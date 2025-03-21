@@ -71,7 +71,7 @@ public class AxeItemBehavior extends ItemBehavior {
 
         org.bukkit.entity.Player bukkitPlayer = ((org.bukkit.entity.Player) player.platformPlayer());
         // Call bukkit event
-        EntityChangeBlockEvent event = new EntityChangeBlockEvent(bukkitPlayer, block, BlockStateUtils.createBlockData(newState.customBlockState().handle()));
+        EntityChangeBlockEvent event = new EntityChangeBlockEvent(bukkitPlayer, block, BlockStateUtils.fromBlockData(newState.customBlockState().handle()));
         if (EventUtils.fireAndCheckCancel(event)) {
             return InteractionResult.PASS;
         }
@@ -88,7 +88,7 @@ public class AxeItemBehavior extends ItemBehavior {
         if (!InteractUtils.isInteractable(BlockStateUtils.getBlockOwnerIdFromState(state.vanillaBlockState().handle()),
                 bukkitPlayer, BlockStateUtils.fromBlockData(state.vanillaBlockState().handle()),
                 context.getHitResult(), item
-        )) {
+        ) || player.isSecondaryUseActive()) {
             player.swingHand(context.getHand());
         }
         // shrink item amount

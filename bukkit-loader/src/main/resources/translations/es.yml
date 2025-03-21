@@ -49,3 +49,7 @@ command.item.get.failure.not_exist: "<red><lang:argument.item.id.invalid:'<arg:0
 command.item.give.success.single: "<lang:commands.give.success.single:'<arg:0>':'<arg:1>':'<arg:2>'>"
 command.item.give.success.multiple: "<lang:commands.give.success.multiple:'<arg:0>':'<arg:1>':'<arg:2>'>"
 command.item.give.failure.not_exist: "<red><lang:argument.item.id.invalid:'<arg:0>'></red>"
+command.search_recipe.not_found: "<red>No se encontró ninguna receta para este objeto</red>"
+command.search_usage.not_found: "<red>No se encontró ningún uso para este objeto</red>"
+command.search_recipe.no_item: "<red>Por favor, sostén un objeto antes de ejecutar este comando</red>"
+command.search_usage.no_item: "<red>Por favor, sostén un objeto antes de ejecutar este comando</red>"

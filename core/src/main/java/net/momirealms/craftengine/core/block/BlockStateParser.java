@@ -25,7 +25,7 @@ public class BlockStateParser {
             return null;
         }
         Holder<CustomBlock> holder = optional.get();
-        ImmutableBlockState defaultState = holder.value().getDefaultState();
+        ImmutableBlockState defaultState = holder.value().defaultState();
         if (reader.canRead() && reader.peek() == '[') {
             reader.skip();
             while (reader.canRead() && reader.peek() != ']') {

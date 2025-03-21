@@ -1,5 +1,7 @@
 package net.momirealms.craftengine.core.item;
 
+import java.util.Map;
+
 public interface ItemWrapper<I> {
 
     I getItem();
@@ -37,4 +39,6 @@ public interface ItemWrapper<I> {
     void count(int amount);
 
     ItemWrapper<I> copyWithCount(int count);
+
+    Map<String, Object> getData();
 }

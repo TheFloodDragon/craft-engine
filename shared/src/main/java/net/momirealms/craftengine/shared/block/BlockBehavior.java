@@ -46,4 +46,8 @@ public abstract class BlockBehavior {
 
     public void performBoneMeal(Object thisBlock, Object[] args) throws Exception {
     }
+
+    public Object updateStateForPlacement(Object context, Object state) {
+        return state;
+    }
 }

@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  * Helper class for handling Adventure components and related functionalities.
  */
 public class AdventureHelper {
-
+    public static final String EMPTY_COMPONENT = componentToJson(Component.empty());
     private final MiniMessage miniMessage;
     private final MiniMessage miniMessageStrict;
     private final GsonComponentSerializer gsonComponentSerializer;

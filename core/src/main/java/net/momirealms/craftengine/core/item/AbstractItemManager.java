@@ -168,7 +168,11 @@ public abstract class AbstractItemManager<I> extends AbstractModelGenerator impl
         registerDataFunction((obj) -> {
             String name = obj.toString();
             return new DisplayNameModifier<>(name);
-        }, "name", "display-name", "custom-name");
+        }, "custom-name");
+        registerDataFunction((obj) -> {
+            String name = obj.toString();
+            return new ItemNameModifier<>(name);
+        }, "item-name", "display-name");
         registerDataFunction((obj) -> {
             List<String> name = MiscUtils.getAsStringList(obj);
             return new LoreModifier<>(name);
@@ -197,12 +201,6 @@ public abstract class AbstractItemManager<I> extends AbstractModelGenerator impl
             String pattern = data.get("pattern").toString().toLowerCase(Locale.ENGLISH);
             return new TrimModifier<>(material, pattern);
         }, "trim");
-        if (VersionHelper.isVersionNewerThan1_20_5()) {
-            registerDataFunction((obj) -> {
-                String name = obj.toString();
-                return new ItemNameModifier<>(name);
-            }, "item-name");
-        }
         if (VersionHelper.isVersionNewerThan1_20_5()) {
             registerDataFunction((obj) -> {
                 Map<String, Object> data = MiscUtils.castToMap(obj, false);

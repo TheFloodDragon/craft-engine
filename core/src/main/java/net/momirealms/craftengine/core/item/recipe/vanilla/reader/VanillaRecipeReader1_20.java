@@ -91,6 +91,16 @@ public class VanillaRecipeReader1_20 extends AbstractRecipeReader {
         );
     }
 
+    @Override
+    public VanillaSmithingTransformRecipe readSmithingTransform(JsonObject json) {
+        return new VanillaSmithingTransformRecipe(
+                readSingleIngredient(json.get("base")),
+                readSingleIngredient(json.get("template")),
+                readSingleIngredient(json.get("addition")),
+                readSmithingResult(json.getAsJsonObject("result"))
+        );
+    }
+
     protected List<String> readSingleIngredient(JsonElement json) {
         List<String> ingredients = new ArrayList<>();
         if (json.isJsonObject()) {
@@ -124,6 +134,12 @@ public class VanillaRecipeReader1_20 extends AbstractRecipeReader {
         String item = object.get("item").getAsString();
         int count = object.has("count") ? object.get("count").getAsInt() : 1;
         return new RecipeResult(item, count, null);
+    }
+
+    @NotNull
+    protected RecipeResult readSmithingResult(JsonObject object) {
+        String item = object.get("item").getAsString();
+        return new RecipeResult(item, 1, null);
     }
 
     protected List<List<String>> readShapelessIngredients(JsonArray json) {

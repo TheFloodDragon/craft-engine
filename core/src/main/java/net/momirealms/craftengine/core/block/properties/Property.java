@@ -1,13 +1,46 @@
 package net.momirealms.craftengine.core.block.properties;
 
+import net.momirealms.craftengine.core.block.ImmutableBlockState;
+import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
+import net.momirealms.craftengine.core.util.Direction;
+import net.momirealms.craftengine.core.util.HorizontalDirection;
 import net.momirealms.sparrow.nbt.Tag;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
+@SuppressWarnings("unchecked")
 public abstract class Property<T extends Comparable<T>> {
+    public static final Map<String, Function<Property<?>, BiFunction<BlockPlaceContext, ImmutableBlockState, ImmutableBlockState>>> HARD_CODED_PLACEMENTS = new HashMap<>();
+
+    static {
+        HARD_CODED_PLACEMENTS.put("axis", (property -> {
+            Property<Direction.Axis> axisProperty = (Property<Direction.Axis>) property;
+            return (context, state) -> state.with(axisProperty, context.getClickedFace().axis());
+        }));
+        HARD_CODED_PLACEMENTS.put("facing", (property -> {
+            if (property.valueClass() == HorizontalDirection.class) {
+                Property<HorizontalDirection> directionProperty = (Property<HorizontalDirection>) property;
+                return (context, state) -> state.with(directionProperty, context.getHorizontalDirection().opposite().toHorizontalDirection());
+            } else if (property.valueClass() == Direction.class) {
+                Property<Direction> directionProperty = (Property<Direction>) property;
+                return (context, state) -> state.with(directionProperty, context.getNearestLookingDirection().opposite());
+            } else {
+                throw new IllegalArgumentException("Unsupported property type used in hard-coded `facing` property: " + property.valueClass());
+            }
+        }));
+        HARD_CODED_PLACEMENTS.put("waterlogged", (property -> {
+            Property<Boolean> waterloggedProperty = (Property<Boolean>) property;
+            return (context, state) -> state.with(waterloggedProperty, context.isWaterSource());
+        }));
+    }
+
     private final Class<T> clazz;
     private final String name;
     @Nullable
@@ -83,10 +116,10 @@ public abstract class Property<T extends Comparable<T>> {
         return this.clazz;
     }
 
-    @Override
-    public boolean equals(Object object) {
-        return this == object;
-    }
+//    @Override
+//    public boolean equals(Object object) {
+//        return this == object;
+//    }
 
     @Override
     public final int hashCode() {
@@ -114,5 +147,11 @@ public abstract class Property<T extends Comparable<T>> {
         public String toString() {
             return this.property.name + "=" + this.property.valueName(this.value);
         }
+    }
+
+    public static BiFunction<BlockPlaceContext, ImmutableBlockState, ImmutableBlockState> createStateForPlacement(String id, Property<?> property) {
+        return Optional.ofNullable(HARD_CODED_PLACEMENTS.get(id))
+                .map(it -> it.apply(property))
+                .orElse(((context, state) -> ImmutableBlockState.with(state, property, property.defaultValue())));
     }
 }

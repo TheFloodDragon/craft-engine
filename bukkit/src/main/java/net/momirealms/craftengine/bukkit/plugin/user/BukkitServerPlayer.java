@@ -197,6 +197,11 @@ public class BukkitServerPlayer extends Player {
     }
 
     @Override
+    public void closeInventory() {
+        platformPlayer().closeInventory();
+    }
+
+    @Override
     public void sendPacket(Object packet, boolean immediately) {
         this.plugin.networkManager().sendPacket(this, packet, immediately);
     }

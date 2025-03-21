@@ -1,5 +1,5 @@
 plugins {
-    id("com.gradleup.shadow") version "9.0.0-beta6"
+    id("com.gradleup.shadow") version "9.0.0-beta11"
     id("net.minecrell.plugin-yml.bukkit") version "0.6.0"
 }
 

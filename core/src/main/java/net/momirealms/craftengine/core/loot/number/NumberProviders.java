@@ -26,7 +26,7 @@ public class NumberProviders {
         holder.bindValue(factory);
     }
 
-    static List<NumberProvider> fromMapList(List<Map<String, Object>> mapList) {
+    public static List<NumberProvider> fromMapList(List<Map<String, Object>> mapList) {
         if (mapList == null || mapList.isEmpty()) return List.of();
         List<NumberProvider> functions = new ArrayList<>();
         for (Map<String, Object> map : mapList) {

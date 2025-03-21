@@ -4,6 +4,8 @@ import com.saicone.rtag.RtagItem;
 import net.momirealms.craftengine.core.item.ItemWrapper;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.Map;
+
 @SuppressWarnings("UnstableApiUsage")
 public class RTagItemWrapper implements ItemWrapper<ItemStack> {
     private final RtagItem rtagItem;
@@ -109,5 +111,10 @@ public class RTagItemWrapper implements ItemWrapper<ItemStack> {
     @Override
     public ItemWrapper<ItemStack> copyWithCount(int count) {
         return new RTagItemWrapper(new RtagItem(this.rtagItem.loadCopy()), count);
+    }
+
+    @Override
+    public Map<String, Object> getData() {
+        return this.rtagItem.get();
     }
 }

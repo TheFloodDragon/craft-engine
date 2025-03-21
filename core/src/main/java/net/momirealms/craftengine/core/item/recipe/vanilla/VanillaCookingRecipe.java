@@ -4,7 +4,7 @@ import net.momirealms.craftengine.core.item.recipe.CookingRecipeCategory;
 
 import java.util.List;
 
-public abstract class VanillaCookingRecipe extends VanillaRecipe {
+public abstract class VanillaCookingRecipe extends VanillaGroupedRecipe {
     protected final List<String> ingredient;
     protected final CookingRecipeCategory category;
     protected final float experience;

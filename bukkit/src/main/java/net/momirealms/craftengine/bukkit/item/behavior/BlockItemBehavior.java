@@ -125,6 +125,7 @@ public class BlockItemBehavior extends ItemBehavior {
         return InteractionResult.SUCCESS;
     }
 
+    // for child class to override
     @Nullable
     public BlockPlaceContext updatePlacementContext(BlockPlaceContext context) {
         return context;

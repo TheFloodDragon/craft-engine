@@ -17,4 +17,6 @@ public interface VanillaRecipeReader {
     VanillaCampfireRecipe readCampfire(JsonObject json);
 
     VanillaStoneCuttingRecipe readStoneCutting(JsonObject json);
+
+    VanillaSmithingTransformRecipe readSmithingTransform(JsonObject json);
 }

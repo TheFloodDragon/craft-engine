@@ -3,7 +3,7 @@ items:
     material: paper
     custom-model-data: 3001
     data:
-      display-name: "<!i><i18n:item.chinese_lantern>"
+      item-name: "<!i><i18n:item.chinese_lantern>"
     model:
       type: "minecraft:model"
       path: "minecraft:item/custom/chinese_lantern"
@@ -13,29 +13,23 @@ items:
       type: block_item
       block:
         loot:
-          template: loot_table:normal
+          template: "default:loot_table/basic"
           arguments:
             item: default:chinese_lantern
         settings:
-          hardness: 0.5
-          resistance: 0.5
-          push-reaction: NORMAL
-          replaceable: false
-          burnable: true
-          burn-chance: 30
-          fire-spread-chance: 100
-          is-redstone-conductor: true
-          is-suffocating: false
-          instrument: HARP
-          luminance: 15
-          map-color: 36
-          item: default:chinese_lantern
-          sounds:
-            break: minecraft:block.wood.break
-            step: minecraft:block.wood.step
-            place: minecraft:block.wood.place
-            hit: minecraft:block.wood.hit
-            fall: minecraft:block.wood.fall
+          template:
+            - default:hardness/wool
+            - default:burn_data/planks
+            - default:sound/wood
+          overrides:
+            push-reaction: NORMAL
+            replaceable: false
+            is-redstone-conductor: true
+            is-suffocating: false
+            instrument: HARP
+            luminance: 15
+            map-color: 36
+            item: default:chinese_lantern
         state:
           id: 15
           state: note_block:15

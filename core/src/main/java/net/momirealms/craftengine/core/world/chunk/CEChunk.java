@@ -48,7 +48,7 @@ public class CEChunk {
         for (int i = 0; i < sections.length; ++i) {
             if (sections[i] == null) {
                 sections[i] = new CESection(world.worldHeight().getSectionYFromSectionIndex(i),
-                        new PalettedContainer<>(null, EmptyBlock.INSTANCE.getDefaultState(), PalettedContainer.PaletteProvider.CUSTOM_BLOCK_STATE));
+                        new PalettedContainer<>(null, EmptyBlock.INSTANCE.defaultState(), PalettedContainer.PaletteProvider.CUSTOM_BLOCK_STATE));
             }
         }
     }

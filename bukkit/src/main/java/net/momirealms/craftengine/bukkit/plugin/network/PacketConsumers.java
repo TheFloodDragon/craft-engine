@@ -376,7 +376,7 @@ public class PacketConsumers {
         Key itemId = state.settings().itemId();
         // no item available
         if (itemId == null) return;
-        BlockData data = BlockStateUtils.createBlockData(state.vanillaBlockState().handle());
+        BlockData data = BlockStateUtils.fromBlockData(state.vanillaBlockState().handle());
         // compare item
         if (data == null || !data.getMaterial().equals(item.getType())) return;
         ItemStack itemStack = BukkitCraftEngine.instance().itemManager().buildCustomItemStack(itemId, player);

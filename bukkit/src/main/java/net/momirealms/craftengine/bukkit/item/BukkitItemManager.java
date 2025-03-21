@@ -21,6 +21,8 @@ import net.momirealms.craftengine.core.pack.Pack;
 import net.momirealms.craftengine.core.pack.misc.EquipmentGeneration;
 import net.momirealms.craftengine.core.pack.model.*;
 import net.momirealms.craftengine.core.pack.model.generation.ModelGeneration;
+import net.momirealms.craftengine.core.pack.model.select.ChargeTypeSelectProperty;
+import net.momirealms.craftengine.core.pack.model.select.TrimMaterialSelectProperty;
 import net.momirealms.craftengine.core.plugin.config.ConfigManager;
 import net.momirealms.craftengine.core.registry.BuiltInRegistries;
 import net.momirealms.craftengine.core.registry.Holder;
@@ -71,6 +73,11 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
     public void delayedInit() {
         Bukkit.getPluginManager().registerEvents(this.itemEventListener, plugin.bootstrap());
         Bukkit.getPluginManager().registerEvents(this.debugStickListener, plugin.bootstrap());
+    }
+
+    @Override
+    public Object encodeJava(Key componentType, @Nullable Object component) {
+        return this.factory.encodeJava(componentType, component);
     }
 
     public static BukkitItemManager instance() {
@@ -454,13 +461,19 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
             for (Map.Entry<Either<String, List<String>>, ItemModel> entry : model.whenMap().entrySet()) {
                 List<String> cases = entry.getKey().fallbackOrMapPrimary(List::of);
                 for (String caseValue : cases) {
+                    Number legacyValue = predicate.toLegacyValue(caseValue);
+                    if (predicate instanceof TrimMaterialSelectProperty property && property.isArmor(materialId)) {
+                        if (legacyValue.floatValue() > 1f) {
+                            continue;
+                        }
+                    }
                     Map<String, Object> merged = mergePredicates(
                             parentPredicates,
                             predicateId,
-                            predicate.toLegacyValue(caseValue)
+                            legacyValue
                     );
                     // Additional check for crossbow
-                    if (materialId.equals(ItemKeys.CROSSBOW)) {
+                    if (predicate instanceof ChargeTypeSelectProperty && materialId.equals(ItemKeys.CROSSBOW)) {
                         merged = mergePredicates(
                                 merged,
                                 "charged",
@@ -477,19 +490,32 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
                 }
             }
             // Additional check for crossbow
-            if (model.fallBack() != null && materialId.equals(ItemKeys.CROSSBOW)) {
-                Map<String, Object> merged = mergePredicates(
-                        parentPredicates,
-                        "charged",
-                        0
-                );
-                processModelRecursively(
-                        model.fallBack(),
-                        merged,
-                        resultList,
-                        materialId,
-                        customModelData
-                );
+            if (model.fallBack() != null) {
+                if (predicate instanceof ChargeTypeSelectProperty && materialId.equals(ItemKeys.CROSSBOW)) {
+                    processModelRecursively(
+                            model.fallBack(),
+                            mergePredicates(
+                                    parentPredicates,
+                                    "charged",
+                                    0
+                            ),
+                            resultList,
+                            materialId,
+                            customModelData
+                    );
+                } else if (predicate instanceof TrimMaterialSelectProperty property && property.isArmor(materialId)) {
+                    processModelRecursively(
+                            model.fallBack(),
+                            mergePredicates(
+                                    parentPredicates,
+                                    "trim_type",
+                                    0f
+                            ),
+                            resultList,
+                            materialId,
+                            customModelData
+                    );
+                }
             }
         }
     }

@@ -41,13 +41,21 @@ public interface Item<I> {
 
     Optional<Integer> damage();
 
+    Item<I> repairCost(Integer data);
+
+    Optional<Integer> repairCost();
+
     Item<I> maxDamage(Integer data);
 
     Optional<Integer> maxDamage();
 
-    Item<I> displayName(String displayName);
+    Item<I> customName(String displayName);
 
-    Optional<String> displayName();
+    Optional<String> customName();
+
+    default Optional<String> hoverName() {
+        return customName().or(this::itemName);
+    }
 
     Item<I> itemName(String itemName);
 
@@ -108,4 +116,6 @@ public interface Item<I> {
     boolean is(Key itemTag);
 
     Object getLiteralObject();
+
+    Item<I> merge(Item<?> another);
 }

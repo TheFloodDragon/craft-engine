@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class CustomStoneCuttingRecipe<T> extends AbstractRecipe<T> {
+public class CustomStoneCuttingRecipe<T> extends AbstractGroupedRecipe<T> {
     public static final Factory<?> FACTORY = new Factory<>();
     protected final Ingredient<T> ingredient;
 
@@ -36,7 +36,7 @@ public class CustomStoneCuttingRecipe<T> extends AbstractRecipe<T> {
 
     @Override
     public @NotNull Key type() {
-        return RecipeTypes.STONE_CUTTING;
+        return RecipeTypes.STONECUTTING;
     }
 
     public Ingredient<T> ingredient() {

@@ -3,33 +3,26 @@ items:
     material: paper
     custom-model-data: 3000
     data:
-      display-name: "<!i><i18n:item.fairy_flower>"
+      item-name: "<!i><i18n:item.fairy_flower>"
     model:
-      type: "minecraft:model"
-      path: "minecraft:item/custom/fairy_flower"
-      generation:
-        parent: "minecraft:item/generated"
-        textures:
-          "layer0": "minecraft:item/custom/fairy_flower"
+      template: default:model/simplified_generated
+      arguments:
+        path: "minecraft:item/custom/fairy_flower"
     behavior:
       type: block_item
       block: default:fairy_flower
 blocks:
   default:fairy_flower:
     settings:
-      template: block_settings:surface_decoration
+      template:
+        - default:hardness/none
+        - default:sound/grass
       overrides:
         item: default:fairy_flower
-        sounds:
-          break: minecraft:block.grass.break
-          step: minecraft:block.grass.step
-          place: minecraft:block.grass.place
-          hit: minecraft:block.grass.hit
-          fall: minecraft:block.grass.fall
     behavior:
       type: bush_block
     loot:
-      template: loot_table:normal
+      template: "default:loot_table/basic"
       arguments:
         item: default:fairy_flower
     state:
@@ -56,9 +49,3 @@ blocks:
             parent: "minecraft:block/custom/fairy_flower_1"
             textures:
               "0": "minecraft:block/custom/fairy_flower_4"
-        - path: "minecraft:block/custom/fairy_flower_5"
-          weight: 1
-          generation:
-            parent: "minecraft:block/custom/fairy_flower_1"
-            textures:
-              "0": "minecraft:block/custom/fairy_flower_5"

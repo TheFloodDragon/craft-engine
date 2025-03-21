@@ -1,8 +1,11 @@
 package net.momirealms.craftengine.bukkit.item.factory;
 
+import com.saicone.rtag.RtagItem;
+import com.saicone.rtag.item.ItemObject;
 import com.saicone.rtag.tag.TagBase;
 import com.saicone.rtag.tag.TagCompound;
 import com.saicone.rtag.tag.TagList;
+import net.momirealms.craftengine.bukkit.item.RTagItemWrapper;
 import net.momirealms.craftengine.core.item.Enchantment;
 import net.momirealms.craftengine.core.item.ItemWrapper;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
@@ -12,6 +15,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -23,7 +27,12 @@ public class UniversalItemFactory extends BukkitItemFactory {
     }
 
     @Override
-    protected void displayName(ItemWrapper<ItemStack> item, String json) {
+    public Object encodeJava(Key componentType, @Nullable Object component) {
+        throw new UnsupportedOperationException("This feature is only available on 1.20.5+");
+    }
+
+    @Override
+    protected void customName(ItemWrapper<ItemStack> item, String json) {
         if (json != null) {
             item.set(json, "display", "Name");
         } else {
@@ -32,19 +41,19 @@ public class UniversalItemFactory extends BukkitItemFactory {
     }
 
     @Override
-    protected Optional<String> displayName(ItemWrapper<ItemStack> item) {
+    protected Optional<String> customName(ItemWrapper<ItemStack> item) {
         if (!item.hasTag("display", "Name")) return Optional.empty();
         return Optional.of(item.get("display", "Name"));
     }
 
     @Override
     protected void itemName(ItemWrapper<ItemStack> item, String json) {
-        throw new UnsupportedOperationException("This feature is only available on 1.20.5+");
+        customName(item, json);
     }
 
     @Override
     protected Optional<String> itemName(ItemWrapper<ItemStack> item) {
-        throw new UnsupportedOperationException("This feature is only available on 1.20.5+");
+        return customName(item);
     }
 
     @Override
@@ -123,18 +132,11 @@ public class UniversalItemFactory extends BukkitItemFactory {
 
     @Override
     protected Optional<Integer> maxDamage(ItemWrapper<ItemStack> item) {
-//        if (!item.hasTag("CustomFishing", "max_dur")) return Optional.empty();
-//        return Optional.of(item.get("CustomFishing", "max_dur"));
         return Optional.of((int) item.getItem().getType().getMaxDurability());
     }
 
     @Override
     protected void maxDamage(ItemWrapper<ItemStack> item, Integer damage) {
-//        if (damage == null) {
-//            item.remove("CustomFishing", "max_dur");
-//        } else {
-//            item.set(damage, "CustomFishing", "max_dur");
-//        }
         throw new UnsupportedOperationException("This feature is only available on 1.20.5+");
     }
 
@@ -217,5 +219,26 @@ public class UniversalItemFactory extends BukkitItemFactory {
 
     @Override
     protected void maxStackSize(ItemWrapper<ItemStack> item, Integer maxStackSize) {
+        throw new UnsupportedOperationException("This feature is only available on 1.20.5+");
+    }
+
+    @Override
+    protected void repairCost(ItemWrapper<ItemStack> item, Integer data) {
+        item.set(data, "RepairCost");
+    }
+
+    @Override
+    protected Optional<Integer> repairCost(ItemWrapper<ItemStack> item) {
+        if (!item.hasTag("RepairCost")) return Optional.empty();
+        return Optional.of(item.get("RepairCost"));
+    }
+
+    @Override
+    protected ItemWrapper<ItemStack> merge(ItemWrapper<ItemStack> item1, ItemWrapper<ItemStack> item2) {
+        Object itemStack = ItemObject.copy(item2.getLiteralObject());
+        ItemObject.setCustomDataTag(itemStack, TagCompound.clone(ItemObject.getCustomDataTag(item1.getLiteralObject())));
+        // one more step than vanilla
+        TagCompound.merge(ItemObject.getCustomDataTag(itemStack), ItemObject.getCustomDataTag(item2.getLiteralObject()), true, true);
+        return new RTagItemWrapper(new RtagItem(ItemObject.asCraftMirror(itemStack)), item2.count());
     }
 }

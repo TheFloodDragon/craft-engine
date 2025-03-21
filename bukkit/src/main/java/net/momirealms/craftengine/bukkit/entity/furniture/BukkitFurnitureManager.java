@@ -343,9 +343,7 @@ public class BukkitFurnitureManager implements FurnitureManager {
             return;
         }
         Vector3f seatPos = MiscUtils.getVector3f(vector3f);
-        if (!furniture.releaseSeat(seatPos)) {
-            plugin.logger().warn("Failed to release seat " + seatPos + " for player " + player.getName());
-        }
+        furniture.releaseSeat(seatPos);
     }
 
     protected boolean isSeatCarrierType(Entity entity) {

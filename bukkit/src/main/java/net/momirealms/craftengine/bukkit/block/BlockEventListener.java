@@ -1,5 +1,6 @@
 package net.momirealms.craftengine.bukkit.block;
 
+import io.papermc.paper.event.block.BlockBreakBlockEvent;
 import net.momirealms.craftengine.bukkit.api.event.CustomBlockBreakEvent;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
@@ -11,6 +12,7 @@ import net.momirealms.craftengine.core.block.properties.Property;
 import net.momirealms.craftengine.core.entity.player.InteractionHand;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.item.ItemKeys;
+import net.momirealms.craftengine.core.loot.LootTable;
 import net.momirealms.craftengine.core.loot.parameter.LootParameters;
 import net.momirealms.craftengine.core.plugin.config.ConfigManager;
 import net.momirealms.craftengine.core.util.Key;
@@ -88,11 +90,12 @@ public class BlockEventListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR) // I forget why it's LOW before
     public void onPlayerBreak(BlockBreakEvent event) {
         org.bukkit.block.Block block = event.getBlock();
         Object blockState = BlockStateUtils.blockDataToBlockState(block.getBlockData());
         int stateId = BlockStateUtils.blockStateToId(blockState);
+        Player player = event.getPlayer();
         if (!BlockStateUtils.isVanillaBlock(stateId)) {
             ImmutableBlockState state = manager.getImmutableBlockStateUnsafe(stateId);
             if (!state.isEmpty()) {
@@ -119,13 +122,11 @@ public class BlockEventListener implements Listener {
                 // play sound
                 Vec3d vec3d = new Vec3d(location.getBlockX() + 0.5, location.getBlockY() + 0.5, location.getBlockZ() + 0.5);
                 world.playBlockSound(vec3d, state.sounds().breakSound(), 1f, 0.8f);
-
-                Player player = event.getPlayer();
                 if (player.getGameMode() == GameMode.CREATIVE) {
                     return;
                 }
 
-                BukkitServerPlayer serverPlayer = plugin.adapt(player);
+                BukkitServerPlayer serverPlayer = this.plugin.adapt(player);
                 Item<ItemStack> itemInHand = serverPlayer.getItemInHand(InteractionHand.MAIN_HAND);
                 Key itemId = Optional.ofNullable(itemInHand).map(Item::id).orElse(ItemKeys.AIR);
                 // do not drop if it's not the correct tool
@@ -136,24 +137,81 @@ public class BlockEventListener implements Listener {
                 ContextHolder.Builder builder = ContextHolder.builder();
                 builder.withParameter(LootParameters.WORLD, world);
                 builder.withParameter(LootParameters.LOCATION, vec3d);
-                builder.withParameter(LootParameters.PLAYER, plugin.adapt(player));
+                builder.withParameter(LootParameters.PLAYER, serverPlayer);
                 builder.withParameter(LootParameters.TOOL, itemInHand);
                 for (Item<Object> item : state.getDrops(builder, world)) {
                     world.dropItemNaturally(vec3d, item);
                 }
             }
-        } else if (ConfigManager.enableSoundSystem()) {
-            Object ownerBlock = BlockStateUtils.getBlockOwner(blockState);
-            if (manager.isBlockSoundRemoved(ownerBlock)) {
-                try {
-                    Object soundType = Reflections.field$BlockBehaviour$soundType.get(ownerBlock);
-                    Object breakSound = Reflections.field$SoundType$breakSound.get(soundType);
-                    block.getWorld().playSound(block.getLocation(), Reflections.field$SoundEvent$location.get(breakSound).toString(), SoundCategory.BLOCKS, 1f, 0.8f);
-                } catch (ReflectiveOperationException e) {
-                    plugin.logger().warn("Failed to get sound type", e);
+        } else {
+            // override vanilla block loots
+            if (player.getGameMode() != GameMode.CREATIVE) {
+                this.plugin.vanillaLootManager().getBlockLoot(stateId).ifPresent(it -> {
+                    if (it.override()) {
+                        event.setDropItems(false);
+                        event.setExpToDrop(0);
+                    }
+                    Location location = block.getLocation();
+                    BukkitServerPlayer serverPlayer = this.plugin.adapt(player);
+                    net.momirealms.craftengine.core.world.World world = new BukkitWorld(player.getWorld());
+                    Vec3d vec3d = new Vec3d(location.getBlockX() + 0.5, location.getBlockY() + 0.5, location.getBlockZ() + 0.5);
+                    ContextHolder.Builder builder = ContextHolder.builder();
+                    builder.withParameter(LootParameters.WORLD, world);
+                    builder.withParameter(LootParameters.LOCATION, vec3d);
+                    builder.withParameter(LootParameters.PLAYER, serverPlayer);
+                    builder.withParameter(LootParameters.TOOL, serverPlayer.getItemInHand(InteractionHand.MAIN_HAND));
+                    ContextHolder contextHolder = builder.build();
+                    for (LootTable<?> lootTable : it.lootTables()) {
+                        for (Item<?> item : lootTable.getRandomItems(contextHolder, world)) {
+                            world.dropItemNaturally(vec3d, item);
+                        }
+                    }
+                });
+            }
+            // sound system
+            if (ConfigManager.enableSoundSystem()) {
+                Object ownerBlock = BlockStateUtils.getBlockOwner(blockState);
+                if (this.manager.isBlockSoundRemoved(ownerBlock)) {
+                    try {
+                        Object soundType = Reflections.field$BlockBehaviour$soundType.get(ownerBlock);
+                        Object breakSound = Reflections.field$SoundType$breakSound.get(soundType);
+                        block.getWorld().playSound(block.getLocation(), Reflections.field$SoundEvent$location.get(breakSound).toString(), SoundCategory.BLOCKS, 1f, 0.8f);
+                    } catch (ReflectiveOperationException e) {
+                        this.plugin.logger().warn("Failed to get sound type", e);
+                    }
                 }
             }
         }
+    }
+
+    // override vanilla block loots
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
+    public void onBlockBreakBlock(BlockBreakBlockEvent event) {
+        Block block = event.getBlock();
+        Object blockState = BlockStateUtils.blockDataToBlockState(block.getBlockData());
+        int stateId = BlockStateUtils.blockStateToId(blockState);
+        if (!BlockStateUtils.isVanillaBlock(stateId)) {
+            return;
+        }
+        this.plugin.vanillaLootManager().getBlockLoot(stateId).ifPresent(it -> {
+            if (it.override()) {
+                event.getDrops().clear();
+                event.setExpToDrop(0);
+            }
+
+            Location location = block.getLocation();
+            Vec3d vec3d = new Vec3d(location.getBlockX() + 0.5, location.getBlockY() + 0.5, location.getBlockZ() + 0.5);
+            net.momirealms.craftengine.core.world.World world = new BukkitWorld(location.getWorld());
+            ContextHolder.Builder builder = ContextHolder.builder();
+            builder.withParameter(LootParameters.WORLD, world);
+            builder.withParameter(LootParameters.LOCATION, vec3d);
+            ContextHolder contextHolder = builder.build();
+            for (LootTable<?> lootTable : it.lootTables()) {
+                for (Item<?> item : lootTable.getRandomItems(contextHolder, world)) {
+                    world.dropItemNaturally(vec3d, item);
+                }
+            }
+        });
     }
 
     @EventHandler(ignoreCancelled = true)

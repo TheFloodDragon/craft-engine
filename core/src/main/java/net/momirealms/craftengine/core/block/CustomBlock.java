@@ -6,8 +6,6 @@ import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
 import net.momirealms.craftengine.core.loot.LootTable;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.registry.Holder;
-import net.momirealms.craftengine.core.util.Direction;
-import net.momirealms.craftengine.core.util.HorizontalDirection;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.shared.block.BlockBehavior;
 import net.momirealms.sparrow.nbt.CompoundTag;
@@ -19,16 +17,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 public abstract class CustomBlock {
     protected final Holder<CustomBlock> holder;
-    protected Key id;
-    protected ImmutableBlockState defaultState;
-    protected BlockStateVariantProvider variantProvider;
-    protected Map<String, Property<?>> properties;
-    protected BlockBehavior behavior;
+    protected final Key id;
+    protected final BlockStateVariantProvider variantProvider;
+    protected final Map<String, Property<?>> properties;
+    protected final BlockBehavior behavior;
+    protected final List<BiFunction<BlockPlaceContext, ImmutableBlockState, ImmutableBlockState>> placements;
+    protected final ImmutableBlockState defaultState;
     @Nullable
-    protected LootTable<?> lootTable;
+    protected final LootTable<?> lootTable;
 
     public CustomBlock(
             @NotNull Key id,
@@ -45,8 +45,9 @@ public abstract class CustomBlock {
         this.id = id;
         this.lootTable = lootTable;
         this.properties = properties;
+        this.placements = new ArrayList<>();
         this.variantProvider = new BlockStateVariantProvider(holder, ImmutableBlockState::new, properties);
-        this.setDefaultState(this.variantProvider.getDefaultState());
+        this.defaultState = this.variantProvider.getDefaultState();
         this.behavior = BlockBehaviors.fromMap(this, behaviorSettings);
         for (Map.Entry<String, VariantState> entry : variantMapper.entrySet()) {
             String nbtString = entry.getKey();
@@ -76,6 +77,9 @@ public abstract class CustomBlock {
             }
         }
         this.applyPlatformSettings();
+        for (Map.Entry<String, Property<?>> propertyEntry : this.properties.entrySet()) {
+            this.placements.add(Property.createStateForPlacement(propertyEntry.getKey(), propertyEntry.getValue()));
+        }
     }
 
     protected abstract void applyPlatformSettings();
@@ -97,7 +101,7 @@ public abstract class CustomBlock {
 
     private List<ImmutableBlockState> getPossibleStates(CompoundTag nbt) {
         List<ImmutableBlockState> tempStates = new ArrayList<>();
-        tempStates.add(getDefaultState());
+        tempStates.add(defaultState());
         for (Property<?> property : variantProvider.getDefaultState().getProperties()) {
             Tag value = nbt.get(property.name());
             if (value != null) {
@@ -116,9 +120,9 @@ public abstract class CustomBlock {
     }
 
     public ImmutableBlockState getBlockState(CompoundTag nbt) {
-        ImmutableBlockState state = getDefaultState();
+        ImmutableBlockState state = defaultState();
         for (Map.Entry<String, Tag> entry : nbt.tags.entrySet()) {
-            Property<?> property = variantProvider.getProperty(entry.getKey());
+            Property<?> property = this.variantProvider.getProperty(entry.getKey());
             if (property != null) {
                 try {
                     state = ImmutableBlockState.with(state, property, property.unpack(entry.getValue()));
@@ -140,47 +144,16 @@ public abstract class CustomBlock {
         return this.properties.values();
     }
 
-    protected final void setDefaultState(ImmutableBlockState state) {
-        this.defaultState = state;
-    }
-
-    public final ImmutableBlockState getDefaultState() {
+    public final ImmutableBlockState defaultState() {
         return this.defaultState;
     }
 
-    // TODO refactor this method
-    @SuppressWarnings("unchecked")
     public ImmutableBlockState getStateForPlacement(BlockPlaceContext context) {
-        ImmutableBlockState state = getDefaultState();
-        Property<Direction.Axis> axisProperty = (Property<Direction.Axis>) this.variantProvider.getProperty("axis");
-        if (axisProperty != null) {
-            state = state.with(axisProperty, context.getClickedFace().axis());
+        ImmutableBlockState state = defaultState();
+        for (BiFunction<BlockPlaceContext, ImmutableBlockState, ImmutableBlockState> placement : this.placements) {
+            state = placement.apply(context, state);
         }
-        Property<?> directionProperty = this.variantProvider.getProperty("facing");
-        if (directionProperty != null) {
-            if (directionProperty.valueClass() == HorizontalDirection.class) {
-                state = state.with((Property<HorizontalDirection>) directionProperty, context.getHorizontalDirection().opposite().toHorizontalDirection());
-            } else if (directionProperty.valueClass() == Direction.class) {
-                state = state.with((Property<Direction>) directionProperty, context.getNearestLookingDirection().opposite());
-            }
-        }
-        Property<Boolean> waterloggedProperty = (Property<Boolean>) this.variantProvider.getProperty("waterlogged");
-        if (waterloggedProperty != null) {
-            if (context.isWaterSource()) {
-                state = state.with(waterloggedProperty, true);
-            }
-        }
-
-        //TODO Use default values
-        Property<Boolean> persistentProperty = (Property<Boolean>) this.variantProvider.getProperty("persistent");
-        if (persistentProperty != null) {
-            state = state.with(persistentProperty, true);
-        }
-        Property<Integer> distanceProperty = (Property<Integer>) this.variantProvider.getProperty("distance");
-        if (distanceProperty != null) {
-            state = state.with(distanceProperty, distanceProperty.defaultValue());
-        }
-        //TODO state = state.behavior().getStateForPlacement(state, context);
+        state = (ImmutableBlockState) this.behavior.updateStateForPlacement(context, state);
         return state;
     }
 }

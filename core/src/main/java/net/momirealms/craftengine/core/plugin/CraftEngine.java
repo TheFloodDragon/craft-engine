@@ -6,6 +6,7 @@ import net.momirealms.craftengine.core.font.ImageManager;
 import net.momirealms.craftengine.core.font.ImageManagerImpl;
 import net.momirealms.craftengine.core.item.ItemManager;
 import net.momirealms.craftengine.core.item.recipe.RecipeManager;
+import net.momirealms.craftengine.core.loot.VanillaLootManager;
 import net.momirealms.craftengine.core.pack.PackManager;
 import net.momirealms.craftengine.core.pack.host.ResourcePackHost;
 import net.momirealms.craftengine.core.plugin.classpath.ClassPathAppender;
@@ -59,6 +60,7 @@ public abstract class CraftEngine implements Plugin {
     protected ItemBrowserManager itemBrowserManager;
     protected GuiManager guiManager;
     protected SoundManager soundManager;
+    protected VanillaLootManager vanillaLootManager;
 
     protected PluginLogger logger;
     protected Consumer<Supplier<String>> debugger = (s) -> {};
@@ -96,7 +98,10 @@ public abstract class CraftEngine implements Plugin {
             this.itemBrowserManager.reload();
             this.blockManager.reload();
             this.worldManager.reload();
+            this.vanillaLootManager.reload();
+            // load configs here
             this.packManager.reload();
+            // load at last
             this.guiManager.reload();
             this.blockManager.delayedLoad();
             this.itemBrowserManager.delayedLoad();
@@ -273,6 +278,11 @@ public abstract class CraftEngine implements Plugin {
     @Override
     public SoundManager soundManager() {
         return soundManager;
+    }
+
+    @Override
+    public VanillaLootManager vanillaLootManager() {
+        return vanillaLootManager;
     }
 
     @Override

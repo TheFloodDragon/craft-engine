@@ -9,5 +9,9 @@ pluginManagement {
     plugins {
         kotlin("jvm") version "2.0.20"
     }
+    repositories {
+        gradlePluginPortal()
+        maven("https://repo.papermc.io/repository/maven-public/")
+    }
 }
 

@@ -10,6 +10,10 @@ public class ComponentUtils {
 
     public static Object adventureToMinecraft(Component component) {
         String json = AdventureHelper.componentToJson(component);
+        return jsonToMinecraft(json);
+    }
+
+    public static Object jsonToMinecraft(String json) {
         if (VersionHelper.isVersionNewerThan1_20_5()) {
             try {
                 return Reflections.method$Component$Serializer$fromJson.invoke(null, json, Reflections.instance$MinecraftRegistry);

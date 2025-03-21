@@ -1,19 +1,10 @@
 package net.momirealms.craftengine.core.item.recipe.vanilla;
 
-public abstract class VanillaRecipe {
-    protected final String group;
-    protected final RecipeResult result;
+import net.momirealms.craftengine.core.util.Key;
 
-    protected VanillaRecipe(String group, RecipeResult result) {
-        this.group = group;
-        this.result = result;
-    }
+public interface VanillaRecipe {
 
-    public String group() {
-        return group;
-    }
+    Key type();
 
-    public RecipeResult result() {
-        return result;
-    }
+    RecipeResult result();
 }

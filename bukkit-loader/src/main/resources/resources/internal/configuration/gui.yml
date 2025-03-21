@@ -53,29 +53,34 @@ images:
     font: minecraft:internal
     file: minecraft:font/gui/custom/stonecutting_recipe.png
     char: '\ub008'
+  internal:smithing_transform_recipe:
+    height: 142
+    ascent: 20
+    font: minecraft:internal
+    file: minecraft:font/gui/custom/smithing_transform_recipe.png
+    char: '\ub009'
   internal:no_recipe:
     height: 140
     ascent: 18
     font: minecraft:internal
     file: minecraft:font/gui/custom/no_recipe.png
-    char: '\ub009'
+    char: '\ub00a'
 
 templates:
-  internal:2d_icon:
+  internal:icon/2d:
     material: arrow
     custom-model-data: "{model_data}"
     data:
-      display-name: "{name}"
+      item-name: "{name}"
       lore: "{lore}"
     model:
-      template: models:generated
+      template: "default:model/simplified_generated"
       arguments:
-        model_path: "minecraft:item/custom/gui/{texture}"
-        texture_path: "minecraft:item/custom/gui/{texture}"
+        path: "minecraft:item/custom/gui/{texture}"
 
 items:
   internal:next_page_0:
-    template: "internal:2d_icon"
+    template: "internal:icon/2d"
     arguments:
       model_data: 1000
       texture: next_page_0
@@ -83,7 +88,7 @@ items:
       lore:
         - "<!i><#F5F5F5><arg:current_page>/<arg:max_page>"
   internal:next_page_1:
-    template: "internal:2d_icon"
+    template: "internal:icon/2d"
     arguments:
       model_data: 1001
       texture: next_page_1
@@ -91,7 +96,7 @@ items:
       lore:
         - "<!i><#696969><arg:current_page>/<arg:max_page>"
   internal:previous_page_0:
-    template: "internal:2d_icon"
+    template: "internal:icon/2d"
     arguments:
       model_data: 1002
       texture: previous_page_0
@@ -99,7 +104,7 @@ items:
       lore:
         - "<!i><#F5F5F5><arg:current_page>/<arg:max_page>"
   internal:previous_page_1:
-    template: "internal:2d_icon"
+    template: "internal:icon/2d"
     arguments:
       model_data: 1003
       texture: previous_page_1
@@ -107,7 +112,7 @@ items:
       lore:
         - "<!i><#696969><arg:current_page>/<arg:max_page>"
   internal:return:
-    template: "internal:2d_icon"
+    template: "internal:icon/2d"
     arguments:
       model_data: 1004
       texture: return
@@ -117,32 +122,32 @@ items:
     material: arrow
     custom-model-data: 1000
     data:
-      display-name: "<!i><#FAFAD2><i18n:internal.next_recipe>"
+      item-name: "<!i><#FAFAD2><i18n:internal.next_recipe>"
       lore:
         - "<!i><#F5F5F5><arg:current_page>/<arg:max_page>"
   internal:next_recipe_1:
     material: arrow
     custom-model-data: 1001
     data:
-      display-name: "<!i><#808080><i18n:internal.next_recipe>"
+      item-name: "<!i><#808080><i18n:internal.next_recipe>"
       lore:
         - "<!i><#696969><arg:current_page>/<arg:max_page>"
   internal:previous_recipe_0:
     material: arrow
     custom-model-data: 1002
     data:
-      display-name: "<!i><#FAFAD2><i18n:internal.previous_recipe>"
+      item-name: "<!i><#FAFAD2><i18n:internal.previous_recipe>"
       lore:
         - "<!i><#F5F5F5><arg:current_page>/<arg:max_page>"
   internal:previous_recipe_1:
     material: arrow
     custom-model-data: 1003
     data:
-      display-name: "<!i><#808080><i18n:internal.previous_recipe>"
+      item-name: "<!i><#808080><i18n:internal.previous_recipe>"
       lore:
         - "<!i><#696969><arg:current_page>/<arg:max_page>"
   internal:get_item:
-    template: "internal:2d_icon"
+    template: "internal:icon/2d"
     arguments:
       model_data: 1005
       texture: get_item
@@ -151,7 +156,7 @@ items:
         - "<!i><gray><i18n:internal.get_item.0>"
         - "<!i><gray><i18n:internal.get_item.1>"
   internal:cooking_info:
-    template: "internal:2d_icon"
+    template: "internal:icon/2d"
     arguments:
       model_data: 1006
       texture: cooking_info
@@ -159,3 +164,10 @@ items:
       lore:
         - "<!i><gray><i18n:internal.cooking_info.0>"
         - "<!i><gray><i18n:internal.cooking_info.1>"
+  internal:exit:
+    template: "internal:icon/2d"
+    arguments:
+      model_data: 1007
+      texture: exit
+      name: "<!i><#DAA520><i18n:internal.exit>"
+      lore: null

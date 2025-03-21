@@ -49,3 +49,7 @@ command.item.get.failure.not_exist: "<red><lang:argument.item.id.invalid:'<arg:0
 command.item.give.success.single: "<lang:commands.give.success.single:'<arg:0>':'<arg:1>':'<arg:2>'>"
 command.item.give.success.multiple: "<lang:commands.give.success.multiple:'<arg:0>':'<arg:1>':'<arg:2>'>"
 command.item.give.failure.not_exist: "<red><lang:argument.item.id.invalid:'<arg:0>'></red>"
+command.item.recipe.browser.recipe.no_found: "<red>找不到此物品的配方</red>"
+command.item.usage.browser.recipe.no_found: "<red>找不到此物品的用法</red>"
+command.search_recipe.no_item: "<red>请手持物品后再执行此命令</red>"
+command.search_usage.no_item: "<red>请手持物品后再执行此命令</red>"

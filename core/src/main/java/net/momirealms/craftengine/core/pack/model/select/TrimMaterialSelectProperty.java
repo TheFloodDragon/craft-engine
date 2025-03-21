@@ -22,7 +22,7 @@ public class TrimMaterialSelectProperty implements SelectProperty, LegacyModelPr
         LEGACY_TRIM_DATA.put("minecraft:lapis", 0.9f);
         LEGACY_TRIM_DATA.put("minecraft:amethyst", 1.0f);
         // INVALID
-        LEGACY_TRIM_DATA.put("minecraft:resin", 0F);
+        LEGACY_TRIM_DATA.put("minecraft:resin", 1.1F);
     }
 
     @Override
@@ -37,9 +37,8 @@ public class TrimMaterialSelectProperty implements SelectProperty, LegacyModelPr
 
     @Override
     public String legacyPredicateId(Key material) {
-        String s = material.toString();
-        if (s.contains("helmet") || s.contains("chestplate") || s.contains("leggings") || s.contains("boots")) {
-            return "trim";
+        if (isArmor(material)) {
+            return "trim_type";
         }
         return null;
     }
@@ -51,6 +50,11 @@ public class TrimMaterialSelectProperty implements SelectProperty, LegacyModelPr
             throw new IllegalArgumentException("Invalid trim material '" + value + "'");
         }
         return f;
+    }
+
+    public boolean isArmor(Key material) {
+        String s = material.toString();
+        return s.contains("helmet") || s.contains("chestplate") || s.contains("leggings") || s.contains("boots");
     }
 
     public static class Factory implements SelectPropertyFactory {

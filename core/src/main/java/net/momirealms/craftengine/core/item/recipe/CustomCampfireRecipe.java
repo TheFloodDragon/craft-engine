@@ -21,11 +21,11 @@ public class CustomCampfireRecipe<T> extends CustomCookingRecipe<T> {
         return RecipeTypes.CAMPFIRE_COOKING;
     }
 
-    public static class Factory<A> implements RecipeFactory<CustomCampfireRecipe<A>> {
+    public static class Factory<A> implements RecipeFactory<A> {
 
         @SuppressWarnings({"unchecked", "rawtypes", "DuplicatedCode"})
         @Override
-        public Recipe<CustomCampfireRecipe<A>> create(Key id, Map<String, Object> arguments) {
+        public Recipe<A> create(Key id, Map<String, Object> arguments) {
             CookingRecipeCategory recipeCategory = arguments.containsKey("category") ? CookingRecipeCategory.valueOf(arguments.get("category").toString().toUpperCase(Locale.ENGLISH)) : null;
             String group = arguments.containsKey("group") ? arguments.get("group").toString() : null;
             int cookingTime = MiscUtils.getAsInt(arguments.getOrDefault("time", 80));

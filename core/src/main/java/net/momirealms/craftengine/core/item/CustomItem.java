@@ -19,6 +19,10 @@ public interface CustomItem<I> extends BuildableItem<I> {
 
     ItemSettings settings();
 
+    default boolean is(Key tag) {
+        return settings().tags().contains(tag);
+    }
+
     default Item<I> buildItem(Player player) {
         return buildItem(new ItemBuildContext(player, ContextHolder.EMPTY));
     }

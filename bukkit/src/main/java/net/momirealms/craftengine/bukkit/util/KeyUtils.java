@@ -8,7 +8,7 @@ public class KeyUtils {
     private KeyUtils() {}
 
     public static Key namespacedKey2Key(NamespacedKey key) {
-        return Key.of(key.namespace(), key.value());
+        return Key.of(key.getNamespace(), key.getKey());
     }
 
     public static Key adventureKey2Key(net.kyori.adventure.key.Key key) {

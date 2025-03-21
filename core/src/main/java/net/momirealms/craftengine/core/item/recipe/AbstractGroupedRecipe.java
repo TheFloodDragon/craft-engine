@@ -4,18 +4,17 @@ import net.momirealms.craftengine.core.item.ItemBuildContext;
 import net.momirealms.craftengine.core.util.Key;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class AbstractRecipe<T> implements Recipe<T> {
+public abstract class AbstractGroupedRecipe<T> implements Recipe<T> {
     protected final String group;
     protected final Key id;
     protected final CustomRecipeResult<T> result;
 
-    protected AbstractRecipe(Key id, String group, CustomRecipeResult<T> result) {
+    protected AbstractGroupedRecipe(Key id, String group, CustomRecipeResult<T> result) {
         this.group = group;
         this.id = id;
         this.result = result;
     }
 
-    @Override
     @Nullable
     public String group() {
         return group;

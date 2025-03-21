@@ -8,6 +8,7 @@ import net.momirealms.craftengine.bukkit.entity.furniture.BukkitFurnitureManager
 import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.item.behavior.BukkitItemBehaviors;
 import net.momirealms.craftengine.bukkit.item.recipe.BukkitRecipeManager;
+import net.momirealms.craftengine.bukkit.loot.BukkitVanillaLootManager;
 import net.momirealms.craftengine.bukkit.pack.BukkitPackManager;
 import net.momirealms.craftengine.bukkit.plugin.command.BukkitCommandManager;
 import net.momirealms.craftengine.bukkit.plugin.command.BukkitSenderFactory;
@@ -136,6 +137,7 @@ public class BukkitCraftEngine extends CraftEngine {
         super.guiManager = new BukkitGuiManager(this);
         super.worldManager = new BukkitWorldManager(this);
         super.soundManager = new BukkitSoundManager(this);
+        super.vanillaLootManager = new BukkitVanillaLootManager(this);
         super.enable();
         // tick task
         if (VersionHelper.isFolia()) {
@@ -204,6 +206,8 @@ public class BukkitCraftEngine extends CraftEngine {
         // register sound parser
         this.packManager.registerConfigSectionParser(this.soundManager);
         this.packManager.registerConfigSectionParser(this.soundManager.jukeboxSongManager());
+        // register vanilla loot parser
+        this.packManager.registerConfigSectionParser(this.vanillaLootManager);
     }
 
     @Override

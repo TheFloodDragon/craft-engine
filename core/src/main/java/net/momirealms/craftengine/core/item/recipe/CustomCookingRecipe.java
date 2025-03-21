@@ -6,7 +6,7 @@ import net.momirealms.craftengine.core.util.Key;
 
 import java.util.List;
 
-public abstract class CustomCookingRecipe<T> extends AbstractRecipe<T> {
+public abstract class CustomCookingRecipe<T> extends AbstractGroupedRecipe<T> {
     protected final CookingRecipeCategory category;
     protected final Ingredient<T> ingredient;
     protected final float experience;

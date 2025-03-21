@@ -19,4 +19,5 @@ public class ComponentKeys {
     public static final String TOOLTIP_STYLE = Key.key("minecraft", "tooltip_style").asString();
     public static final String JUKEBOX_PLAYABLE = Key.key("minecraft", "jukebox_playable").asString();
     public static final String TRIM = Key.key("minecraft", "trim").asString();
+    public static final String REPAIR_COST = Key.key("minecraft", "repair_cost").asString();
 }

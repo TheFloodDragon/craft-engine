@@ -2,6 +2,7 @@ package net.momirealms.craftengine.core.item;
 
 import net.momirealms.craftengine.core.plugin.Plugin;
 import net.momirealms.craftengine.core.util.Key;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -18,6 +19,8 @@ public abstract class ItemFactory<P extends Plugin, W extends ItemWrapper<I>, I>
         Objects.requireNonNull(item, "item");
         return new AbstractItem<>(this, wrapInternal(item));
     }
+
+    public abstract Object encodeJava(Key componentType, @Nullable Object component);
 
     protected abstract ItemWrapper<I> wrapInternal(I item);
 
@@ -49,9 +52,9 @@ public abstract class ItemFactory<P extends Plugin, W extends ItemWrapper<I>, I>
 
     protected abstract Optional<Integer> customModelData(ItemWrapper<I> item);
 
-    protected abstract void displayName(ItemWrapper<I> item, String json);
+    protected abstract void customName(ItemWrapper<I> item, String json);
 
-    protected abstract Optional<String> displayName(ItemWrapper<I> item);
+    protected abstract Optional<String> customName(ItemWrapper<I> item);
 
     protected abstract void itemName(ItemWrapper<I> item, String json);
 
@@ -104,4 +107,10 @@ public abstract class ItemFactory<P extends Plugin, W extends ItemWrapper<I>, I>
     protected abstract boolean is(ItemWrapper<I> item, Key itemTag);
 
     protected abstract boolean isBlockItem(ItemWrapper<I> item);
+
+    protected abstract void repairCost(ItemWrapper<I> item, Integer data);
+
+    protected abstract Optional<Integer> repairCost(ItemWrapper<I> item);
+
+    protected abstract ItemWrapper<I> merge(ItemWrapper<I> item1, ItemWrapper<I> item2);
 }

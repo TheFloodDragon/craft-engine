@@ -108,7 +108,7 @@ public class BukkitBlockManager extends AbstractBlockManager {
             this.fallingBlockRemoveListener = new FallingBlockRemoveListener();
         } else this.fallingBlockRemoveListener = null;
         this.stateId2ImmutableBlockStates = new ImmutableBlockState[customBlockCount];
-        Arrays.fill(this.stateId2ImmutableBlockStates, EmptyBlock.INSTANCE.getDefaultState());
+        Arrays.fill(this.stateId2ImmutableBlockStates, EmptyBlock.INSTANCE.defaultState());
         instance = this;
     }
 
@@ -133,7 +133,7 @@ public class BukkitBlockManager extends AbstractBlockManager {
         this.cachedSuggestions.clear();
         this.blockStateOverrides.clear();
         if (EmptyBlock.INSTANCE != null)
-            Arrays.fill(this.stateId2ImmutableBlockStates, EmptyBlock.INSTANCE.getDefaultState());
+            Arrays.fill(this.stateId2ImmutableBlockStates, EmptyBlock.INSTANCE.defaultState());
     }
 
     @Override
@@ -165,8 +165,12 @@ public class BukkitBlockManager extends AbstractBlockManager {
     }
 
     public void initWorldEditHook() {
-        for (Key newBlockId : this.blockRegisterOrder) {
-            WorldEditHook.register(newBlockId);
+        try {
+            for (Key newBlockId : this.blockRegisterOrder) {
+                WorldEditHook.register(newBlockId);
+            }
+        } catch (Exception e) {
+            this.plugin.logger().warn("Failed to initialize world edit hook", e);
         }
     }
 

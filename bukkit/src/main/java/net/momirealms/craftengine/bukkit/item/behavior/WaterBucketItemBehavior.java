@@ -46,7 +46,7 @@ public class WaterBucketItemBehavior extends ItemBehavior {
 
         // TODO Refactor all of this because it's playing a trick with the server
         ImmutableBlockState nextState = state.with(waterlogged, true);
-        block.setBlockData(BlockStateUtils.createBlockData(nextState.vanillaBlockState().handle()), false);
+        block.setBlockData(BlockStateUtils.fromBlockData(nextState.vanillaBlockState().handle()), false);
         // actually we should broadcast this change
         context.getPlayer().sendPacket(BlockStateUtils.createBlockUpdatePacket(pos, state), true);
         BukkitCraftEngine.instance().scheduler().sync().runDelayed(() ->

@@ -1,7 +1,11 @@
 package net.momirealms.craftengine.bukkit.item.factory;
 
+import com.saicone.rtag.RtagItem;
 import com.saicone.rtag.data.ComponentType;
+import com.saicone.rtag.item.ItemObject;
+import net.momirealms.craftengine.bukkit.item.RTagItemWrapper;
 import net.momirealms.craftengine.bukkit.util.EnchantmentUtils;
+import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.core.item.ComponentKeys;
 import net.momirealms.craftengine.core.item.Enchantment;
 import net.momirealms.craftengine.core.item.ItemWrapper;
@@ -9,6 +13,7 @@ import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.VersionHelper;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +52,11 @@ public class ComponentItemFactory extends BukkitItemFactory {
     }
 
     @Override
+    public Object encodeJava(Key componentType, @Nullable Object component) {
+        return ComponentType.encodeJava(componentType, component).orElse(null);
+    }
+
+    @Override
     protected void customModelData(ItemWrapper<ItemStack> item, Integer data) {
         if (data == null) {
             item.removeComponent(ComponentKeys.CUSTOM_MODEL_DATA);
@@ -62,7 +72,7 @@ public class ComponentItemFactory extends BukkitItemFactory {
     }
 
     @Override
-    protected void displayName(ItemWrapper<ItemStack> item, String json) {
+    protected void customName(ItemWrapper<ItemStack> item, String json) {
         if (json == null) {
             item.removeComponent(ComponentKeys.CUSTOM_NAME);
         } else {
@@ -71,7 +81,7 @@ public class ComponentItemFactory extends BukkitItemFactory {
     }
 
     @Override
-    protected Optional<String> displayName(ItemWrapper<ItemStack> item) {
+    protected Optional<String> customName(ItemWrapper<ItemStack> item) {
         if (!item.hasComponent(ComponentKeys.CUSTOM_NAME)) return Optional.empty();
         return Optional.ofNullable(
                 (String) ComponentType.encodeJava(
@@ -271,5 +281,34 @@ public class ComponentItemFactory extends BukkitItemFactory {
         } else {
             item.setComponent(ComponentKeys.MAX_STACK_SIZE, maxStackSize);
         }
+    }
+
+    @Override
+    protected void repairCost(ItemWrapper<ItemStack> item, Integer data) {
+        if (data == null) {
+            item.removeComponent(ComponentKeys.REPAIR_COST);
+        } else {
+            item.setComponent(ComponentKeys.REPAIR_COST, data);
+        }
+    }
+
+    @Override
+    protected Optional<Integer> repairCost(ItemWrapper<ItemStack> item) {
+        if (!item.hasComponent(ComponentKeys.REPAIR_COST)) return Optional.empty();
+        return Optional.ofNullable((Integer) ComponentType.encodeJava(ComponentKeys.REPAIR_COST, item.getComponent(ComponentKeys.REPAIR_COST)).orElse(null));
+    }
+
+    @Override
+    protected ItemWrapper<ItemStack> merge(ItemWrapper<ItemStack> item1, ItemWrapper<ItemStack> item2) {
+        Object itemStack1 = item1.getLiteralObject();
+        Object itemStack2 = item2.getLiteralObject();
+        try {
+            Object itemStack3 = Reflections.method$ItemStack$transmuteCopy.invoke(itemStack1, Reflections.method$ItemStack$getItem.invoke(itemStack2), 1);
+            Reflections.method$ItemStack$applyComponents.invoke(itemStack3, Reflections.method$ItemStack$getComponentsPatch.invoke(itemStack2));
+            return new RTagItemWrapper(new RtagItem(ItemObject.asCraftMirror(itemStack3)), item2.count());
+        } catch (Exception e) {
+            this.plugin.logger().warn("Failed to merge item", e);
+        }
+        return null;
     }
 }

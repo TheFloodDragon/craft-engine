@@ -2,10 +2,12 @@ package net.momirealms.craftengine.core.plugin.gui.category;
 
 import dev.dejvokep.boostedyaml.block.implementation.Section;
 import net.momirealms.craftengine.core.entity.player.Player;
+import net.momirealms.craftengine.core.item.recipe.Recipe;
 import net.momirealms.craftengine.core.pack.LoadingSequence;
 import net.momirealms.craftengine.core.plugin.Reloadable;
 import net.momirealms.craftengine.core.plugin.config.ConfigManager;
 import net.momirealms.craftengine.core.plugin.config.ConfigSectionParser;
+import net.momirealms.craftengine.core.plugin.gui.Gui;
 import net.momirealms.craftengine.core.util.Key;
 
 import java.util.List;
@@ -33,6 +35,10 @@ public interface ItemBrowserManager extends Reloadable, ConfigSectionParser {
 
     void open(Player player);
 
+    void openRecipePage(Player player, Gui parentGui, List<Recipe<Object>> recipes, int index, int depth, boolean canOpenNoRecipePage);
+
+    void openNoRecipePage(Player player, Key result, Gui parentGui, int depth);
+
     TreeSet<Category> categories();
 
     Optional<Category> byId(Key key);
@@ -46,6 +52,7 @@ public interface ItemBrowserManager extends Reloadable, ConfigSectionParser {
 
         public static String CATEGORY_TITLE;
         public static Key CATEGORY_BACK;
+        public static Key CATEGORY_EXIT;
         public static Key CATEGORY_NEXT_PAGE_AVAILABLE;
         public static Key CATEGORY_NEXT_PAGE_BLOCK;
         public static Key CATEGORY_PREVIOUS_PAGE_AVAILABLE;
@@ -58,7 +65,9 @@ public interface ItemBrowserManager extends Reloadable, ConfigSectionParser {
         public static String RECIPE_CAMPFIRE_TITLE;
         public static String RECIPE_CRAFTING_TITLE;
         public static String RECIPE_STONECUTTING_TITLE;
+        public static String RECIPE_SMITHING_TRANSFORM_TITLE;
         public static Key RECIPE_BACK;
+        public static Key RECIPE_EXIT;
         public static Key RECIPE_NEXT_PAGE_AVAILABLE;
         public static Key RECIPE_NEXT_PAGE_BLOCK;
         public static Key RECIPE_PREVIOUS_PAGE_AVAILABLE;
@@ -82,6 +91,7 @@ public interface ItemBrowserManager extends Reloadable, ConfigSectionParser {
 
             CATEGORY_TITLE = getOrThrow(section, "category.title");
             CATEGORY_BACK = Key.of(getOrThrow(section, "category.page-navigation.return"));
+            CATEGORY_EXIT = Key.of(getOrThrow(section, "category.page-navigation.exit"));
             CATEGORY_NEXT_PAGE_AVAILABLE = Key.of(getOrThrow(section, "category.page-navigation.next.available"));
             CATEGORY_NEXT_PAGE_BLOCK = Key.of(getOrThrow(section, "category.page-navigation.next.not-available"));
             CATEGORY_PREVIOUS_PAGE_AVAILABLE = Key.of(getOrThrow(section, "category.page-navigation.previous.available"));
@@ -91,10 +101,12 @@ public interface ItemBrowserManager extends Reloadable, ConfigSectionParser {
             RECIPE_BLASTING_TITLE = getOrThrow(section, "recipe.blasting.title");
             RECIPE_SMELTING_TITLE = getOrThrow(section, "recipe.smelting.title");
             RECIPE_SMOKING_TITLE = getOrThrow(section, "recipe.smoking.title");
-            RECIPE_CAMPFIRE_TITLE = getOrThrow(section, "recipe.campfire.title");
+            RECIPE_CAMPFIRE_TITLE = getOrThrow(section, "recipe.campfire-cooking.title");
             RECIPE_CRAFTING_TITLE = getOrThrow(section, "recipe.crafting.title");
             RECIPE_STONECUTTING_TITLE = getOrThrow(section, "recipe.stonecutting.title");
+            RECIPE_SMITHING_TRANSFORM_TITLE = getOrThrow(section, "recipe.smithing-transform.title");
             RECIPE_BACK = Key.of(getOrThrow(section, "recipe.page-navigation.return"));
+            RECIPE_EXIT = Key.of(getOrThrow(section, "recipe.page-navigation.exit"));
             RECIPE_NEXT_PAGE_AVAILABLE = Key.of(getOrThrow(section, "recipe.page-navigation.next.available"));
             RECIPE_NEXT_PAGE_BLOCK = Key.of(getOrThrow(section, "recipe.page-navigation.next.not-available"));
             RECIPE_PREVIOUS_PAGE_AVAILABLE = Key.of(getOrThrow(section, "recipe.page-navigation.previous.available"));

@@ -3,7 +3,7 @@ items:
     material: paper
     custom-model-data: 2000
     data:
-      display-name: "<!i><i18n:item.bench>"
+      item-name: "<!i><i18n:item.bench>"
     model:
       type: "minecraft:model"
       path: "minecraft:item/custom/bench"
@@ -42,14 +42,14 @@ items:
                 seats:
                   - 1,0,-0.1 0
         loot:
-          template: loot_table:normal
+          template: "default:loot_table/basic"
           arguments:
             item: default:bench
   default:table_lamp:
     material: paper
     custom-model-data: 2001
     data:
-      display-name: "<!i><i18n:item.table_lamp>"
+      item-name: "<!i><i18n:item.table_lamp>"
     model:
       type: "minecraft:model"
       path: "minecraft:item/custom/table_lamp"
@@ -86,14 +86,14 @@ items:
                 height: 0.4
                 interactive: true
         loot:
-          template: loot_table:normal
+          template: "default:loot_table/basic"
           arguments:
             item: default:table_lamp
   default:wooden_chair:
     material: paper
     custom-model-data: 2002
     data:
-      display-name: "<!i><i18n:item.wooden_chair>"
+      item-name: "<!i><i18n:item.wooden_chair>"
     model:
       type: "minecraft:model"
       path: "minecraft:item/custom/wooden_chair"
@@ -123,6 +123,6 @@ items:
                 seats:
                   - 0,0,-0.1 0
         loot:
-          template: loot_table:normal
+          template: "default:loot_table/basic"
           arguments:
             item: default:wooden_chair

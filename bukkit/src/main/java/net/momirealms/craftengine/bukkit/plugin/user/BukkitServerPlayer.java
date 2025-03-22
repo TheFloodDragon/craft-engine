@@ -16,15 +16,15 @@ import net.momirealms.craftengine.core.plugin.network.ConnectionState;
 import net.momirealms.craftengine.core.util.Direction;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.VersionHelper;
-import net.momirealms.craftengine.core.world.BlockPos;
-import net.momirealms.craftengine.core.world.Vec3d;
 import net.momirealms.craftengine.core.world.World;
+import net.momirealms.craftengine.core.world.*;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.Reference;
@@ -199,6 +199,31 @@ public class BukkitServerPlayer extends Player {
     @Override
     public void closeInventory() {
         platformPlayer().closeInventory();
+    }
+
+    // TODO DO NOT USE BUKKIT API
+    @Override
+    public BlockHitResult rayTrace(double distance, FluidCollisionRule collisionRule) {
+        RayTraceResult result = platformPlayer().rayTraceBlocks(distance, FluidUtils.toCollisionRule(collisionRule));
+        if (result == null) {
+            Location eyeLocation = platformPlayer().getEyeLocation();
+            Location targetLocation = eyeLocation.clone();
+            targetLocation.add(eyeLocation.getDirection().multiply(distance));
+            return BlockHitResult.miss(new Vec3d(eyeLocation.getX(), eyeLocation.getY(), eyeLocation.getZ()),
+                    Direction.getApproximateNearest(eyeLocation.getX() - targetLocation.getX(), eyeLocation.getY() - targetLocation.getY(), eyeLocation.getZ() - targetLocation.getZ()),
+                    new BlockPos(targetLocation.getBlockX(), targetLocation.getBlockY(), targetLocation.getBlockZ())
+            );
+        } else {
+            Vector hitPos = result.getHitPosition();
+            Block hitBlock = result.getHitBlock();
+            Location hitBlockLocation = hitBlock.getLocation();
+            return new BlockHitResult(
+                    new Vec3d(hitPos.getX(), hitPos.getY(), hitPos.getZ()),
+                    DirectionUtils.toDirection(result.getHitBlockFace()),
+                    new BlockPos(hitBlockLocation.getBlockX(), hitBlockLocation.getBlockY(), hitBlockLocation.getBlockZ()),
+                    false
+            );
+        }
     }
 
     @Override

@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 public class ItemBehaviors {
+    public static final Key EMPTY = Key.from("craftengine:empty");
 
     public static void register(Key key, ItemBehaviorFactory factory) {
         Holder.Reference<ItemBehaviorFactory> holder = ((WritableRegistry<ItemBehaviorFactory>) BuiltInRegistries.ITEM_BEHAVIOR_FACTORY)

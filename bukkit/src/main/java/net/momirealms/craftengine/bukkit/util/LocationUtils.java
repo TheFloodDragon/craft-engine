@@ -13,12 +13,28 @@ public class LocationUtils {
         return new Vec3d(loc.getX(), loc.getY(), loc.getZ());
     }
 
+    public static Vec3d fromVec(Object vec) throws ReflectiveOperationException {
+        return new Vec3d(
+            Reflections.field$Vec3$x.getDouble(vec),
+            Reflections.field$Vec3$y.getDouble(vec),
+            Reflections.field$Vec3$z.getDouble(vec)
+        );
+    }
+
     public static Object toBlockPos(BlockPos pos) {
         try {
             return Reflections.constructor$BlockPos.newInstance(pos.x(), pos.y(), pos.z());
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to create BlockPos", e);
         }
+    }
+
+    public static Object above(Object blockPos) throws ReflectiveOperationException {
+        return toBlockPos(
+            Reflections.field$Vec3i$x.getInt(blockPos),
+            Reflections.field$Vec3i$y.getInt(blockPos) + 1,
+            Reflections.field$Vec3i$z.getInt(blockPos)
+        );
     }
 
     public static Object toBlockPos(int x, int y, int z) {

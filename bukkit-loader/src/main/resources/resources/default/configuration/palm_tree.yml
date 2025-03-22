@@ -235,7 +235,7 @@ items:
           # To prevent errors, we use tree feature from vanilla here
           feature: minecraft:fancy_oak
           bone-meal-success-chance: 0.45
-          tags:
+          bottom-block-tags:
             - minecraft:dirt
             - minecraft:farmland
             - minecraft:sand

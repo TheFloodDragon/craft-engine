@@ -2,6 +2,7 @@ package net.momirealms.craftengine.bukkit.world;
 
 import net.momirealms.craftengine.bukkit.util.EntityUtils;
 import net.momirealms.craftengine.bukkit.util.ItemUtils;
+import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.VersionHelper;
@@ -28,36 +29,45 @@ public class BukkitWorld implements World {
     }
 
     @Override
-    public org.bukkit.World getHandle() {
+    public org.bukkit.World platformWorld() {
         return world.get();
+    }
+
+    @Override
+    public Object serverWorld() {
+        try {
+            return Reflections.field$CraftWorld$ServerLevel.get(platformWorld());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get server world", e);
+        }
     }
 
     @Override
     public WorldHeight worldHeight() {
         if (this.worldHeight == null) {
-            this.worldHeight = WorldHeight.create(getHandle().getMinHeight(), getHandle().getMaxHeight() - getHandle().getMinHeight());
+            this.worldHeight = WorldHeight.create(platformWorld().getMinHeight(), platformWorld().getMaxHeight() - platformWorld().getMinHeight());
         }
         return this.worldHeight;
     }
 
     @Override
     public WorldBlock getBlockAt(int x, int y, int z) {
-        return new BukkitWorldBlock(getHandle().getBlockAt(x, y, z));
+        return new BukkitWorldBlock(platformWorld().getBlockAt(x, y, z));
     }
 
     @Override
     public String name() {
-        return getHandle().getName();
+        return platformWorld().getName();
     }
 
     @Override
     public Path directory() {
-        return getHandle().getWorldFolder().toPath();
+        return platformWorld().getWorldFolder().toPath();
     }
 
     @Override
     public UUID uuid() {
-        return getHandle().getUID();
+        return platformWorld().getUID();
     }
 
     @Override
@@ -65,16 +75,16 @@ public class BukkitWorld implements World {
         ItemStack itemStack = (ItemStack) item.load();
         if (ItemUtils.isEmpty(itemStack)) return;
         if (VersionHelper.isVersionNewerThan1_21_2()) {
-            getHandle().dropItemNaturally(new Location(null, location.x(), location.y(), location.z()), (ItemStack) item.getItem());
+            platformWorld().dropItemNaturally(new Location(null, location.x(), location.y(), location.z()), (ItemStack) item.getItem());
         } else {
-            getHandle().dropItemNaturally(new Location(null, location.x() - 0.5, location.y() - 0.5, location.z() - 0.5), (ItemStack) item.getItem());
+            platformWorld().dropItemNaturally(new Location(null, location.x() - 0.5, location.y() - 0.5, location.z() - 0.5), (ItemStack) item.getItem());
         }
     }
 
     @Override
     public void dropExp(Vec3d location, int amount) {
         if (amount <= 0) return;
-        EntityUtils.spawnEntity(getHandle(), new Location(getHandle(), location.x(), location.y(), location.z()), EntityType.EXPERIENCE_ORB, (e) -> {
+        EntityUtils.spawnEntity(platformWorld(), new Location(platformWorld(), location.x(), location.y(), location.z()), EntityType.EXPERIENCE_ORB, (e) -> {
             ExperienceOrb orb = (ExperienceOrb) e;
             orb.setExperience(amount);
         });
@@ -82,6 +92,6 @@ public class BukkitWorld implements World {
 
     @Override
     public void playBlockSound(Vec3d location, Key sound, float volume, float pitch) {
-        getHandle().playSound(new Location(null, location.x(), location.y(), location.z()), sound.toString(), SoundCategory.BLOCKS, volume, pitch);
+        platformWorld().playSound(new Location(null, location.x(), location.y(), location.z()), sound.toString(), SoundCategory.BLOCKS, volume, pitch);
     }
 }

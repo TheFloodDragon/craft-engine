@@ -2,6 +2,7 @@ i18n:
   en:
     item.chinese_lantern: "Chinese Lantern"
     item.fairy_flower: "Fairy Flower"
+    item.reed: "Reed"
     item.bench: "Bench"
     item.table_lamp: "Table Lamp"
     item.wooden_chair: "Wooden Chair"
@@ -36,6 +37,7 @@ i18n:
   zh_cn:
     item.chinese_lantern: "灯笼"
     item.fairy_flower: "仙灵花"
+    item.reed: "芦苇"
     item.bench: "长椅"
     item.table_lamp: "台灯"
     item.wooden_chair: "木椅"

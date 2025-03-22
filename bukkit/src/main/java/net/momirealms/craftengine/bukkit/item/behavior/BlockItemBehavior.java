@@ -79,7 +79,7 @@ public class BlockItemBehavior extends ItemBehavior {
 
         BlockPos pos = placeContext.getClickedPos();
         BlockPos againstPos = placeContext.getAgainstPos();
-        World world = (World) placeContext.getLevel().getHandle();
+        World world = (World) placeContext.getLevel().platformWorld();
         Location placeLocation = new Location(world, pos.x(), pos.y(), pos.z());
 
         Block bukkitBlock = world.getBlockAt(placeLocation);
@@ -151,7 +151,7 @@ public class BlockItemBehavior extends ItemBehavior {
             Object blockState = state.customBlockState().handle();
             Object blockPos = LocationUtils.toBlockPos(context.getClickedPos());
             Object voxelShape = Reflections.method$CollisionContext$of.invoke(null, player);
-            Object world = Reflections.field$CraftWorld$ServerLevel.get(context.getLevel().getHandle());
+            Object world = Reflections.field$CraftWorld$ServerLevel.get(context.getLevel().platformWorld());
             boolean defaultReturn = ((!this.checkStatePlacement() || (boolean) Reflections.method$BlockStateBase$canSurvive.invoke(blockState, world, blockPos))
                     && (boolean) Reflections.method$ServerLevel$checkEntityCollision.invoke(world, blockState, player, voxelShape, blockPos, true));
             Block block = (Block) Reflections.method$CraftBlock$at.invoke(null, world, blockPos);

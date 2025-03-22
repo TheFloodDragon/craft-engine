@@ -24,7 +24,7 @@ import net.momirealms.craftengine.shared.block.*;
 import org.jetbrains.annotations.NotNull;
 
 public class CraftEngineBlock extends Block implements BehaviorHolder, ShapeHolder, NoteBlockIndicator, Fallable, BonemealableBlock {
-    private static final PaperWeightStoneBlockShape STONE = new PaperWeightStoneBlockShape(Blocks.STONE.defaultBlockState());
+    private static final StoneBlockShape STONE = new StoneBlockShape(Blocks.STONE.defaultBlockState());
     private boolean isNoteBlock;
     public ObjectHolder<BlockBehavior> behaviorHolder;
     public ObjectHolder<BlockShape> shapeHolder;

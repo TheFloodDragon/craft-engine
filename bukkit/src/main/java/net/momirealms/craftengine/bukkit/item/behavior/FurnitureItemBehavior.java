@@ -77,7 +77,7 @@ public class FurnitureItemBehavior extends ItemBehavior {
 
         // trigger event
         org.bukkit.entity.Player bukkitPlayer = (org.bukkit.entity.Player) player.platformPlayer();
-        World world = (World) context.getLevel().getHandle();
+        World world = (World) context.getLevel().platformWorld();
 
         // get position and rotation for placement
         Vec3d finalPlacePosition;

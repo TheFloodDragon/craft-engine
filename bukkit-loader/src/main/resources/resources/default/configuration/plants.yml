@@ -1,7 +1,7 @@
 items:
   default:fairy_flower:
     material: paper
-    custom-model-data: 3000
+    custom-model-data: 3001
     data:
       item-name: "<!i><i18n:item.fairy_flower>"
     model:
@@ -11,6 +11,18 @@ items:
     behavior:
       type: block_item
       block: default:fairy_flower
+  default:reed:
+    material: paper
+    custom-model-data: 3002
+    data:
+      item-name: "<!i><i18n:item.reed>"
+    model:
+      template: default:model/simplified_generated
+      arguments:
+        path: "minecraft:item/custom/reed"
+    behavior:
+      type: liquid_collision_block_item
+      block: default:reed
 blocks:
   default:fairy_flower:
     settings:
@@ -19,6 +31,7 @@ blocks:
         - default:sound/grass
       overrides:
         item: default:fairy_flower
+        push-reaction: DESTROY
     behavior:
       type: bush_block
     loot:
@@ -27,7 +40,7 @@ blocks:
         item: default:fairy_flower
     state:
       id: 0
-      state: tripwire:0
+      state: sugar_cane:0
       models:
         - path: "minecraft:block/custom/fairy_flower_1"
           weight: 100
@@ -49,3 +62,23 @@ blocks:
             parent: "minecraft:block/custom/fairy_flower_1"
             textures:
               "0": "minecraft:block/custom/fairy_flower_4"
+  default:reed:
+    settings:
+      template:
+        - default:hardness/none
+        - default:sound/grass
+      overrides:
+        item: default:reed
+        push-reaction: DESTROY
+    behavior:
+      type: on_liquid_block
+      liquid-type: water
+    loot:
+      template: "default:loot_table/basic"
+      arguments:
+        item: default:reed
+    state:
+      id: 1
+      state: sugar_cane:1
+      model:
+        path: "minecraft:block/custom/reed"

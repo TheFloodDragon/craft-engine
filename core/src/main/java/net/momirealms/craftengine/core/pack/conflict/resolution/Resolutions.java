@@ -12,6 +12,7 @@ import java.util.Map;
 public class Resolutions {
     public static final Key RETAIN_MATCHING = Key.of("craftengine:retain_matching");
     public static final Key MERGE_JSON = Key.of("craftengine:merge_json");
+    public static final Key MERGE_ATLAS = Key.of("craftengine:merge_atlas");
     public static final Key CONDITIONAL = Key.of("craftengine:conditional");
     public static final Key MERGE_PACK_MCMETA = Key.of("craftengine:merge_pack_mcmeta");
 
@@ -20,6 +21,7 @@ public class Resolutions {
         register(MERGE_JSON, MergeJsonResolution.FACTORY);
         register(CONDITIONAL, ConditionalResolution.FACTORY);
         register(MERGE_PACK_MCMETA, MergePackMcMetaResolution.FACTORY);
+        register(MERGE_ATLAS, MergeAltasResolution.FACTORY);
     }
 
     public static void register(Key key, ResolutionFactory factory) {

@@ -8,7 +8,9 @@ import java.util.UUID;
 
 public interface World {
 
-    Object getHandle();
+    Object platformWorld();
+
+    Object serverWorld();
 
     WorldHeight worldHeight();
 

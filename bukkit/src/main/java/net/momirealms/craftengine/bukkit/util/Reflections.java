@@ -1455,6 +1455,12 @@ public class Reflections {
             )
     );
 
+    public static final Method method$Direction$ordinal = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$Direction, new String[]{"ordinal"}
+            )
+    );
+
     public static final Method method$Direction$values = requireNonNull(
             ReflectionUtils.getStaticMethod(
                     clazz$Direction, clazz$Direction.arrayType()
@@ -3326,6 +3332,7 @@ public class Reflections {
     public static final Object instance$Blocks$STONE;
     public static final Object instance$Blocks$STONE$defaultState;
     public static final Object instance$Blocks$FIRE;
+    public static final Object instance$Blocks$ICE;
 
     static {
         try {
@@ -3337,6 +3344,8 @@ public class Reflections {
             Object stone = method$ResourceLocation$fromNamespaceAndPath.invoke(null, "minecraft", "stone");
             instance$Blocks$STONE = method$Registry$get.invoke(instance$BuiltInRegistries$BLOCK, stone);
             instance$Blocks$STONE$defaultState = method$Block$defaultBlockState.invoke(instance$Blocks$STONE);
+            Object ice = method$ResourceLocation$fromNamespaceAndPath.invoke(null, "minecraft", "ice");
+            instance$Blocks$ICE = method$Registry$get.invoke(instance$BuiltInRegistries$BLOCK, ice);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -3862,11 +3871,17 @@ public class Reflections {
     );
 
     public static final Object instance$Fluids$WATER;
+    public static final Object instance$Fluids$LAVA;
+    public static final Object instance$Fluids$EMPTY;
 
     static {
         try {
             Object waterId = method$ResourceLocation$fromNamespaceAndPath.invoke(null, "minecraft", "water");
             instance$Fluids$WATER = method$Registry$get.invoke(instance$BuiltInRegistries$FLUID, waterId);
+            Object lavaId = method$ResourceLocation$fromNamespaceAndPath.invoke(null, "minecraft", "lava");
+            instance$Fluids$LAVA = method$Registry$get.invoke(instance$BuiltInRegistries$FLUID, lavaId);
+            Object emptyId = method$ResourceLocation$fromNamespaceAndPath.invoke(null, "minecraft", "empty");
+            instance$Fluids$EMPTY = method$Registry$get.invoke(instance$BuiltInRegistries$FLUID, emptyId);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -5013,6 +5028,90 @@ public class Reflections {
     public static final Method method$ItemStack$getItem = requireNonNull(
             ReflectionUtils.getMethod(
                     clazz$ItemStack, clazz$Item
+            )
+    );
+
+    public static final Class<?> clazz$BlockHitResult = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("world.phys.BlockHitResult"),
+                    BukkitReflectionUtils.assembleMCClass("world.phys.MovingObjectPositionBlock")
+            )
+    );
+
+    public static final Class<?> clazz$ClipContext$Fluid = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("world.level.ClipContext$Fluid"),
+                    BukkitReflectionUtils.assembleMCClass("world.level.RayTrace$FluidCollisionOption")
+            )
+    );
+
+    public static final Method method$ClipContext$Fluid$values = requireNonNull(
+            ReflectionUtils.getStaticMethod(
+                    clazz$ClipContext$Fluid, clazz$ClipContext$Fluid.arrayType()
+            )
+    );
+
+    public static final Object instance$ClipContext$Fluid$NONE;
+    public static final Object instance$ClipContext$Fluid$SOURCE_ONLY;
+    public static final Object instance$ClipContext$Fluid$ANY;
+
+    static {
+        try {
+            Object[] values = (Object[]) method$ClipContext$Fluid$values.invoke(null);
+            instance$ClipContext$Fluid$NONE = values[0];
+            instance$ClipContext$Fluid$SOURCE_ONLY = values[1];
+            instance$ClipContext$Fluid$ANY = values[2];
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static final Method method$Item$getPlayerPOVHitResult = requireNonNull(
+            ReflectionUtils.getDeclaredMethod(
+                    clazz$Item, clazz$BlockHitResult, clazz$Level, clazz$Player, clazz$ClipContext$Fluid
+            )
+    );
+
+    public static final Method method$BlockHitResult$withPosition = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$BlockHitResult, clazz$BlockHitResult, clazz$BlockPos
+            )
+    );
+
+    public static final Field field$BlockHitResul$blockPos = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$BlockHitResult, clazz$BlockPos, 0
+            )
+    );
+
+    public static final Field field$BlockHitResul$direction = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$BlockHitResult, clazz$Direction, 0
+            )
+    );
+
+    public static final Field field$BlockHitResul$miss = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$BlockHitResult, boolean.class, 0
+            )
+    );
+
+    public static final Field field$BlockHitResul$inside = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$BlockHitResult, boolean.class, 1
+            )
+    );
+
+    public static final Class<?> clazz$HitResult = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("world.phys.HitResult"),
+                    BukkitReflectionUtils.assembleMCClass("world.phys.MovingObjectPosition")
+            )
+    );
+
+    public static final Field field$HitResult$location = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$HitResult, clazz$Vec3, 0
             )
     );
 }

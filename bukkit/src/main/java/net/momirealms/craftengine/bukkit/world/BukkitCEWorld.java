@@ -15,7 +15,7 @@ public class BukkitCEWorld extends CEWorld {
     @Override
     public void tick() {
         if (ConfigManager.enableLightSystem()) {
-            LightUtils.updateChunkLight((org.bukkit.World) world.getHandle(), SectionPosUtils.toMap(super.updatedSectionPositions, world.worldHeight().getMinSection() - 1, world.worldHeight().getMaxSection() + 1));
+            LightUtils.updateChunkLight((org.bukkit.World) world.platformWorld(), SectionPosUtils.toMap(super.updatedSectionPositions, world.worldHeight().getMinSection() - 1, world.worldHeight().getMaxSection() + 1));
             super.updatedSectionPositions.clear();
         }
     }

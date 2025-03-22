@@ -6,10 +6,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.momirealms.craftengine.shared.block.BlockShape;
 
-public class PaperWeightStoneBlockShape implements BlockShape {
+public class StoneBlockShape implements BlockShape {
     private final BlockState rawBlockState;
 
-    public PaperWeightStoneBlockShape(BlockState rawBlockState) {
+    public StoneBlockShape(BlockState rawBlockState) {
         this.rawBlockState = rawBlockState;
     }
 

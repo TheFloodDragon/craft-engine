@@ -1,7 +1,7 @@
 items:
   default:chinese_lantern:
     material: paper
-    custom-model-data: 3001
+    custom-model-data: 3000
     data:
       item-name: "<!i><i18n:item.chinese_lantern>"
     model:

@@ -320,14 +320,17 @@ public abstract class AbstractPackManager implements PackManager {
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/stripped_palm_log.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/stripped_palm_log_top.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/palm_leaves.png");
-        // fairy flower
-        plugin.saveResource("resources/default/configuration/fairy_flower.yml");
+        // plants
+        plugin.saveResource("resources/default/configuration/plants.yml");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/fairy_flower_1.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/fairy_flower_2.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/fairy_flower_3.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/fairy_flower_4.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/reed.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/fairy_flower.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/reed.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/models/block/custom/fairy_flower_1.json");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/models/block/custom/reed.json");
         // furniture
         plugin.saveResource("resources/default/configuration/furniture.yml");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/models/item/custom/table_lamp.json");

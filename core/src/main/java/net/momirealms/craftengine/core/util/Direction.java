@@ -182,6 +182,21 @@ public enum Direction {
         };
     }
 
+    public static Direction getApproximateNearest(double x, double y, double z) {
+        Direction nearestDirection = null;
+        double maxDotProduct = -Double.MAX_VALUE;
+        for (Direction direction : Direction.values()) {
+            double dotProduct = x * direction.vec.x() +
+                    y * direction.vec.y() +
+                    z * direction.vec.z();
+            if (dotProduct > maxDotProduct) {
+                maxDotProduct = dotProduct;
+                nearestDirection = direction;
+            }
+        }
+        return nearestDirection;
+    }
+
     public static Direction from3DDataValue(int id) {
         return BY_3D_DATA[Math.abs(id % BY_3D_DATA.length)];
     }

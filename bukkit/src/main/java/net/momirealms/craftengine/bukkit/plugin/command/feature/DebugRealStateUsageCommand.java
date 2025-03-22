@@ -44,22 +44,32 @@ public class DebugRealStateUsageCommand extends BukkitCommandFeature<CommandSend
                     List<Integer> reals = blockManager.realBlockArranger().get(baseBlockId);
                     if (reals == null) return;
                     int i = 0;
-                    Component component = Component.text(baseBlockId + ": ");
-                    List<Component> children = new ArrayList<>();
+                    Component block = Component.text(baseBlockId + ": ");
+                    plugin().senderFactory().wrap(context.sender()).sendMessage(block);
+
+                    List<Component> batch = new ArrayList<>(100);
                     for (int real : reals) {
                         ImmutableBlockState state = blockManager.getImmutableBlockStateUnsafe(real);
                         if (state.isEmpty()) {
                             Component hover = Component.text("craftengine:" + baseBlockId.value() + "_" + i).color(NamedTextColor.GREEN);
-                            children.add(Component.text("|").color(NamedTextColor.GREEN).hoverEvent(HoverEvent.showText(hover)));
+                            batch.add(Component.text("|").color(NamedTextColor.GREEN).hoverEvent(HoverEvent.showText(hover)));
                         } else {
                             Component hover = Component.text("craftengine:" + baseBlockId.value() + "_" + i).color(NamedTextColor.RED);
                             hover = hover.append(Component.newline()).append(Component.text(state.toString()).color(NamedTextColor.GRAY));
-                            children.add(Component.text("|").color(NamedTextColor.RED).hoverEvent(HoverEvent.showText(hover)));
+                            batch.add(Component.text("|").color(NamedTextColor.RED).hoverEvent(HoverEvent.showText(hover)));
                         }
                         i++;
+                        if (batch.size() == 100) {
+                            plugin().senderFactory().wrap(context.sender())
+                                    .sendMessage(Component.text("").children(batch));
+                            batch.clear();
+                        }
                     }
-                    plugin().senderFactory().wrap(context.sender())
-                            .sendMessage(component.children(children));
+                    if (!batch.isEmpty()) {
+                        plugin().senderFactory().wrap(context.sender())
+                                .sendMessage(Component.text("").children(batch));
+                        batch.clear();
+                    }
                 });
     }
 

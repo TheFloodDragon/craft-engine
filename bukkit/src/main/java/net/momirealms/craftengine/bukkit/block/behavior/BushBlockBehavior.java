@@ -83,7 +83,9 @@ public class BushBlockBehavior extends BlockBehavior {
     public static class Factory implements BlockBehaviorFactory {
         @Override
         public BlockBehavior create(CustomBlock block, Map<String, Object> arguments) {
-            if (arguments.containsKey("tags")) {
+            if (arguments.containsKey("bottom-block-tags")) {
+                return new BushBlockBehavior(MiscUtils.getAsStringList(arguments.get("bottom-block-tags")).stream().map(it -> BlockTags.getOrCreate(Key.of(it))).toList());
+            } else if (arguments.containsKey("tags")) {
                 return new BushBlockBehavior(MiscUtils.getAsStringList(arguments.get("tags")).stream().map(it -> BlockTags.getOrCreate(Key.of(it))).toList());
             } else {
                 return INSTANCE;
@@ -100,7 +102,7 @@ public class BushBlockBehavior extends BlockBehavior {
         return mayPlaceOn(belowState, world, belowPos);
     }
 
-    private boolean mayPlaceOn(Object belowState, Object world, Object blockPos) throws ReflectiveOperationException {
+    protected boolean mayPlaceOn(Object belowState, Object world, Object belowPos) throws ReflectiveOperationException {
         for (Object tag : this.tagsCanSurviveOn) {
             if ((boolean) Reflections.method$BlockStateBase$hasTag.invoke(belowState, tag)) {
                 return true;

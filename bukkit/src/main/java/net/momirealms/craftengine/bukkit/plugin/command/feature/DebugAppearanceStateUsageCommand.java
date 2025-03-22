@@ -44,8 +44,10 @@ public class DebugAppearanceStateUsageCommand extends BukkitCommandFeature<Comma
                     List<Integer> appearances = blockManager.blockAppearanceArranger().get(baseBlockId);
                     if (appearances == null) return;
                     int i = 0;
-                    Component component = Component.text(baseBlockId + ": ");
-                    List<Component> children = new ArrayList<>();
+                    Component block = Component.text(baseBlockId + ": ");
+                    plugin().senderFactory().wrap(context.sender()).sendMessage(block);
+
+                    List<Component> batch = new ArrayList<>();
                     for (int appearance : appearances) {
                         Component text = Component.text("|");
                         List<Integer> reals = blockManager.appearanceToRealStates(appearance);
@@ -64,11 +66,19 @@ public class DebugAppearanceStateUsageCommand extends BukkitCommandFeature<Comma
                             }
                             text = text.color(NamedTextColor.RED).hoverEvent(HoverEvent.showText(hover.children(hoverChildren)));
                         }
-                        children.add(text);
+                        batch.add(text);
                         i++;
+                        if (batch.size() == 100) {
+                            plugin().senderFactory().wrap(context.sender())
+                                    .sendMessage(Component.text("").children(batch));
+                            batch.clear();
+                        }
                     }
-                    plugin().senderFactory().wrap(context.sender())
-                            .sendMessage(component.children(children));
+                    if (!batch.isEmpty()) {
+                        plugin().senderFactory().wrap(context.sender())
+                                .sendMessage(Component.text("").children(batch));
+                        batch.clear();
+                    }
                 });
     }
 

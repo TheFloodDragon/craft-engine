@@ -29,7 +29,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class BukkitServerPlayer extends Player {
     private final Channel channel;
@@ -59,6 +62,8 @@ public class BukkitServerPlayer extends Player {
     private int resentSwingTick;
 
     private Key lastUsedRecipe = null;
+
+    private Map<Integer, List<Integer>> furnitureView = new ConcurrentHashMap<>();
 
     public BukkitServerPlayer(BukkitCraftEngine plugin, Channel channel) {
         this.channel = channel;
@@ -229,6 +234,11 @@ public class BukkitServerPlayer extends Player {
     @Override
     public void sendPacket(Object packet, boolean immediately) {
         this.plugin.networkManager().sendPacket(this, packet, immediately);
+    }
+
+    @Override
+    public void receivePacket(Object packet) {
+        this.plugin.networkManager().receivePacket(this, packet);
     }
 
     @Override
@@ -576,6 +586,11 @@ public class BukkitServerPlayer extends Player {
     public org.bukkit.entity.Player platformPlayer() {
         if (playerRef == null) return null;
         return playerRef.get();
+    }
+
+    @Override
+    public Map<Integer, List<Integer>> furnitureView() {
+        return this.furnitureView;
     }
 
     public void setResendSound() {

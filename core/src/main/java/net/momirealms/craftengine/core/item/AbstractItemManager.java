@@ -23,6 +23,7 @@ public abstract class AbstractItemManager<I> extends AbstractModelGenerator impl
     protected static final List<Key> VANILLA_ITEMS = new ArrayList<>();
     protected static final Map<Key, List<Holder<Key>>> VANILLA_ITEM_TAGS = new HashMap<>();
 
+    protected final Map<String, ExternalItemProvider<I>> externalItemProviders = new HashMap<>();
     protected final Map<String, Function<Object, ItemModifier<I>>> dataFunctions = new HashMap<>();
     protected final Map<Key, CustomItem<I>> customItems = new HashMap<>();
     protected final Map<Key, List<Holder<Key>>> customItemTags;
@@ -45,6 +46,18 @@ public abstract class AbstractItemManager<I> extends AbstractModelGenerator impl
         for (Key key : items) {
             VANILLA_ITEM_EXTRA_BEHAVIORS.computeIfAbsent(key, k -> new ArrayList<>()).add(behavior);
         }
+    }
+
+    @Override
+    public ExternalItemProvider<I> getExternalItemProvider(String name) {
+        return this.externalItemProviders.get(name);
+    }
+
+    @Override
+    public boolean registerExternalItemProvider(ExternalItemProvider<I> externalItemProvider) {
+        if (this.externalItemProviders.containsKey(externalItemProvider.plugin())) return false;
+        this.externalItemProviders.put(externalItemProvider.plugin(), externalItemProvider);
+        return true;
     }
 
     @Override
@@ -165,6 +178,13 @@ public abstract class AbstractItemManager<I> extends AbstractModelGenerator impl
     }
 
     private void registerFunctions() {
+        registerDataFunction((obj) -> {
+            Map<String, Object> data = MiscUtils.castToMap(obj, false);
+            String plugin = data.get("plugin").toString();
+            String id = data.get("id").toString();
+            ExternalItemProvider<I> provider = AbstractItemManager.this.getExternalItemProvider(plugin);
+            return new ExternalModifier<>(id, Objects.requireNonNull(provider, "Item provider " + plugin + " not found"));
+        }, "external");
         registerDataFunction((obj) -> {
             String name = obj.toString();
             return new DisplayNameModifier<>(name);

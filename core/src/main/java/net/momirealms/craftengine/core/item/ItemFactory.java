@@ -112,5 +112,7 @@ public abstract class ItemFactory<P extends Plugin, W extends ItemWrapper<I>, I>
 
     protected abstract Optional<Integer> repairCost(ItemWrapper<I> item);
 
-    protected abstract ItemWrapper<I> merge(ItemWrapper<I> item1, ItemWrapper<I> item2);
+    protected abstract ItemWrapper<I> mergeCopy(ItemWrapper<I> item1, ItemWrapper<I> item2);
+
+    protected abstract void merge(ItemWrapper<I> item1, ItemWrapper<I> item2);
 }

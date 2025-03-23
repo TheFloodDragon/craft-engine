@@ -13,10 +13,17 @@ import java.util.function.BiFunction;
 
 public interface ImageManager extends Reloadable, ConfigSectionParser {
     String CONFIG_SECTION_NAME = "images";
+    Key DEFAULT_FONT = Key.of("minecraft:default");
 
     default String sectionId() {
         return CONFIG_SECTION_NAME;
     }
+
+    void delayedLoad();
+
+    boolean isDefaultFontInUse();
+
+    boolean isIllegalCharacter(int codepoint);
 
     Collection<Font> fontsInUse();
 

@@ -117,5 +117,7 @@ public interface Item<I> {
 
     Object getLiteralObject();
 
-    Item<I> merge(Item<?> another);
+    Item<I> mergeCopy(Item<?> another);
+
+    void merge(Item<I> another);
 }

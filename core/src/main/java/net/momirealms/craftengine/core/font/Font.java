@@ -3,6 +3,7 @@ package net.momirealms.craftengine.core.font;
 import net.momirealms.craftengine.core.util.Key;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 
@@ -17,6 +18,10 @@ public class Font {
     public boolean isCodepointInUse(int codepoint) {
         if (codepoint == 0) return false;
         return this.idToCodepoint.containsKey(codepoint);
+    }
+
+    public Collection<Integer> codepointsInUse() {
+        return Collections.unmodifiableCollection(this.idToCodepoint.keySet());
     }
 
     public BitmapImage getImageByCodepoint(int codepoint) {

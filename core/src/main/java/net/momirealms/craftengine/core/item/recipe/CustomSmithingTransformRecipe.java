@@ -96,7 +96,7 @@ public class CustomSmithingTransformRecipe<T> implements Recipe<T> {
         Item<T> wrappedResult = (Item<T>) CraftEngine.instance().itemManager().wrap(result);
         Item<T> finalResult = wrappedResult;
         if (this.mergeComponents) {
-            finalResult = base.merge(wrappedResult);
+            finalResult = base.mergeCopy(wrappedResult);
         }
         for (ItemDataProcessor processor : this.processors) {
             processor.accept(base, wrappedResult, finalResult);

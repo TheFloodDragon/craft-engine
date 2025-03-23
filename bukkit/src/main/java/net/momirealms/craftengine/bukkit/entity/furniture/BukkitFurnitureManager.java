@@ -1,7 +1,5 @@
 package net.momirealms.craftengine.bukkit.entity.furniture;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.util.EntityUtils;
 import net.momirealms.craftengine.core.entity.furniture.*;
@@ -37,11 +35,6 @@ public class BukkitFurnitureManager implements FurnitureManager {
 
     private final Map<Integer, LoadedFurniture> furnitureByBaseEntityId  = new ConcurrentHashMap<>(256, 0.5f);
     private final Map<Integer, LoadedFurniture> furnitureByInteractionEntityId  = new ConcurrentHashMap<>(512, 0.5f);
-    private final Map<Integer, int[]> baseEntity2SubEntities = new ConcurrentHashMap<>(256, 0.5f);
-
-    // Delay furniture cache remove for about 4-5 ticks
-    private static final int DELAYED_TICK = 5;
-    private final IntSet[] delayedRemove = new IntSet[DELAYED_TICK];
     // Event listeners
     private final Listener dismountListener;
     private final FurnitureEventListener furnitureEventListener;
@@ -56,9 +49,6 @@ public class BukkitFurnitureManager implements FurnitureManager {
         this.plugin = plugin;
         this.furnitureEventListener = new FurnitureEventListener(this);
         this.dismountListener = VersionHelper.isVersionNewerThan1_20_3() ? new DismountListener1_20_3(this) : new DismountListener1_20(this::handleDismount);
-        for (int i = 0; i < DELAYED_TICK; i++) {
-            this.delayedRemove[i] = new IntOpenHashSet();
-        }
         instance = this;
     }
 
@@ -171,18 +161,6 @@ public class BukkitFurnitureManager implements FurnitureManager {
     }
 
     public void tick() {
-        IntSet first = this.delayedRemove[0];
-        for (int i : first) {
-            // unloaded furniture might be loaded again
-            LoadedFurniture furniture = getLoadedFurnitureByBaseEntityId(i);
-            if (furniture == null)
-                this.baseEntity2SubEntities.remove(i);
-        }
-        first.clear();
-        for (int i = 1; i < DELAYED_TICK; i++) {
-            this.delayedRemove[i - 1] = this.delayedRemove[i];
-        }
-        this.delayedRemove[DELAYED_TICK-1] = first;
     }
 
     @Override
@@ -224,12 +202,6 @@ public class BukkitFurnitureManager implements FurnitureManager {
         return Optional.ofNullable(this.byId.get(id));
     }
 
-    @Nullable
-    @Override
-    public int[] getSubEntityIdsByBaseEntityId(int entityId) {
-        return this.baseEntity2SubEntities.get(entityId);
-    }
-
     @Override
     public boolean isFurnitureBaseEntity(int entityId) {
         return this.furnitureByBaseEntityId.containsKey(entityId);
@@ -253,7 +225,6 @@ public class BukkitFurnitureManager implements FurnitureManager {
             for (int sub : furniture.interactionEntityIds()) {
                 this.furnitureByInteractionEntityId.remove(sub);
             }
-            this.delayedRemove[DELAYED_TICK-1].add(id);
         }
     }
 
@@ -270,6 +241,7 @@ public class BukkitFurnitureManager implements FurnitureManager {
             if (previous != null) return;
             LoadedFurniture furniture = addNewFurniture(display, customFurniture, getAnchorType(entity, customFurniture));
             for (Player player : display.getTrackedPlayers()) {
+                this.plugin.adapt(player).furnitureView().computeIfAbsent(furniture.baseEntityId(), k -> new ArrayList<>()).addAll(furniture.subEntityIds());
                 this.plugin.networkManager().sendPacket(player, furniture.spawnPacket());
             }
         }
@@ -316,7 +288,6 @@ public class BukkitFurnitureManager implements FurnitureManager {
     private synchronized LoadedFurniture addNewFurniture(ItemDisplay display, CustomFurniture furniture, AnchorType anchorType) {
         LoadedFurniture loadedFurniture = new LoadedFurniture(display, furniture, anchorType);
         this.furnitureByBaseEntityId.put(loadedFurniture.baseEntityId(), loadedFurniture);
-        this.baseEntity2SubEntities.put(loadedFurniture.baseEntityId(), loadedFurniture.subEntityIds());
         for (int entityId : loadedFurniture.interactionEntityIds()) {
             this.furnitureByInteractionEntityId.put(entityId, loadedFurniture);
         }

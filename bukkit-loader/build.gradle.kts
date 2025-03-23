@@ -18,6 +18,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":bukkit"))
     implementation(project(":bukkit:legacy"))
+    implementation(project(":bukkit:compatibility"))
 
     implementation("net.kyori:adventure-platform-bukkit:${rootProject.properties["adventure_platform_version"]}")
     implementation("com.saicone.rtag:rtag-item:${rootProject.properties["rtag_version"]}")

@@ -280,7 +280,13 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
-    public Item<I> merge(Item<?> another) {
-        return new AbstractItem<>(this.factory, this.factory.merge(this.item, ((AbstractItem) another).item));
+    public Item<I> mergeCopy(Item<?> another) {
+        return new AbstractItem<>(this.factory, this.factory.mergeCopy(this.item, ((AbstractItem) another).item));
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @Override
+    public void merge(Item<I> another) {
+        this.factory.merge(this.item, ((AbstractItem) another).item);
     }
 }

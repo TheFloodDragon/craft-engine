@@ -1,5 +1,6 @@
 package net.momirealms.craftengine.bukkit.item;
 
+import net.momirealms.craftengine.bukkit.compatibility.item.NeigeItemsProvider;
 import net.momirealms.craftengine.bukkit.item.behavior.AxeItemBehavior;
 import net.momirealms.craftengine.bukkit.item.behavior.BucketItemBehavior;
 import net.momirealms.craftengine.bukkit.item.behavior.WaterBucketItemBehavior;
@@ -69,8 +70,15 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
 
     @Override
     public void delayedInit() {
-        Bukkit.getPluginManager().registerEvents(this.itemEventListener, plugin.bootstrap());
-        Bukkit.getPluginManager().registerEvents(this.debugStickListener, plugin.bootstrap());
+        Bukkit.getPluginManager().registerEvents(this.itemEventListener, this.plugin.bootstrap());
+        Bukkit.getPluginManager().registerEvents(this.debugStickListener, this.plugin.bootstrap());
+        this.hookExternalPlugins();
+    }
+
+    private void hookExternalPlugins() {
+        if (this.plugin.isPluginEnabled("NeigeItems")) {
+            registerExternalItemProvider(new NeigeItemsProvider());
+        }
     }
 
     @Override

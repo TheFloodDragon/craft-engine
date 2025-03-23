@@ -18,6 +18,7 @@ public class ImageManagerImpl implements ImageManager {
     private final HashMap<Key, Font> fonts = new HashMap<>();
                 // namespace:id image
     private final HashMap<Key, BitmapImage> images = new HashMap<>();
+    private final Set<Integer> illegalChars = new HashSet<>();
 
     private OffsetFont offsetFont;
 
@@ -36,6 +37,24 @@ public class ImageManagerImpl implements ImageManager {
     public void unload() {
         this.fonts.clear();
         this.images.clear();
+        this.illegalChars.clear();
+    }
+
+    @Override
+    public void delayedLoad() {
+        Optional.ofNullable(this.fonts.get(DEFAULT_FONT)).ifPresent(font -> {
+            this.illegalChars.addAll(font.codepointsInUse());
+        });
+    }
+
+    @Override
+    public boolean isDefaultFontInUse() {
+        return !this.illegalChars.isEmpty();
+    }
+
+    @Override
+    public boolean isIllegalCharacter(int codepoint) {
+        return this.illegalChars.contains(codepoint);
     }
 
     @Override

@@ -299,7 +299,7 @@ public class ComponentItemFactory extends BukkitItemFactory {
     }
 
     @Override
-    protected ItemWrapper<ItemStack> merge(ItemWrapper<ItemStack> item1, ItemWrapper<ItemStack> item2) {
+    protected ItemWrapper<ItemStack> mergeCopy(ItemWrapper<ItemStack> item1, ItemWrapper<ItemStack> item2) {
         Object itemStack1 = item1.getLiteralObject();
         Object itemStack2 = item2.getLiteralObject();
         try {
@@ -310,5 +310,18 @@ public class ComponentItemFactory extends BukkitItemFactory {
             this.plugin.logger().warn("Failed to merge item", e);
         }
         return null;
+    }
+
+    @Override
+    protected void merge(ItemWrapper<ItemStack> item1, ItemWrapper<ItemStack> item2) {
+        // load previous changes on nms items
+        item1.load();
+        Object itemStack1 = item1.getLiteralObject();
+        Object itemStack2 = item2.getLiteralObject();
+        try {
+            Reflections.method$ItemStack$applyComponents.invoke(itemStack1, Reflections.method$ItemStack$getComponentsPatch.invoke(itemStack2));
+        } catch (Exception e) {
+            plugin.logger().warn("Failed to merge item", e);
+        }
     }
 }

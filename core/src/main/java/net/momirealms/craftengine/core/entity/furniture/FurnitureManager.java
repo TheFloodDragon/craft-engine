@@ -5,7 +5,6 @@ import net.momirealms.craftengine.core.plugin.Reloadable;
 import net.momirealms.craftengine.core.plugin.config.ConfigSectionParser;
 import net.momirealms.craftengine.core.util.Key;
 
-import javax.annotation.Nullable;
 import java.util.Optional;
 
 public interface FurnitureManager extends Reloadable, ConfigSectionParser {
@@ -24,9 +23,6 @@ public interface FurnitureManager extends Reloadable, ConfigSectionParser {
     }
 
     Optional<CustomFurniture> getFurniture(Key id);
-
-    @Nullable
-    int[] getSubEntityIdsByBaseEntityId(int entityId);
 
     boolean isFurnitureBaseEntity(int entityId);
 }

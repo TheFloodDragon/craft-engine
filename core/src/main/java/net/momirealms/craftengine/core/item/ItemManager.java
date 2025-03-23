@@ -51,6 +51,10 @@ public interface ItemManager<T> extends Reloadable, ModelGenerator, ConfigSectio
 
     Key customItemId(T itemStack);
 
+    ExternalItemProvider<T> getExternalItemProvider(String name);
+
+    boolean registerExternalItemProvider(ExternalItemProvider<T> externalItemProvider);
+
     Optional<CustomItem<T>> getCustomItem(Key key);
 
     Optional<List<ItemBehavior>> getItemBehavior(Key key);

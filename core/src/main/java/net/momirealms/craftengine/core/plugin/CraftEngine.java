@@ -106,6 +106,7 @@ public abstract class CraftEngine implements Plugin {
             this.blockManager.delayedLoad();
             this.itemBrowserManager.delayedLoad();
             this.soundManager.delayedLoad();
+            this.imageManager.delayedLoad();
             if (ConfigManager.debug()) {
                 this.debugger = (s) -> logger.info("[Debug] " + s.get());
             } else {
@@ -126,11 +127,11 @@ public abstract class CraftEngine implements Plugin {
         // delay the reload so other plugins can register some parsers
         this.scheduler.sync().runDelayed(() -> {
             this.registerParsers();
+            this.itemManager.delayedInit();
             this.reload();
             this.guiManager.delayedInit();
             this.recipeManager.delayedInit();
             this.blockManager.delayedInit();
-            this.itemManager.delayedInit();
             this.worldManager.delayedInit();
             this.packManager.delayedInit();
             this.furnitureManager.delayedInit();

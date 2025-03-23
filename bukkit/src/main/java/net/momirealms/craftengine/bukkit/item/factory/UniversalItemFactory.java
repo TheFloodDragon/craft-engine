@@ -234,11 +234,18 @@ public class UniversalItemFactory extends BukkitItemFactory {
     }
 
     @Override
-    protected ItemWrapper<ItemStack> merge(ItemWrapper<ItemStack> item1, ItemWrapper<ItemStack> item2) {
+    protected ItemWrapper<ItemStack> mergeCopy(ItemWrapper<ItemStack> item1, ItemWrapper<ItemStack> item2) {
         Object itemStack = ItemObject.copy(item2.getLiteralObject());
         ItemObject.setCustomDataTag(itemStack, TagCompound.clone(ItemObject.getCustomDataTag(item1.getLiteralObject())));
         // one more step than vanilla
         TagCompound.merge(ItemObject.getCustomDataTag(itemStack), ItemObject.getCustomDataTag(item2.getLiteralObject()), true, true);
         return new RTagItemWrapper(new RtagItem(ItemObject.asCraftMirror(itemStack)), item2.count());
+    }
+
+    @Override
+    protected void merge(ItemWrapper<ItemStack> item1, ItemWrapper<ItemStack> item2) {
+        // load previous changes on nms items
+        item1.load();
+        TagCompound.merge(ItemObject.getCustomDataTag(item1.getLiteralObject()), ItemObject.getCustomDataTag(item2.getLiteralObject()), true, true);
     }
 }

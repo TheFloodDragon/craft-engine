@@ -3,6 +3,7 @@ include(":shared")
 include(":core")
 include(":bukkit")
 include(":bukkit:legacy")
+include(":bukkit:compatibility")
 include(":bukkit-loader")
 include(":server-mod")
 pluginManagement {

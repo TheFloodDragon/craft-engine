@@ -41,9 +41,9 @@ public class LoadedFurniture {
     private final WeakReference<Entity> baseEntity;
     private final int baseEntityId;
     // includes elements + interactions
-    private final int[] subEntityIds;
+    private final List<Integer> subEntityIds;
     // interactions
-    private final int[] interactionEntityIds;
+    private final List<Integer> interactionEntityIds;
     // seats
     private final Set<Vector3f> occupiedSeats = Collections.synchronizedSet(new HashSet<>());
     private final Vector<Entity> seats = new Vector<>();
@@ -73,14 +73,9 @@ public class LoadedFurniture {
             interactionEntityIds.add(entityId);
             this.hitBoxes.put(entityId, hitBox);
         }
-        this.subEntityIds = new int[entityIds.size()];
-        for (int i = 0; i < entityIds.size(); ++i) {
-            this.subEntityIds[i] = entityIds.get(i);
-        }
-        this.interactionEntityIds = new int[interactionEntityIds.size()];
-        for (int i = 0; i < interactionEntityIds.size(); ++i) {
-            this.interactionEntityIds[i] = interactionEntityIds.get(i);
-        }
+        this.subEntityIds = entityIds;
+        this.interactionEntityIds = interactionEntityIds;
+        this.resetSpawnPackets();
     }
 
     private void resetSpawnPackets() {
@@ -146,13 +141,6 @@ public class LoadedFurniture {
     public void teleport(@NotNull Location location) {
         if (location.equals(this.location)) return;
         this.location = location;
-    }
-
-    public Object spawnPacket() {
-        if (this.cachedSpawnPacket == null) {
-            this.resetSpawnPackets();
-        }
-        return this.cachedSpawnPacket;
     }
 
     @NotNull
@@ -235,11 +223,11 @@ public class LoadedFurniture {
         return baseEntityId;
     }
 
-    public int[] interactionEntityIds() {
+    public List<Integer> interactionEntityIds() {
         return interactionEntityIds;
     }
 
-    public int[] subEntityIds() {
+    public List<Integer> subEntityIds() {
         return this.subEntityIds;
     }
 
@@ -285,5 +273,9 @@ public class LoadedFurniture {
                 });
         this.addSeatEntity(seatEntity);
         seatEntity.addPassenger(player);
+    }
+
+    public @NotNull Object spawnPacket() {
+        return cachedSpawnPacket;
     }
 }

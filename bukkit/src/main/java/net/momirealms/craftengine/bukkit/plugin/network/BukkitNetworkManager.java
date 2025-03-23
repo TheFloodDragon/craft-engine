@@ -125,6 +125,9 @@ public class BukkitNetworkManager implements NetworkManager, Listener {
         registerNMSPacketConsumer(PacketConsumers.MOVE_ENTITY, Reflections.clazz$ClientboundMoveEntityPacket$Pos);
         registerNMSPacketConsumer(PacketConsumers.PICK_ITEM_FROM_ENTITY, Reflections.clazz$ServerboundPickItemFromEntityPacket);
         registerNMSPacketConsumer(PacketConsumers.SOUND, Reflections.clazz$ClientboundSoundPacket);
+        registerNMSPacketConsumer(PacketConsumers.CHAT, Reflections.clazz$ServerboundChatPacket);
+        registerNMSPacketConsumer(PacketConsumers.RENAME_ITEM, Reflections.clazz$ServerboundRenameItemPacket);
+        registerNMSPacketConsumer(PacketConsumers.SIGN_UPDATE, Reflections.clazz$ServerboundSignUpdatePacket);
         registerByteBufPacketConsumer(PacketConsumers.SECTION_BLOCK_UPDATE, this.packetIds.clientboundSectionBlocksUpdatePacket());
         registerByteBufPacketConsumer(PacketConsumers.BLOCK_UPDATE, this.packetIds.clientboundBlockUpdatePacket());
         registerByteBufPacketConsumer(PacketConsumers.LEVEL_PARTICLE, this.packetIds.clientboundLevelParticlesPacket());
@@ -263,6 +266,28 @@ public class BukkitNetworkManager implements NetworkManager, Listener {
 
     public void sendPackets(@NotNull NetWorkUser player, List<Object> packet) {
         this.packetsConsumer.accept(player.serverPlayer(), packet);
+    }
+
+    public void receivePacket(@NotNull NetWorkUser player, Object packet) {
+        Channel channel = player.nettyChannel();
+        if (channel.isOpen()) {
+            List<String> handlerNames = channel.pipeline().names();
+            if (handlerNames.contains("via-encoder")) {
+                channel.pipeline().context("via-decoder").fireChannelRead(packet);
+            } else if (handlerNames.contains("ps_decoder_transformer")) {
+                channel.pipeline().context("ps_decoder_transformer").fireChannelRead(packet);
+            } else if (handlerNames.contains("decompress")) {
+                channel.pipeline().context("decompress").fireChannelRead(packet);
+            } else {
+                if (handlerNames.contains("decrypt")) {
+                    channel.pipeline().context("decrypt").fireChannelRead(packet);
+                } else {
+                    channel.pipeline().context("splitter").fireChannelRead(packet);
+                }
+            }
+        } else {
+            ((ByteBuf) packet).release();
+        }
     }
 
     private void injectServerChannel(Channel serverChannel) {

@@ -157,8 +157,6 @@ public class ItemEventListener implements Listener {
             }
 
             for (ItemBehavior itemBehavior : optionalItemBehaviors.get()) {
-
-
                 InteractionResult result = itemBehavior.useOnBlock(new UseOnContext(player, hand, hitResult));
                 if (result == InteractionResult.SUCCESS_AND_CANCEL) {
                     event.setCancelled(true);

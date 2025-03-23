@@ -74,7 +74,6 @@ public class FurnitureEventListener implements Listener {
         this.manager.handleEntityUnload(event.getEntity());
     }
 
-
     @EventHandler(ignoreCancelled = true)
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();

@@ -15,6 +15,7 @@ repositories {
 dependencies {
     compileOnly(project(":core"))
     compileOnly(project(":shared"))
+    compileOnly(project(":bukkit:compatibility"))
     compileOnly(project(":bukkit:legacy"))
     // Anti Grief
     compileOnly("com.github.Xiao-MoMi:AntiGriefLib:${rootProject.properties["anti_grief_version"]}")

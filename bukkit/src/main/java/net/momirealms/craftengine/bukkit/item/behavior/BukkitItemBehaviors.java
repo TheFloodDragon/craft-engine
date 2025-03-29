@@ -11,6 +11,7 @@ public class BukkitItemBehaviors extends ItemBehaviors {
     public static final Key AXE_ITEM = Key.from("craftengine:axe_item");
     public static final Key WATER_BUCKET_ITEM = Key.from("craftengine:water_bucket_item");
     public static final Key BUCKET_ITEM = Key.from("craftengine:bucket_item");
+    public static final Key BONE_MEAL_ITEM = Key.from("craftengine:bone_meal_item");
 
     public static void init() {
         register(EMPTY, EmptyItemBehavior.FACTORY);
@@ -20,5 +21,6 @@ public class BukkitItemBehaviors extends ItemBehaviors {
         register(AXE_ITEM, AxeItemBehavior.FACTORY);
         register(WATER_BUCKET_ITEM, WaterBucketItemBehavior.FACTORY);
         register(BUCKET_ITEM, BucketItemBehavior.FACTORY);
+        register(BONE_MEAL_ITEM, BoneMealItemBehavior.FACTORY);
     }
 }

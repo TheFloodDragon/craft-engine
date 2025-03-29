@@ -11,6 +11,7 @@ public class LightUtils {
 
     private LightUtils() {}
 
+    @SuppressWarnings("unchecked")
     public static void updateChunkLight(World world, Map<Long, BitSet> sectionPosSet) {
         try {
             Object serverLevel = Reflections.field$CraftWorld$ServerLevel.get(world);
@@ -19,8 +20,13 @@ public class LightUtils {
                 long chunkKey = entry.getKey();
                 Object chunkHolder = Reflections.method$ServerChunkCache$getVisibleChunkIfPresent.invoke(chunkSource, chunkKey);
                 if (chunkHolder == null) continue;
-                @SuppressWarnings("unchecked")
-                List<Object> players = (List<Object>) Reflections.method$ChunkHolder$getPlayers.invoke(chunkHolder, false);
+                List<Object> players;
+                if (Reflections.method$ChunkHolder$getPlayers != null) {
+                    players = (List<Object>) Reflections.method$ChunkHolder$getPlayers.invoke(chunkHolder, false);
+                } else {
+                    Object chunkHolder$PlayerProvider = Reflections.field$ChunkHolder$playerProvider.get(chunkHolder);
+                    players = (List<Object>) Reflections.method$ChunkHolder$PlayerProvider$getPlayers.invoke(chunkHolder$PlayerProvider, false);
+                }
                 if (players.isEmpty()) continue;
                 Object lightEngine = Reflections.field$ChunkHolder$lightEngine.get(chunkHolder);
                 BitSet blockChangedLightSectionFilter = (BitSet) Reflections.field$ChunkHolder$blockChangedLightSectionFilter.get(chunkHolder);

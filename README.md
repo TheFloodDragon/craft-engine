@@ -116,7 +116,7 @@ The code you contribute will be open-sourced under the GPLv3 license. If you pre
 
 ### 🌍 Translations
 1. Clone this repository.
-2. Create a new language file in: `/bukkit-loader/src/main/resources/translations`
+2. Create a new language file in: `/bukkit/loader/src/main/resources/translations`
 3. Once done, submit a **pull request** for review. We appreciate your contributions!
 
 ### 💖 Support the Developer
@@ -135,7 +135,7 @@ repositories {
 ```
 ```kotlin
 dependencies {
-    compileOnly("net.momirealms:craft-engine-core:0.0.34")
-    compileOnly("net.momirealms:craft-engine-bukkit:0.0.34")
+    compileOnly("net.momirealms:craft-engine-core:0.0.38")
+    compileOnly("net.momirealms:craft-engine-bukkit:0.0.38")
 }
 ```

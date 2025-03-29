@@ -42,6 +42,20 @@ public class CraftEngineFurniture {
      *
      * @param location    location
      * @param furnitureId furniture to place
+     * @return the loaded furniture
+     */
+    @Nullable
+    public static LoadedFurniture place(Location location, Key furnitureId) {
+        CustomFurniture furniture = byId(furnitureId);
+        if (furniture == null) return null;
+        return place(location, furnitureId, furniture.getAnyPlacement());
+    }
+
+    /**
+     * Places furniture at the certain location
+     *
+     * @param location    location
+     * @param furnitureId furniture to place
      * @param anchorType  anchor type
      * @return the loaded furniture
      */
@@ -246,7 +260,7 @@ public class CraftEngineFurniture {
             builder.withParameter(LootParameters.WORLD, world);
             if (player != null) {
                 builder.withParameter(LootParameters.PLAYER, player);
-                builder.withParameter(LootParameters.TOOL, player.getItemInHand(InteractionHand.MAIN_HAND));
+                builder.withOptionalParameter(LootParameters.TOOL, player.getItemInHand(InteractionHand.MAIN_HAND));
             }
             List<Item<ItemStack>> items = lootTable.getRandomItems(builder.build(), world);
             for (Item<ItemStack> item : items) {
@@ -254,7 +268,7 @@ public class CraftEngineFurniture {
             }
         }
         if (playSound) {
-            world.playBlockSound(vec3d, loadedFurniture.furniture().settings().sounds().breakSound(), 1f, 0.8f);
+            world.playBlockSound(vec3d, loadedFurniture.furniture().settings().sounds().breakSound());
         }
     }
 }

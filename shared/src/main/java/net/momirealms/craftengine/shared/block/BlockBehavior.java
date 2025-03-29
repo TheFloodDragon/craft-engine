@@ -8,10 +8,6 @@ public abstract class BlockBehavior {
         return superMethod.call();
     }
 
-    public Object getFluidState(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
-        return superMethod.call();
-    }
-
     public void tick(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
         superMethod.call();
     }
@@ -28,12 +24,10 @@ public abstract class BlockBehavior {
         return (boolean) superMethod.call();
     }
 
-    public void onBrokenAfterFall(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
-        superMethod.call();
+    public void onBrokenAfterFall(Object thisBlock, Object[] args) throws Exception {
     }
 
-    public void onLand(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
-        superMethod.call();
+    public void onLand(Object thisBlock, Object[] args) throws Exception {
     }
 
     public boolean isValidBoneMealTarget(Object thisBlock, Object[] args) throws Exception {
@@ -47,7 +41,19 @@ public abstract class BlockBehavior {
     public void performBoneMeal(Object thisBlock, Object[] args) throws Exception {
     }
 
-    public Object updateStateForPlacement(Object context, Object state) {
-        return state;
-    }
+//
+//    public Object getFluidState(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
+//        return superMethod.call();
+//    }
+//    public boolean canPlaceLiquid(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
+//        return (boolean) superMethod.call();
+//    }
+//
+//    public boolean placeLiquid(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
+//        return (boolean) superMethod.call();
+//    }
+//
+//    public Object pickupBlock(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
+//        return superMethod.call();
+//    }
 }

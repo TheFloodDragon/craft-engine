@@ -24,6 +24,15 @@ public class ChunkPos {
         this.longKey = asLong(this.x, this.z);
     }
 
+    @Override
+    public String toString() {
+        return "ChunkPos{" +
+                "x=" + x +
+                ", z=" + z +
+                ", longKey=" + longKey +
+                '}';
+    }
+
     public int x() {
         return x;
     }

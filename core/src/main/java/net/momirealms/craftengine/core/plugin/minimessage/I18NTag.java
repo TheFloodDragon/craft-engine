@@ -23,7 +23,7 @@ public class I18NTag implements TagResolver {
             return null;
         }
         String i18nKey = arguments.popOr("No argument i18n key provided").toString();
-        String translation = TranslationManager.instance().translateI18NTag(i18nKey);
+        String translation = TranslationManager.instance().miniMessageTranslation(i18nKey);
         return Tag.inserting(AdventureHelper.miniMessage().deserialize(translation, this.context.tagResolvers()));
     }
 

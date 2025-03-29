@@ -4,10 +4,12 @@ import com.google.common.collect.Lists;
 import io.netty.channel.Channel;
 import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.util.*;
 import net.momirealms.craftengine.bukkit.world.BukkitWorld;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
+import net.momirealms.craftengine.core.block.PackedBlockState;
 import net.momirealms.craftengine.core.entity.player.InteractionHand;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.Item;
@@ -63,7 +65,9 @@ public class BukkitServerPlayer extends Player {
 
     private Key lastUsedRecipe = null;
 
-    private Map<Integer, List<Integer>> furnitureView = new ConcurrentHashMap<>();
+    private boolean hasClientMod = false;
+    // for better fake furniture visual sync
+    private final Map<Integer, List<Integer>> furnitureView = new ConcurrentHashMap<>();
 
     public BukkitServerPlayer(BukkitCraftEngine plugin, Channel channel) {
         this.channel = channel;
@@ -72,11 +76,7 @@ public class BukkitServerPlayer extends Player {
 
     public void setPlayer(org.bukkit.entity.Player player) {
         playerRef = new WeakReference<>(player);
-        try {
-            serverPlayerRef = new WeakReference<>(Reflections.method$CraftPlayer$getHandle.invoke(player));
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        serverPlayerRef = new WeakReference<>(FastNMS.INSTANCE.method$CraftPlayer$getHandle(player));
     }
 
     @Override
@@ -295,7 +295,7 @@ public class BukkitServerPlayer extends Player {
     public float getDestroyProgress(Object blockState, BlockPos pos) {
         try {
             Object serverPlayer = serverPlayer();
-            Object blockPos = Reflections.constructor$BlockPos.newInstance(pos.x(), pos.y(), pos.z());
+            Object blockPos = LocationUtils.toBlockPos(pos.x(), pos.y(), pos.z());
             return (float) Reflections.method$BlockStateBase$getDestroyProgress.invoke(blockState, serverPlayer, Reflections.method$Entity$level.invoke(serverPlayer), blockPos);
         } catch (ReflectiveOperationException e) {
             this.plugin.logger().warn("Failed to get destroy progress for player " + platformPlayer().getName());
@@ -308,7 +308,8 @@ public class BukkitServerPlayer extends Player {
         if (custom && getDestroyProgress(state, pos) >= 1f) {
             assert immutableBlockState != null;
             // not an instant break on client side
-            if (getDestroyProgress(immutableBlockState.vanillaBlockState().handle(), pos) < 1f) {
+            PackedBlockState vanillaBlockState = immutableBlockState.vanillaBlockState();
+            if (vanillaBlockState != null && getDestroyProgress(vanillaBlockState.handle(), pos) < 1f) {
                 try {
                     Object levelEventPacket = Reflections.constructor$ClientboundLevelEventPacket.newInstance(2001, LocationUtils.toBlockPos(pos), BlockStateUtils.blockStateToId(this.destroyedState), false);
                     sendPacket(levelEventPacket, false);
@@ -361,6 +362,13 @@ public class BukkitServerPlayer extends Player {
     public void stopMiningBlock() {
         setCanBreakBlock(true);
         setIsDestroyingBlock(false, false);
+    }
+
+    @Override
+    public void preventMiningBlock() {
+        setCanBreakBlock(false);
+        setIsDestroyingBlock(false, false);
+        abortMiningBlock();
     }
 
     private void resetEffect(Object mobEffect) throws ReflectiveOperationException {
@@ -615,5 +623,13 @@ public class BukkitServerPlayer extends Player {
 
     public void setLastUsedRecipe(Key lastUsedRecipe) {
         this.lastUsedRecipe = lastUsedRecipe;
+    }
+
+    public boolean clientModEnabled() {
+        return this.hasClientMod;
+    }
+
+    public void setClientModState(boolean enable) {
+        this.hasClientMod = enable;
     }
 }

@@ -3,9 +3,9 @@ package net.momirealms.craftengine.core.plugin.network;
 import io.netty.channel.Channel;
 import net.momirealms.craftengine.core.entity.player.Player;
 
-import java.util.Collection;
-
 public interface NetworkManager {
+    String MOD_CHANNEL = "craftengine:payload";
+
     void setUser(Channel channel, NetWorkUser user);
 
     NetWorkUser getUser(Channel channel);
@@ -14,7 +14,7 @@ public interface NetworkManager {
 
     Channel getChannel(Player player);
 
-    Collection<? extends NetWorkUser> onlineUsers();
+    NetWorkUser[] onlineUsers();
 
     void init();
 

@@ -35,6 +35,7 @@ public class VanillaLoot {
     }
 
     public enum Type {
-        BLOCK
+        BLOCK,
+        ENTITY
     }
 }

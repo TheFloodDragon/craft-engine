@@ -35,6 +35,14 @@ public abstract class Property<T extends Comparable<T>> {
                 throw new IllegalArgumentException("Unsupported property type used in hard-coded `facing` property: " + property.valueClass());
             }
         }));
+        HARD_CODED_PLACEMENTS.put("facing_clockwise", (property -> {
+            if (property.valueClass() == HorizontalDirection.class) {
+                Property<HorizontalDirection> directionProperty = (Property<HorizontalDirection>) property;
+                return (context, state) -> state.with(directionProperty, context.getHorizontalDirection().clockWise().toHorizontalDirection());
+            } else {
+                throw new IllegalArgumentException("Unsupported property type used in hard-coded `facing_clockwise` property: " + property.valueClass());
+            }
+        }));
         HARD_CODED_PLACEMENTS.put("waterlogged", (property -> {
             Property<Boolean> waterloggedProperty = (Property<Boolean>) property;
             return (context, state) -> state.with(waterloggedProperty, context.isWaterSource());

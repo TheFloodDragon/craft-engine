@@ -23,7 +23,6 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.type.NoteBlock;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -121,7 +120,7 @@ public class BlockEventListener implements Listener {
                 }
                 // play sound
                 Vec3d vec3d = new Vec3d(location.getBlockX() + 0.5, location.getBlockY() + 0.5, location.getBlockZ() + 0.5);
-                world.playBlockSound(vec3d, state.sounds().breakSound(), 1f, 0.8f);
+                world.playBlockSound(vec3d, state.sounds().breakSound());
                 if (player.getGameMode() == GameMode.CREATIVE) {
                     return;
                 }
@@ -138,7 +137,7 @@ public class BlockEventListener implements Listener {
                 builder.withParameter(LootParameters.WORLD, world);
                 builder.withParameter(LootParameters.LOCATION, vec3d);
                 builder.withParameter(LootParameters.PLAYER, serverPlayer);
-                builder.withParameter(LootParameters.TOOL, itemInHand);
+                builder.withOptionalParameter(LootParameters.TOOL, itemInHand);
                 for (Item<Object> item : state.getDrops(builder, world)) {
                     world.dropItemNaturally(vec3d, item);
                 }
@@ -159,7 +158,7 @@ public class BlockEventListener implements Listener {
                     builder.withParameter(LootParameters.WORLD, world);
                     builder.withParameter(LootParameters.LOCATION, vec3d);
                     builder.withParameter(LootParameters.PLAYER, serverPlayer);
-                    builder.withParameter(LootParameters.TOOL, serverPlayer.getItemInHand(InteractionHand.MAIN_HAND));
+                    builder.withOptionalParameter(LootParameters.TOOL, serverPlayer.getItemInHand(InteractionHand.MAIN_HAND));
                     ContextHolder contextHolder = builder.build();
                     for (LootTable<?> lootTable : it.lootTables()) {
                         for (Item<?> item : lootTable.getRandomItems(contextHolder, world)) {
@@ -226,7 +225,7 @@ public class BlockEventListener implements Listener {
         int stateId = BlockStateUtils.blockStateToId(blockState);
         if (!BlockStateUtils.isVanillaBlock(stateId)) {
             ImmutableBlockState state = manager.getImmutableBlockStateUnsafe(stateId);
-            player.playSound(playerLocation, state.sounds().stepSound().toString(), SoundCategory.BLOCKS, 0.15f, 1f);
+            player.playSound(playerLocation, state.sounds().stepSound().id().toString(), SoundCategory.BLOCKS, state.sounds().stepSound().volume(), state.sounds().stepSound().pitch());
         } else if (ConfigManager.enableSoundSystem()) {
             Object ownerBlock = BlockStateUtils.getBlockOwner(blockState);
             if (manager.isBlockSoundRemoved(ownerBlock)) {
@@ -268,7 +267,7 @@ public class BlockEventListener implements Listener {
                 for (Item<Object> item : blockState.getDrops(builder, world)) {
                     world.dropItemNaturally(vec3d, item);
                 }
-                world.playBlockSound(vec3d, blockState.sounds().breakSound(),1f, 0.8f);
+                world.playBlockSound(vec3d, blockState.sounds().breakSound());
             }
         }
     }
@@ -300,7 +299,7 @@ public class BlockEventListener implements Listener {
                 for (Item<Object> item : state.getDrops(builder, world)) {
                     world.dropItemNaturally(vec3d, item);
                 }
-                world.playBlockSound(vec3d, state.sounds().breakSound(), 1f, 0.8f);
+                world.playBlockSound(vec3d, state.sounds().breakSound());
             }
         }
     }
@@ -308,10 +307,10 @@ public class BlockEventListener implements Listener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     public void onBlockPhysics(BlockPhysicsEvent event) {
         if (!this.enableNoteBlockCheck) return;
-        Block block = event.getBlock();
         // for vanilla blocks
-        if (block.getBlockData() instanceof NoteBlock) {
+        if (event.getChangedType() == Material.NOTE_BLOCK) {
             try {
+                Block block = event.getBlock();
                 World world = block.getWorld();
                 Location location = block.getLocation();
                 Block sourceBlock = event.getSourceBlock();
@@ -319,7 +318,7 @@ public class BlockEventListener implements Listener {
                 if (direction == BlockFace.UP || direction == BlockFace.DOWN) {
                     Object serverLevel = Reflections.field$CraftWorld$ServerLevel.get(world);
                     Object chunkSource = Reflections.field$ServerLevel$chunkSource.get(serverLevel);
-                    Object blockPos = Reflections.constructor$BlockPos.newInstance(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+                    Object blockPos = LocationUtils.toBlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
                     Reflections.method$ServerChunkCache$blockChanged.invoke(chunkSource, blockPos);
                     if (direction == BlockFace.UP) {
                         NoteBlockChainUpdateUtils.noteBlockChainUpdate(serverLevel, chunkSource, Reflections.instance$Direction$UP, blockPos, 0);
@@ -332,41 +331,4 @@ public class BlockEventListener implements Listener {
             }
         }
     }
-
-    // TODO Is there a way to deceive the server?
-//    @SuppressWarnings("unchecked")
-//    @EventHandler(ignoreCancelled = true)
-//    public void onDispenserWork(BlockDispenseEvent event) {
-//        ItemStack itemStack = event.getItem();
-//        Material type = itemStack.getType();
-//        Block block = event.getBlock();
-//        if (type == Material.BUCKET) {
-//            if (block.getBlockData() instanceof Dispenser dispenser) {
-//                Block against = block.getRelative(dispenser.getFacing());
-//                ImmutableBlockState state = this.manager.getImmutableBlockState(BlockStateUtils.blockDataToId(against.getBlockData()));
-//                if (state != null && !state.isEmpty()) {
-//                    Location location = against.getLocation();
-//                    CustomBlock customBlock = state.owner().value();
-//                    Property<Boolean> waterlogged = (Property<Boolean>) customBlock.getProperty("waterlogged");
-//                    if (waterlogged == null) return;
-//                    if (!state.get(waterlogged)) return;
-//                    ImmutableBlockState nextState = state.with(waterlogged, false);
-//                    CraftEngineBlocks.place(location, nextState, UpdateOption.UPDATE_ALL);
-//                }
-//            }
-//        } else if (WATER_BUCKETS.contains(type)) {
-//            if (block.getBlockData() instanceof Dispenser dispenser) {
-//                Block against = block.getRelative(dispenser.getFacing());
-//                ImmutableBlockState state = this.manager.getImmutableBlockState(BlockStateUtils.blockDataToId(against.getBlockData()));
-//                if (state != null && !state.isEmpty()) {
-//                    Location location = against.getLocation();
-//                    CustomBlock customBlock = state.owner().value();
-//                    Property<Boolean> waterlogged = (Property<Boolean>) customBlock.getProperty("waterlogged");
-//                    if (waterlogged == null) return;
-//                    ImmutableBlockState nextState = state.with(waterlogged, true);
-//                    CraftEngineBlocks.place(location, nextState, UpdateOption.UPDATE_ALL);
-//                }
-//            }
-//        }
-//    }
 }

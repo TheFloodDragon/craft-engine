@@ -1,5 +1,6 @@
 package net.momirealms.craftengine.bukkit.util;
 
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.core.world.BlockPos;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -14,13 +15,9 @@ public class EntityUtils {
 
     public static BlockPos getOnPos(Player player) {
         try {
-            Object serverPlayer = Reflections.method$CraftPlayer$getHandle.invoke(player);
+            Object serverPlayer = FastNMS.INSTANCE.method$CraftPlayer$getHandle(player);
             Object blockPos = Reflections.method$Entity$getOnPos.invoke(serverPlayer, 1.0E-5F);
-            return new BlockPos(
-                    (int) Reflections.field$Vec3i$x.get(blockPos),
-                    (int) Reflections.field$Vec3i$y.get(blockPos),
-                    (int) Reflections.field$Vec3i$z.get(blockPos)
-            );
+            return LocationUtils.fromBlockPos(blockPos);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

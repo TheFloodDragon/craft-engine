@@ -11,6 +11,7 @@ import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.registry.Holder;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.Tristate;
+import net.momirealms.craftengine.core.util.VersionHelper;
 import net.momirealms.craftengine.shared.ObjectHolder;
 import net.momirealms.craftengine.shared.block.BlockBehavior;
 import org.bukkit.inventory.ItemStack;
@@ -103,6 +104,21 @@ public class BukkitCustomBlock extends CustomBlock {
                 Reflections.field$BlockBehaviour$soundType.set(mcBlock, SoundUtils.toSoundType(settings.sounds()));
                 // init cache
                 Reflections.method$BlockStateBase$initCache.invoke(mcBlockState);
+                // set block light
+                if (settings.blockLight() != -1) {
+                    if (VersionHelper.isVersionNewerThan1_21_2()) {
+                        Reflections.field$BlockStateBase$lightBlock.set(mcBlockState, settings.blockLight());
+                    } else {
+                        Object cache = Reflections.field$BlockStateBase$cache.get(mcBlockState);
+                        Reflections.field$BlockStateBase$Cache$lightBlock.set(cache, settings.blockLight());
+                    }
+                }
+                // set fluid later
+                if (settings.fluidState()) {
+                    Reflections.field$BlockStateBase$fluidState.set(mcBlockState, Reflections.method$FlowingFluid$getSource.invoke(Reflections.instance$Fluids$WATER, false));
+                } else {
+                    Reflections.field$BlockStateBase$fluidState.set(mcBlockState, Reflections.instance$Fluid$EMPTY$defaultState);
+                }
                 // set random tick later
                 BlockStateUtils.setIsRandomlyTicking(mcBlockState, settings.isRandomlyTicking());
                 // bind tags

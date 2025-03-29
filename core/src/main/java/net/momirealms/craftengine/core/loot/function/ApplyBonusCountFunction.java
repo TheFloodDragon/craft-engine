@@ -12,6 +12,7 @@ import net.momirealms.craftengine.core.registry.Registries;
 import net.momirealms.craftengine.core.registry.WritableRegistry;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
+import net.momirealms.craftengine.core.util.RandomUtils;
 import net.momirealms.craftengine.core.util.ResourceKey;
 
 import java.util.Collections;
@@ -78,9 +79,11 @@ public class ApplyBonusCountFunction<T> extends AbstractLootConditionalFunction<
 
     public static class Formulas {
         public static final Key ORE_DROPS = Key.of("craftengine:ore_drops");
+        public static final Key CROP_DROPS = Key.of("craftengine:binomial_with_bonus_count");
 
         static {
             register(ORE_DROPS, OreDrops.FACTORY);
+            register(CROP_DROPS, CropDrops.FACTORY);
         }
 
         public static void register(Key key, FormulaFactory factory) {
@@ -130,6 +133,42 @@ public class ApplyBonusCountFunction<T> extends AbstractLootConditionalFunction<
             @Override
             public Formula create(Map<String, Object> arguments) {
                 return INSTANCE;
+            }
+        }
+    }
+
+    public static class CropDrops implements Formula {
+        public static final Factory FACTORY = new Factory();
+        private final int extra;
+        private final float probability;
+
+        public CropDrops(int extra, float probability) {
+            this.extra = extra;
+            this.probability = probability;
+        }
+
+        @Override
+        public int apply(int initialCount, int enchantmentLevel) {
+            for (int i = 0; i < enchantmentLevel + this.extra; i++) {
+                if (RandomUtils.generateRandomFloat(0,1) < this.probability) {
+                    initialCount++;
+                }
+            }
+            return initialCount;
+        }
+
+        @Override
+        public Key type() {
+            return Formulas.CROP_DROPS;
+        }
+
+        public static class Factory implements FormulaFactory {
+
+            @Override
+            public Formula create(Map<String, Object> arguments) {
+                int extra = MiscUtils.getAsInt(arguments.getOrDefault("extra", 1));
+                float probability = MiscUtils.getAsFloat(arguments.getOrDefault("probability", 0.5f));
+                return new CropDrops(extra, probability);
             }
         }
     }

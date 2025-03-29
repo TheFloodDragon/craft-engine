@@ -1,6 +1,7 @@
 package net.momirealms.craftengine.core.world;
 
 import net.momirealms.craftengine.core.item.Item;
+import net.momirealms.craftengine.core.sound.SoundData;
 import net.momirealms.craftengine.core.util.Key;
 
 import java.nio.file.Path;
@@ -31,4 +32,8 @@ public interface World {
     void dropExp(Vec3d location, int amount);
 
     void playBlockSound(Vec3d location, Key sound, float volume, float pitch);
+
+    default void playBlockSound(Vec3d location, SoundData data) {
+        playBlockSound(location, data.id(), data.volume(), data.pitch());
+    }
 }

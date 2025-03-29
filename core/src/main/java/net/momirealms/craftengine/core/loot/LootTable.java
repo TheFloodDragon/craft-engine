@@ -10,6 +10,7 @@ import net.momirealms.craftengine.core.loot.function.LootFunction;
 import net.momirealms.craftengine.core.loot.function.LootFunctions;
 import net.momirealms.craftengine.core.loot.number.NumberProvider;
 import net.momirealms.craftengine.core.loot.number.NumberProviders;
+import net.momirealms.craftengine.core.util.MiscUtils;
 import net.momirealms.craftengine.core.util.context.ContextHolder;
 import net.momirealms.craftengine.core.world.World;
 import org.jetbrains.annotations.Nullable;
@@ -43,19 +44,19 @@ public class LootTable<T> {
             NumberProvider rolls = NumberProviders.fromObject(pool.getOrDefault("rolls", 1));
             NumberProvider bonus_rolls = NumberProviders.fromObject(pool.getOrDefault("bonus_rolls", 0));
             List<LootCondition> conditions = Optional.ofNullable(pool.get("conditions"))
-                    .map(it -> LootConditions.fromMapList((List<Map<String, Object>>) it))
+                    .map(it -> LootConditions.fromMapList(MiscUtils.castToMapListOrThrow(it, () -> new RuntimeException("'conditions' should be a map list, current type: " + it.getClass().getSimpleName()))))
                     .orElse(Lists.newArrayList());
             List<LootEntryContainer<T>> containers = Optional.ofNullable(pool.get("entries"))
-                    .map(it -> (List<LootEntryContainer<T>>) new ArrayList<LootEntryContainer<T>>(LootEntryContainers.fromMapList((List<Map<String, Object>>) it)))
+                    .map(it -> (List<LootEntryContainer<T>>) new ArrayList<LootEntryContainer<T>>(LootEntryContainers.fromMapList(MiscUtils.castToMapListOrThrow(it, () -> new RuntimeException("'entries' should be a map list, current type: " + it.getClass().getSimpleName())))))
                     .orElse(Lists.newArrayList());
             List<LootFunction<T>> functions = Optional.ofNullable(pool.get("functions"))
-                    .map(it -> (List<LootFunction<T>>) new ArrayList<LootFunction<T>>(LootFunctions.fromMapList((List<Map<String, Object>>) it)))
+                    .map(it -> (List<LootFunction<T>>) new ArrayList<LootFunction<T>>(LootFunctions.fromMapList(MiscUtils.castToMapListOrThrow(it, () -> new RuntimeException("'functions' should be a map list, current type: " + it.getClass().getSimpleName())))))
                     .orElse(Lists.newArrayList());
             lootPools.add(new LootPool<>(containers, conditions, functions, rolls, bonus_rolls));
         }
         return new LootTable<>(lootPools,
                 Optional.ofNullable(map.get("functions"))
-                        .map(it -> (List<LootFunction<T>>) new ArrayList<LootFunction<T>>(LootFunctions.fromMapList((List<Map<String, Object>>) it)))
+                        .map(it -> (List<LootFunction<T>>) new ArrayList<LootFunction<T>>(LootFunctions.fromMapList(MiscUtils.castToMapListOrThrow(it, () -> new RuntimeException("'functions' should be a map list, current type: " + it.getClass().getSimpleName())))))
                         .orElse(Lists.newArrayList())
         );
     }

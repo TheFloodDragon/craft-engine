@@ -2,6 +2,7 @@ package net.momirealms.craftengine.bukkit.block.behavior;
 
 import net.momirealms.craftengine.bukkit.api.CraftEngineBlocks;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.util.*;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
@@ -12,6 +13,7 @@ import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
 import net.momirealms.craftengine.core.util.RandomUtils;
+import net.momirealms.craftengine.core.util.Tuple;
 import net.momirealms.craftengine.shared.block.BlockBehavior;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -19,6 +21,7 @@ import org.bukkit.World;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 public class SaplingBlockBehavior extends BushBlockBehavior {
@@ -26,12 +29,14 @@ public class SaplingBlockBehavior extends BushBlockBehavior {
     private final Key feature;
     private final Property<Integer> stageProperty;
     private final double boneMealSuccessChance;
+    private final float growSpeed;
 
-    public SaplingBlockBehavior(Key feature, Property<Integer> stageProperty, List<Object> tagsCanSurviveOn, double boneMealSuccessChance) {
-        super(tagsCanSurviveOn);
+    public SaplingBlockBehavior(Key feature, Property<Integer> stageProperty, List<Object> tagsCanSurviveOn, Set<Object> blocksCansSurviveOn, Set<String> customBlocksCansSurviveOn, double boneMealSuccessChance, float growSpeed) {
+        super(tagsCanSurviveOn, blocksCansSurviveOn, customBlocksCansSurviveOn);
         this.feature = feature;
         this.stageProperty = stageProperty;
         this.boneMealSuccessChance = boneMealSuccessChance;
+        this.growSpeed = growSpeed;
     }
 
     public Key treeFeature() {
@@ -43,11 +48,8 @@ public class SaplingBlockBehavior extends BushBlockBehavior {
         Object world = args[1];
         Object blockPos = args[2];
         Object blockState = args[0];
-        int x = (int) Reflections.field$Vec3i$x.get(blockPos);
-        int y = (int) Reflections.field$Vec3i$y.get(blockPos);
-        int z = (int) Reflections.field$Vec3i$z.get(blockPos);
-        Object aboveBlockPos = LocationUtils.toBlockPos(x, y + 1, z);
-        if ((int) Reflections.method$LevelReader$getMaxLocalRawBrightness.invoke(world, aboveBlockPos) >= 9 && (float) Reflections.method$RandomSource$nextFloat.invoke(args[3]) < (1.0f / 7.0f)) {
+        Object aboveBlockPos = LocationUtils.above(blockPos);
+        if ((int) Reflections.method$LevelReader$getMaxLocalRawBrightness.invoke(world, aboveBlockPos) >= 9 && (float) RandomUtils.generateRandomFloat(0, 1) < growSpeed) {
             increaseStage(world, blockPos, blockState, args[3]);
         }
     }
@@ -58,10 +60,10 @@ public class SaplingBlockBehavior extends BushBlockBehavior {
         int currentStage = immutableBlockState.get(this.stageProperty);
         if (currentStage != this.stageProperty.possibleValues().get(this.stageProperty.possibleValues().size() - 1)) {
             ImmutableBlockState nextStage = immutableBlockState.cycle(this.stageProperty);
-            World bukkitWorld = (World) Reflections.method$Level$getCraftWorld.invoke(world);
-            int x = (int) Reflections.field$Vec3i$x.get(blockPos);
-            int y = (int) Reflections.field$Vec3i$y.get(blockPos);
-            int z = (int) Reflections.field$Vec3i$z.get(blockPos);
+            World bukkitWorld = FastNMS.INSTANCE.method$Level$getCraftWorld(world);
+            int x = FastNMS.INSTANCE.field$Vec3i$x(blockPos);
+            int y = FastNMS.INSTANCE.field$Vec3i$y(blockPos);
+            int z = FastNMS.INSTANCE.field$Vec3i$z(blockPos);
             CraftEngineBlocks.place(new Location(bukkitWorld, x, y, z), nextStage, UpdateOption.UPDATE_NONE, false);
         } else {
             generateTree(world, blockPos, blockState, randomSource);
@@ -83,7 +85,7 @@ public class SaplingBlockBehavior extends BushBlockBehavior {
         Object legacyState = Reflections.method$FluidState$createLegacyBlock.invoke(fluidState);
         Reflections.method$Level$setBlock.invoke(world, blockPos, legacyState, UpdateOption.UPDATE_NONE.flags());
         if ((boolean) Reflections.method$ConfiguredFeature$place.invoke(configuredFeature, world, chunkGenerator, randomSource, blockPos)) {
-            if (Reflections.method$BlockGetter$getBlockState.invoke(world, blockPos) == legacyState) {
+            if (FastNMS.INSTANCE.method$BlockGetter$getBlockState(world, blockPos) == legacyState) {
                 Reflections.method$ServerLevel$sendBlockUpdated.invoke(world, blockPos, blockState, legacyState, 2);
             }
         } else {
@@ -93,8 +95,34 @@ public class SaplingBlockBehavior extends BushBlockBehavior {
     }
 
     @Override
-    public boolean isBoneMealSuccess(Object thisBlock, Object[] args) {
-        return RandomUtils.generateRandomDouble(0d, 1d) < this.boneMealSuccessChance;
+    public boolean isBoneMealSuccess(Object thisBlock, Object[] args) throws Exception {
+        boolean success = RandomUtils.generateRandomDouble(0d, 1d) < this.boneMealSuccessChance;
+        Object level = args[0];
+        Object blockPos = args[2];
+        Object blockState = args[3];
+        ImmutableBlockState immutableBlockState = BukkitBlockManager.instance().getImmutableBlockState(BlockStateUtils.blockStateToId(blockState));
+        if (immutableBlockState == null || immutableBlockState.isEmpty()) {
+            return false;
+        }
+        boolean sendParticles = false;
+        Object visualState = immutableBlockState.vanillaBlockState().handle();
+        Object visualStateBlock = Reflections.method$BlockStateBase$getBlock.invoke(visualState);
+        if (Reflections.clazz$BonemealableBlock.isInstance(visualStateBlock)) {
+            boolean is = (boolean) Reflections.method$BonemealableBlock$isValidBonemealTarget.invoke(visualStateBlock, level, blockPos, visualState);
+            if (!is) {
+                sendParticles = true;
+            }
+        } else {
+            sendParticles = true;
+        }
+        if (sendParticles) {
+            World world = FastNMS.INSTANCE.method$Level$getCraftWorld(level);
+            int x = FastNMS.INSTANCE.field$Vec3i$x(blockPos);
+            int y = FastNMS.INSTANCE.field$Vec3i$y(blockPos);
+            int z = FastNMS.INSTANCE.field$Vec3i$z(blockPos);
+            world.spawnParticle(ParticleUtils.getParticle("HAPPY_VILLAGER"), x + 0.5, y + 0.5, z + 0.5, 12, 0.25, 0.25, 0.25);
+        }
+        return success;
     }
 
     @Override
@@ -121,11 +149,9 @@ public class SaplingBlockBehavior extends BushBlockBehavior {
                 throw new IllegalArgumentException("stage property not set for sapling");
             }
             double boneMealSuccessChance = MiscUtils.getAsDouble(arguments.getOrDefault("bone-meal-success-chance", 0.45));
-            if (arguments.containsKey("tags")) {
-                return new SaplingBlockBehavior(Key.of(feature), stageProperty, MiscUtils.getAsStringList(arguments.get("tags")).stream().map(it -> BlockTags.getOrCreate(Key.of(it))).toList(), boneMealSuccessChance);
-            } else {
-                return new SaplingBlockBehavior(Key.of(feature), stageProperty, List.of(DIRT_TAG, FARMLAND), boneMealSuccessChance);
-            }
+            Tuple<List<Object>, Set<Object>, Set<String>> tuple = readTagsAndState(arguments);
+            return new SaplingBlockBehavior(Key.of(feature), stageProperty, tuple.left(), tuple.mid(), tuple.right(), boneMealSuccessChance,
+                    MiscUtils.getAsFloat(arguments.getOrDefault("grow-speed", 1.0 / 7.0)));
         }
     }
 }

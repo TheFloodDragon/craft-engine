@@ -7,6 +7,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.dejvokep.boostedyaml.YamlDocument;
+import net.momirealms.craftengine.bukkit.compatibility.worldedit.WorldEditBlockRegister;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.plugin.injector.BukkitInjector;
 import net.momirealms.craftengine.bukkit.plugin.network.PacketConsumers;
@@ -45,13 +46,12 @@ public class BukkitBlockManager extends AbstractBlockManager {
     private static BukkitBlockManager instance;
     private final BukkitCraftEngine plugin;
 
-    // Used to store override information of json files
-    private final Map<Key, Map<String, JsonElement>> blockStateOverrides = new HashMap<>();
-
     // A temporary map used to detect whether the same block state corresponds to multiple models.
     private final Map<Integer, Key> tempRegistryIdConflictMap = new HashMap<>();
     // A temporary map that converts the custom block registered on the server to the vanilla block ID.
     private final Map<Integer, Integer> tempBlockAppearanceConvertor = new HashMap<>();
+    // A temporary map that stores the model path of a certain vanilla block state
+    private final Map<Integer, JsonElement> tempVanillaBlockStateModels = new HashMap<>();
 
     // The total amount of blocks registered
     private int customBlockCount;
@@ -79,11 +79,19 @@ public class BukkitBlockManager extends AbstractBlockManager {
 
     // a reverted mapper
     private final Map<Integer, List<Integer>> appearanceToRealState = new HashMap<>();
+    // Used to store override information of json files
+    private final Map<Key, Map<String, JsonElement>> blockStateOverrides = new HashMap<>();
+    // for mod, real block id -> state models
+    private final Map<Key, JsonElement> modBlockStates = new HashMap<>();
     // Cached command suggestions
     private final List<Suggestion> cachedSuggestions = new ArrayList<>();
+    // Cached Namespace
+    private final Set<String> namespacesInUse = new HashSet<>();
     // Event listeners
     private final BlockEventListener blockEventListener;
     private final FallingBlockRemoveListener fallingBlockRemoveListener;
+
+    private WorldEditCommandHelper weCommandHelper;
 
     public BukkitBlockManager(BukkitCraftEngine plugin) {
         super(plugin);
@@ -122,6 +130,19 @@ public class BukkitBlockManager extends AbstractBlockManager {
         if (this.fallingBlockRemoveListener != null) {
             Bukkit.getPluginManager().registerEvents(this.fallingBlockRemoveListener, plugin.bootstrap());
         }
+        boolean hasWE = false;
+        // WorldEdit
+        if (this.plugin.isPluginEnabled("FastAsyncWorldEdit")) {
+            this.initFastAsyncWorldEditHook();
+            hasWE = true;
+        } else if (this.plugin.isPluginEnabled("WorldEdit")) {
+            this.initWorldEditHook();
+            hasWE = true;
+        }
+        if (hasWE) {
+            this.weCommandHelper = new WorldEditCommandHelper(this.plugin, this);
+            this.weCommandHelper.enable();
+        }
     }
 
     @Override
@@ -132,6 +153,7 @@ public class BukkitBlockManager extends AbstractBlockManager {
         this.id2CraftEngineBlocks.clear();
         this.cachedSuggestions.clear();
         this.blockStateOverrides.clear();
+        this.modBlockStates.clear();
         if (EmptyBlock.INSTANCE != null)
             Arrays.fill(this.stateId2ImmutableBlockStates, EmptyBlock.INSTANCE.defaultState());
     }
@@ -141,6 +163,7 @@ public class BukkitBlockManager extends AbstractBlockManager {
         this.unload();
         HandlerList.unregisterAll(this.blockEventListener);
         if (this.fallingBlockRemoveListener != null) HandlerList.unregisterAll(this.fallingBlockRemoveListener);
+        if (this.weCommandHelper != null) this.weCommandHelper.disable();
     }
 
     @Override
@@ -158,6 +181,7 @@ public class BukkitBlockManager extends AbstractBlockManager {
     private void clearCache() {
         this.tempRegistryIdConflictMap.clear();
         this.tempBlockAppearanceConvertor.clear();
+        this.tempVanillaBlockStateModels.clear();
     }
 
     public void initFastAsyncWorldEditHook() {
@@ -167,7 +191,7 @@ public class BukkitBlockManager extends AbstractBlockManager {
     public void initWorldEditHook() {
         try {
             for (Key newBlockId : this.blockRegisterOrder) {
-                WorldEditHook.register(newBlockId);
+                WorldEditBlockRegister.register(newBlockId);
             }
         } catch (Exception e) {
             this.plugin.logger().warn("Failed to initialize world edit hook", e);
@@ -181,25 +205,30 @@ public class BukkitBlockManager extends AbstractBlockManager {
 
     @NotNull
     public ImmutableBlockState getImmutableBlockStateUnsafe(int stateId) {
-        return stateId2ImmutableBlockStates[stateId - BlockStateUtils.vanillaStateSize()];
+        return this.stateId2ImmutableBlockStates[stateId - BlockStateUtils.vanillaStateSize()];
     }
 
     @Nullable
     public ImmutableBlockState getImmutableBlockState(int stateId) {
         if (!BlockStateUtils.isVanillaBlock(stateId)) {
-            return stateId2ImmutableBlockStates[stateId - BlockStateUtils.vanillaStateSize()];
+            return this.stateId2ImmutableBlockStates[stateId - BlockStateUtils.vanillaStateSize()];
         }
         return null;
     }
 
     @Override
+    public Map<Key, JsonElement> modBlockStates() {
+        return Collections.unmodifiableMap(this.modBlockStates);
+    }
+
+    @Override
     public Map<Key, Map<String, JsonElement>> blockOverrides() {
-        return blockStateOverrides;
+        return Collections.unmodifiableMap(this.blockStateOverrides);
     }
 
     @Override
     public Map<Key, CustomBlock> blocks() {
-        return this.id2CraftEngineBlocks;
+        return Collections.unmodifiableMap(this.id2CraftEngineBlocks);
     }
 
     @Override
@@ -209,15 +238,17 @@ public class BukkitBlockManager extends AbstractBlockManager {
 
     @Override
     public Collection<Suggestion> cachedSuggestions() {
-        return this.cachedSuggestions;
+        return Collections.unmodifiableCollection(this.cachedSuggestions);
     }
 
     @Override
     public void initSuggestions() {
         this.cachedSuggestions.clear();
+        this.namespacesInUse.clear();
         Set<String> states = new HashSet<>();
         for (CustomBlock block : this.id2CraftEngineBlocks.values()) {
             states.add(block.id().toString());
+            this.namespacesInUse.add(block.id().namespace());
             for (ImmutableBlockState state : block.variantProvider().states()) {
                 states.add(state.toString());
             }
@@ -225,6 +256,10 @@ public class BukkitBlockManager extends AbstractBlockManager {
         for (String state : states) {
             this.cachedSuggestions.add(Suggestion.suggestion(state));
         }
+    }
+
+    public Set<String> namespacesInUse() {
+        return Collections.unmodifiableSet(namespacesInUse);
     }
 
     public ImmutableMap<Key, List<Integer>> blockAppearanceArranger() {
@@ -416,11 +451,19 @@ public class BukkitBlockManager extends AbstractBlockManager {
         // create block
         Map<String, Object> behaviorSection = MiscUtils.castToMap(section.getOrDefault("behavior", Map.of()), false);
 
-        CustomBlock block = new BukkitCustomBlock(id, holder, properties, appearances, variants, settings, behaviorSection, lootTable);
+        BukkitCustomBlock block = new BukkitCustomBlock(id, holder, properties, appearances, variants, settings, behaviorSection, lootTable);
 
         // bind appearance
         bindAppearance(block);
         this.id2CraftEngineBlocks.put(id, block);
+
+        // generate mod assets
+        if (ConfigManager.generateModAssets()) {
+            for (ImmutableBlockState state : block.variantProvider().states()) {
+                Key realBlockId = BlockStateUtils.getBlockOwnerIdFromState(state.customBlockState());
+                this.modBlockStates.put(realBlockId, this.tempVanillaBlockStateModels.get(state.vanillaBlockState().registryId()));
+            }
+        }
     }
 
     private void bindAppearance(CustomBlock block) {
@@ -488,12 +531,14 @@ public class BukkitBlockManager extends AbstractBlockManager {
         Map<String, JsonElement> paths = this.blockStateOverrides.computeIfAbsent(block, k -> new HashMap<>());
         if (variants.size() == 1) {
             paths.put(propertyData, variants.get(0));
+            this.tempVanillaBlockStateModels.put(vanillaStateRegistryId, variants.get(0));
         } else {
             JsonArray array = new JsonArray();
             for (JsonObject object : variants) {
                 array.add(object);
             }
             paths.put(propertyData, array);
+            this.tempVanillaBlockStateModels.put(vanillaStateRegistryId, array);
         }
         return Pair.of(block, vanillaStateRegistryId);
     }
@@ -702,6 +747,7 @@ public class BukkitBlockManager extends AbstractBlockManager {
             if (plugin.hasMod()) {
                 newRealBlock = Reflections.method$Registry$get.invoke(Reflections.instance$BuiltInRegistries$BLOCK, resourceLocation);
                 newBlockState = getOnlyBlockState(newRealBlock);
+
                 @SuppressWarnings("unchecked")
                 Optional<Object> optionalHolder = (Optional<Object>) Reflections.method$Registry$getHolder0.invoke(Reflections.instance$BuiltInRegistries$BLOCK, resourceLocation);
                 blockHolder = optionalHolder.get();
@@ -731,7 +777,7 @@ public class BukkitBlockManager extends AbstractBlockManager {
             builder2.put(stateId, blockHolder);
             stateIds.add(stateId);
 
-            deceiveBukkit(newRealBlock, clientSideBlockType);
+            deceiveBukkit(newRealBlock, clientSideBlockType, isNoteBlock);
             order.add(realBlockKey);
             counter++;
         }
@@ -771,9 +817,9 @@ public class BukkitBlockManager extends AbstractBlockManager {
         return states.get(0);
     }
 
-    private void deceiveBukkit(Object newBlock, Key replacedBlock) throws IllegalAccessException {
+    private void deceiveBukkit(Object newBlock, Key replacedBlock, boolean isNoteBlock) throws IllegalAccessException {
         @SuppressWarnings("unchecked")
         Map<Object, Material> magicMap = (Map<Object, Material>) Reflections.field$CraftMagicNumbers$BLOCK_MATERIAL.get(null);
-        magicMap.put(newBlock, org.bukkit.Registry.MATERIAL.get(Objects.requireNonNull(NamespacedKey.fromString(replacedBlock.toString()))));
+        magicMap.put(newBlock, isNoteBlock ? Material.STONE : org.bukkit.Registry.MATERIAL.get(new NamespacedKey(replacedBlock.namespace(), replacedBlock.value())));
     }
 }

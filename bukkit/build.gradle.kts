@@ -5,9 +5,7 @@ plugins {
 
 repositories {
     maven("https://jitpack.io/")
-    maven("https://repo.extendedclip.com/content/repositories/placeholderapi/") // papi
     maven("https://repo.papermc.io/repository/maven-public/")
-    maven("https://maven.enginehub.org/repo/") // worldguard worldedit
     maven("https://repo.momirealms.net/releases/")
     mavenCentral()
 }
@@ -22,8 +20,8 @@ dependencies {
     // NBT
     compileOnly("net.momirealms:sparrow-nbt:${rootProject.properties["sparrow_nbt_version"]}")
     compileOnly("net.momirealms:sparrow-util:${rootProject.properties["sparrow_util_version"]}")
-    // Placeholder
-    compileOnly("me.clip:placeholderapi:${rootProject.properties["placeholder_api_version"]}")
+    // NMS
+    compileOnly("net.momirealms:craft-engine-nms-helper:${rootProject.properties["nms_helper_version"]}")
     // Platform
     compileOnly("dev.folia:folia-api:${rootProject.properties["paper_version"]}-R0.1-SNAPSHOT")
     // OpenGL Math
@@ -54,10 +52,10 @@ dependencies {
     compileOnly("net.kyori:adventure-text-serializer-gson:${rootProject.properties["adventure_bundle_version"]}") {
         exclude("com.google.code.gson", "gson")
     }
-    compileOnly("com.sk89q.worldedit:worldedit-core:7.2.19")
-    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.2.19")
     // Data Fixer Upper
     compileOnly("com.mojang:datafixerupper:${rootProject.properties["datafixerupper_version"]}")
+    // BStats
+    compileOnly("org.bstats:bstats-bukkit:${rootProject.properties["bstats_version"]}")
 }
 
 java {

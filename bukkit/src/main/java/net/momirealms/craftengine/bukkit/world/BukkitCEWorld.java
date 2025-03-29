@@ -5,11 +5,17 @@ import net.momirealms.craftengine.core.plugin.config.ConfigManager;
 import net.momirealms.craftengine.core.util.SectionPosUtils;
 import net.momirealms.craftengine.core.world.CEWorld;
 import net.momirealms.craftengine.core.world.World;
+import net.momirealms.craftengine.core.world.chunk.storage.StorageAdaptor;
+import net.momirealms.craftengine.core.world.chunk.storage.WorldDataStorage;
 
 public class BukkitCEWorld extends CEWorld {
 
-    public BukkitCEWorld(World world) {
-        super(world);
+    public BukkitCEWorld(World world, StorageAdaptor adaptor) {
+        super(world, adaptor);
+    }
+
+    public BukkitCEWorld(World world, WorldDataStorage dataStorage) {
+        super(world, dataStorage);
     }
 
     @Override

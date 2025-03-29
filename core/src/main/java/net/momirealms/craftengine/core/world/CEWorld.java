@@ -3,7 +3,7 @@ package net.momirealms.craftengine.core.world;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.world.chunk.CEChunk;
-import net.momirealms.craftengine.core.world.chunk.storage.DefaultRegionFileStorage;
+import net.momirealms.craftengine.core.world.chunk.storage.StorageAdaptor;
 import net.momirealms.craftengine.core.world.chunk.storage.WorldDataStorage;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,10 +25,18 @@ public abstract class CEWorld {
     private CEChunk lastChunk;
     private long lastChunkPos;
 
-    public CEWorld(World world) {
+    public CEWorld(World world, StorageAdaptor adaptor) {
         this.world = world;
         this.loadedChunkMap = new Long2ObjectOpenHashMap<>(1024, 0.5f);
-        this.worldDataStorage = new DefaultRegionFileStorage(world.directory().resolve(REGION_DIRECTORY));
+        this.worldDataStorage = adaptor.adapt(world);
+        this.worldHeightAccessor = world.worldHeight();
+        this.lastChunkPos = ChunkPos.INVALID_CHUNK_POS;
+    }
+
+    public CEWorld(World world, WorldDataStorage dataStorage) {
+        this.world = world;
+        this.loadedChunkMap = new Long2ObjectOpenHashMap<>(1024, 0.5f);
+        this.worldDataStorage = dataStorage;
         this.worldHeightAccessor = world.worldHeight();
         this.lastChunkPos = ChunkPos.INVALID_CHUNK_POS;
     }

@@ -14,6 +14,11 @@ import java.util.function.BiFunction;
 public interface ImageManager extends Reloadable, ConfigSectionParser {
     String CONFIG_SECTION_NAME = "images";
     Key DEFAULT_FONT = Key.of("minecraft:default");
+    String BYPASS_BOOK = "craftengine.filter.bypass.book";
+    String BYPASS_SIGN = "craftengine.filter.bypass.sign";
+    String BYPASS_CHAT = "craftengine.filter.bypass.chat";
+    String BYPASS_COMMAND = "craftengine.filter.bypass.command";
+    String BYPASS_ANVIL = "craftengine.filter.bypass.anvil";
 
     default String sectionId() {
         return CONFIG_SECTION_NAME;
@@ -68,4 +73,6 @@ public interface ImageManager extends Reloadable, ConfigSectionParser {
     default int loadingSequence() {
         return LoadingSequence.FONT;
     }
+
+    void delayedInit();
 }

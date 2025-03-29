@@ -3,12 +3,16 @@ package net.momirealms.craftengine.core.util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class ReflectionUtils {
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     private ReflectionUtils() {}
 
@@ -321,7 +325,7 @@ public class ReflectionUtils {
     }
 
     @Nullable
-    public static Method getStaticMethod(final Class<?> clazz, String[] possibleNames, Class<?> returnType, final Class<?>... parameterTypes) {
+    public static Method getStaticMethod(final Class<?> clazz, Class<?> returnType, String[] possibleNames, final Class<?>... parameterTypes) {
         outer:
         for (Method method : clazz.getMethods()) {
             if (method.getParameterCount() != parameterTypes.length) {
@@ -445,5 +449,41 @@ public class ReflectionUtils {
             throw new RuntimeException("This class is expected to have only one constructor but it has " + constructors.length);
         }
         return constructors[0];
+    }
+
+    public static MethodHandle unreflectGetter(Field field) throws IllegalAccessException {
+        try {
+            return LOOKUP.unreflectGetter(field);
+        } catch (IllegalAccessException e) {
+            field.setAccessible(true);
+            return LOOKUP.unreflectGetter(field);
+        }
+    }
+
+    public static MethodHandle unreflectMethod(Method method) throws IllegalAccessException {
+        try {
+            return LOOKUP.unreflect(method);
+        } catch (IllegalAccessException e) {
+            method.setAccessible(true);
+            return LOOKUP.unreflect(method);
+        }
+    }
+
+    public static VarHandle findVarHandle(Class<?> clazz, String name, Class<?> type) {
+        try {
+            return MethodHandles.privateLookupIn(clazz, LOOKUP)
+                    .findVarHandle(clazz, name, type);
+        } catch (NoSuchFieldException | SecurityException | IllegalAccessException e) {
+            return null;
+        }
+    }
+
+    public static VarHandle findVarHandle(Field field) {
+        try {
+            return MethodHandles.privateLookupIn(field.getDeclaringClass(), LOOKUP)
+                    .findVarHandle(field.getDeclaringClass(), field.getName(), field.getType());
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            return null;
+        }
     }
 }

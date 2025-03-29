@@ -14,11 +14,11 @@ repositories {
 
 dependencies {
     implementation(project(":shared"))
-    remapper("net.fabricmc:tiny-remapper:0.10.4:fat")
-    paperweightDevelopmentBundle("io.papermc.paper:dev-bundle:1.21.4-R0.1-SNAPSHOT")
-    compileOnly("space.vectrix.ignite:ignite-api:1.1.0")
-    compileOnly("net.fabricmc:sponge-mixin:0.15.2+mixin.0.8.7")
-    compileOnly("io.github.llamalad7:mixinextras-common:0.4.1")
+    remapper("net.fabricmc:tiny-remapper:${rootProject.properties["tiny_remapper_version"]}:fat")
+    paperweightDevelopmentBundle("io.papermc.paper:dev-bundle:${property("latest_minecraft_version")}-R0.1-SNAPSHOT")
+    compileOnly("space.vectrix.ignite:ignite-api:${rootProject.properties["ignite_version"]}")
+    compileOnly("net.fabricmc:sponge-mixin:${rootProject.properties["mixin_version"]}")
+    compileOnly("io.github.llamalad7:mixinextras-common:${rootProject.properties["mixinextras_version"]}")
 }
 
 java {
@@ -44,7 +44,7 @@ artifacts {
 tasks {
     shadowJar {
         archiveClassifier = ""
-        archiveFileName = "${rootProject.name}-bukkit-mod-${rootProject.properties["project_version"]}.jar"
+        archiveFileName = "${rootProject.name}-ignite-mod-${rootProject.properties["project_version"]}.jar"
         destinationDirectory.set(file("$rootDir/target"))
     }
 }

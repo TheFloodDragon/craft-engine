@@ -10,11 +10,11 @@ public class SoundUtils {
     public static Object toSoundType(BlockSounds sounds) throws ReflectiveOperationException {
         return Reflections.constructor$SoundType.newInstance(
             1f, 1f,
-                getOrRegisterSoundEvent(sounds.breakSound()),
-                getOrRegisterSoundEvent(sounds.stepSound()),
-                getOrRegisterSoundEvent(sounds.placeSound()),
-                getOrRegisterSoundEvent(sounds.hitSound()),
-                getOrRegisterSoundEvent(sounds.fallSound())
+                getOrRegisterSoundEvent(sounds.breakSound().id()),
+                getOrRegisterSoundEvent(sounds.stepSound().id()),
+                getOrRegisterSoundEvent(sounds.placeSound().id()),
+                getOrRegisterSoundEvent(sounds.hitSound().id()),
+                getOrRegisterSoundEvent(sounds.fallSound().id())
         );
     }
 

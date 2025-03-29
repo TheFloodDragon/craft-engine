@@ -188,13 +188,14 @@ public class ItemEventListener implements Listener {
             if (againCustomBlock == null || againCustomBlock.isEmpty()) {
                 return;
             }
+
             BlockPos pos = LocationUtils.toBlockPos(clickedBlock.getLocation());
             Vec3d vec3d = new Vec3d(interactionPoint.getX(), interactionPoint.getY(), interactionPoint.getZ());
             Direction direction = DirectionUtils.toDirection(event.getBlockFace());
             BlockHitResult hitResult = new BlockHitResult(vec3d, direction, pos, false);
             try {
                 BlockData craftBlockData = BlockStateUtils.fromBlockData(againCustomBlock.vanillaBlockState().handle());
-                if (InteractUtils.isInteractable(Key.of(clickedBlock.getType().getKey().asString()), bukkitPlayer, craftBlockData, hitResult, itemInHand)) {
+                if (InteractUtils.isInteractable(KeyUtils.namespacedKey2Key(craftBlockData.getMaterial().getKey()), bukkitPlayer, craftBlockData, hitResult, itemInHand)) {
                     if (!player.isSecondaryUseActive()) {
                         player.setResendSound();
                     }

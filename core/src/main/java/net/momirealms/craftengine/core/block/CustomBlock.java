@@ -1,5 +1,6 @@
 package net.momirealms.craftengine.core.block;
 
+import net.momirealms.craftengine.core.block.behavior.AbstractBlockBehavior;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviors;
 import net.momirealms.craftengine.core.block.properties.Property;
 import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
@@ -153,7 +154,9 @@ public abstract class CustomBlock {
         for (BiFunction<BlockPlaceContext, ImmutableBlockState, ImmutableBlockState> placement : this.placements) {
             state = placement.apply(context, state);
         }
-        state = (ImmutableBlockState) this.behavior.updateStateForPlacement(context, state);
+        if (this.behavior instanceof AbstractBlockBehavior blockBehavior) {
+            state = blockBehavior.updateStateForPlacement(context, state);
+        }
         return state;
     }
 }

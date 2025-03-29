@@ -7,6 +7,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
+import io.papermc.paper.event.player.AsyncChatDecorateEvent;
 import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.core.util.ReflectionUtils;
 import net.momirealms.craftengine.core.util.VersionHelper;
@@ -26,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import sun.misc.Unsafe;
 
 import java.io.BufferedReader;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.*;
 import java.time.Instant;
 import java.util.*;
@@ -469,9 +471,9 @@ public class Reflections {
             BukkitReflectionUtils.assembleCBClass("entity.CraftPlayer")
     ));
 
-    public static final Method method$CraftPlayer$getHandle = requireNonNull(
-            ReflectionUtils.getMethod(clazz$CraftPlayer, new String[] { "getHandle" })
-    );
+//    public static final Method method$CraftPlayer$getHandle = requireNonNull(
+//            ReflectionUtils.getMethod(clazz$CraftPlayer, new String[] { "getHandle" })
+//    );
 
     public static final Field field$ServerPlayer$connection = requireNonNull(
             ReflectionUtils.getInstanceDeclaredField(clazz$ServerPlayer, clazz$ServerGamePacketListenerImpl, 0)
@@ -703,6 +705,19 @@ public class Reflections {
     public static final Constructor<?> constructor$EntityDataAccessor = requireNonNull(
             ReflectionUtils.getConstructor(
                     clazz$EntityDataAccessor, int.class, clazz$EntityDataSerializer
+            )
+    );
+
+    public static final Class<?> clazz$SynchedEntityData = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("network.syncher.SynchedEntityData"),
+                    BukkitReflectionUtils.assembleMCClass("network.syncher.DataWatcher")
+            )
+    );
+
+    public static final Method method$SynchedEntityData$get = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$SynchedEntityData, Object.class, clazz$EntityDataAccessor
             )
     );
 
@@ -1248,9 +1263,18 @@ public class Reflections {
             )
     );
 
+    public static final Class<?> clazz$Team$Visibility = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("world.scores.Team$Visibility"),
+                    BukkitReflectionUtils.assembleMCClass("world.scores.ScoreboardTeamBase$EnumTeamPush")
+            )
+    );
+
     public static final Field field$ClientboundSetPlayerTeamPacket$Parameters$nametagVisibility = requireNonNull(
             ReflectionUtils.getInstanceDeclaredField(
-                    clazz$ClientboundSetPlayerTeamPacket$Parameters, String.class, 0
+                    clazz$ClientboundSetPlayerTeamPacket$Parameters,
+                    VersionHelper.isVersionNewerThan1_21_5() ? clazz$Team$Visibility : String.class,
+                    0
             )
     );
 
@@ -1340,17 +1364,17 @@ public class Reflections {
             )
     );
 
-    public static final Field field$Vec3i$x = requireNonNull(
-            ReflectionUtils.getDeclaredField(clazz$Vec3i, int.class, 0)
-    );
-
-    public static final Field field$Vec3i$y = requireNonNull(
-            ReflectionUtils.getDeclaredField(clazz$Vec3i, int.class, 1)
-    );
-
-    public static final Field field$Vec3i$z = requireNonNull(
-            ReflectionUtils.getDeclaredField(clazz$Vec3i, int.class, 2)
-    );
+//    public static final Field field$Vec3i$x = requireNonNull(
+//            ReflectionUtils.getDeclaredField(clazz$Vec3i, int.class, 0)
+//    );
+//
+//    public static final Field field$Vec3i$y = requireNonNull(
+//            ReflectionUtils.getDeclaredField(clazz$Vec3i, int.class, 1)
+//    );
+//
+//    public static final Field field$Vec3i$z = requireNonNull(
+//            ReflectionUtils.getDeclaredField(clazz$Vec3i, int.class, 2)
+//    );
 
     public static final Class<?> clazz$BlockState = requireNonNull(
             ReflectionUtils.getClazz(
@@ -1474,16 +1498,35 @@ public class Reflections {
 
     public static final Object instance$Direction$DOWN;
     public static final Object instance$Direction$UP;
+    public static final Object instance$Direction$NORTH;
+    public static final Object instance$Direction$SOUTH;
+    public static final Object instance$Direction$WEST;
+    public static final Object instance$Direction$EAST;
     public static final Object[] instance$Directions;
+    private static final Map<Object, Object> oppositeDirections = new HashMap<>();
 
     static {
         try {
             instance$Directions = (Object[]) method$Direction$values.invoke(null);
             instance$Direction$DOWN = instance$Directions[0];
             instance$Direction$UP = instance$Directions[1];
+            instance$Direction$NORTH = instance$Directions[2];
+            instance$Direction$SOUTH = instance$Directions[3];
+            instance$Direction$WEST = instance$Directions[4];
+            instance$Direction$EAST = instance$Directions[5];
+            oppositeDirections.put(instance$Direction$DOWN, instance$Direction$UP);
+            oppositeDirections.put(instance$Direction$UP, instance$Direction$DOWN);
+            oppositeDirections.put(instance$Direction$NORTH, instance$Direction$SOUTH);
+            oppositeDirections.put(instance$Direction$SOUTH, instance$Direction$NORTH);
+            oppositeDirections.put(instance$Direction$WEST, instance$Direction$EAST);
+            oppositeDirections.put(instance$Direction$EAST, instance$Direction$WEST);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static Object getOppositeDirection(Object direction) {
+        return oppositeDirections.get(direction);
     }
 
     public static final Class<?> clazz$CraftBlock = requireNonNull(
@@ -1510,15 +1553,21 @@ public class Reflections {
             )
     );
 
-    public static final Method method$CraftBlock$at = requireNonNull(
-            ReflectionUtils.getStaticMethod(
-                    clazz$CraftBlock, clazz$CraftBlock, clazz$LevelAccessor, clazz$BlockPos
-            )
-    );
+//    public static final Method method$CraftBlock$at = requireNonNull(
+//            ReflectionUtils.getStaticMethod(
+//                    clazz$CraftBlock, clazz$CraftBlock, clazz$LevelAccessor, clazz$BlockPos
+//            )
+//    );
 
     public static final Method method$CraftBlockStates$getBlockState = requireNonNull(
             ReflectionUtils.getStaticMethod(
                     clazz$CraftBlockStates, clazz$CraftBlockState, clazz$LevelAccessor, clazz$BlockPos
+            )
+    );
+
+    public static final Method method$CraftBlockState$getHandle = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$CraftBlockState, clazz$BlockState
             )
     );
 
@@ -1534,23 +1583,25 @@ public class Reflections {
             )
     );
 
+    @Deprecated
     public static final Method method$CraftBlockData$createData = requireNonNull(
             ReflectionUtils.getStaticMethod(
-                    clazz$CraftBlockData, new String[]{"createData"}, clazz$CraftBlockData, clazz$BlockState
+                    clazz$CraftBlockData, clazz$CraftBlockData, new String[]{"createData"}, clazz$BlockState
             )
     );
 
+    @Deprecated
     public static final Method method$CraftBlockData$fromData = requireNonNull(
             ReflectionUtils.getStaticMethod(
-                    clazz$CraftBlockData, new String[]{"fromData"}, clazz$CraftBlockData, clazz$BlockState
+                    clazz$CraftBlockData, clazz$CraftBlockData, new String[]{"fromData"}, clazz$BlockState
             )
     );
 
-    public static final Constructor<?> constructor$BlockPos = requireNonNull(
-            ReflectionUtils.getConstructor(
-                    clazz$BlockPos, int.class, int.class, int.class
-            )
-    );
+//    public static final Constructor<?> constructor$BlockPos = requireNonNull(
+//            ReflectionUtils.getConstructor(
+//                    clazz$BlockPos, int.class, int.class, int.class
+//            )
+//    );
 
     public static final Method method$Vec3i$relative = requireNonNull(
             ReflectionUtils.getMethod(
@@ -1636,6 +1687,10 @@ public class Reflections {
             ReflectionUtils.getDeclaredField(
                     clazz$PalettedContainer, clazz$PalettedContainer$Data, 0
             )
+    );
+
+    public static final VarHandle varHandle$PalettedContainer$data = requireNonNull(
+            ReflectionUtils.findVarHandle(field$PalettedContainer$data)
     );
 
     public static final Field field$PalettedContainer$Data$storage = requireNonNull(
@@ -1762,11 +1817,11 @@ public class Reflections {
             )
     );
 
-    public static final Method method$ServerChunkCache$getChunkAtIfLoadedMainThread = requireNonNull(
-            ReflectionUtils.getMethod(
-                    clazz$ServerChunkCache, clazz$LevelChunk, int.class, int.class
-            )
-    );
+//    public static final Method method$ServerChunkCache$getChunkAtIfLoadedMainThread = requireNonNull(
+//            ReflectionUtils.getMethod(
+//                    clazz$ServerChunkCache, clazz$LevelChunk, int.class, int.class
+//            )
+//    );
 
     public static final Field field$ChunkAccess$sections = requireNonNull(
             ReflectionUtils.getDeclaredField(
@@ -1795,30 +1850,38 @@ public class Reflections {
             )
     );
 
-    public static final Field field$ChunkAccess$blockEntities;
+//    public static final Field field$ChunkAccess$blockEntities;
+//
+//    static {
+//        Field targetField = null;
+//        for (Field field : clazz$ChunkAccess.getDeclaredFields()) {
+//            if (Map.class.isAssignableFrom(field.getType())) {
+//                Type genericType = field.getGenericType();
+//                if (genericType instanceof ParameterizedType parameterizedType) {
+//                    Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+//                    if (actualTypeArguments.length == 2 &&
+//                            actualTypeArguments[0].equals(clazz$BlockPos) &&
+//                            actualTypeArguments[1].equals(clazz$BlockEntity)) {
+//                        field.setAccessible(true);
+//                        targetField = field;
+//                    }
+//                }
+//            }
+//        }
+//        field$ChunkAccess$blockEntities = targetField;
+//    }
 
-    static {
-        Field targetField = null;
-        for (Field field : clazz$ChunkAccess.getDeclaredFields()) {
-            if (Map.class.isAssignableFrom(field.getType())) {
-                Type genericType = field.getGenericType();
-                if (genericType instanceof ParameterizedType parameterizedType) {
-                    Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-                    if (actualTypeArguments.length == 2 &&
-                            actualTypeArguments[0].equals(clazz$BlockPos) &&
-                            actualTypeArguments[1].equals(clazz$BlockEntity)) {
-                        field.setAccessible(true);
-                        targetField = field;
-                    }
-                }
-            }
-        }
-        field$ChunkAccess$blockEntities = targetField;
-    }
-
+    @Deprecated
     public static final Method method$LevelChunkSection$setBlockState = requireNonNull(
             ReflectionUtils.getMethod(
                     clazz$LevelChunkSection, clazz$BlockState, int.class, int.class, int.class, clazz$BlockState, boolean.class
+            )
+    );
+
+    @Deprecated
+    public static final Method method$LevelChunkSection$getBlockState = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$LevelChunkSection, clazz$BlockState, int.class, int.class, int.class
             )
     );
 
@@ -2205,6 +2268,25 @@ public class Reflections {
             )
     );
 
+    public static final Class<?> clazz$BlockStateBase$Cache = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("world.level.block.state.BlockBehaviour$BlockStateBase$Cache"),
+                    BukkitReflectionUtils.assembleMCClass("world.level.block.state.BlockBase$BlockData$Cache")
+            )
+    );
+
+    public static final Field field$BlockStateBase$cache = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$BlockStateBase, clazz$BlockStateBase$Cache, 0
+            )
+    );
+
+    // 1.20-1.21.1
+    public static final Field field$BlockStateBase$Cache$lightBlock =
+            ReflectionUtils.getInstanceDeclaredField(
+                    clazz$BlockStateBase$Cache, int.class, 0
+            );
+
     public static final Method method$BlockStateBase$initCache = requireNonNull(
             ReflectionUtils.getMethod(
                     clazz$BlockStateBase, void.class, new String[] { "initCache", "a" }
@@ -2226,6 +2308,12 @@ public class Reflections {
     public static final Field field$BlockStateBase$isViewBlocking = requireNonNull(
             ReflectionUtils.getDeclaredField(
                     clazz$BlockStateBase, clazz$StatePredicate, 2
+            )
+    );
+
+    public static final Field field$BlockStateBase$fluidState = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$BlockStateBase, clazz$FluidState, 0
             )
     );
 
@@ -2282,6 +2370,12 @@ public class Reflections {
                     clazz$BlockStateBase, int.class, 0
             )
     );
+
+    // 1.21.2+
+    public static final Field field$BlockStateBase$lightBlock =
+            ReflectionUtils.getInstanceDeclaredField(
+                    clazz$BlockStateBase, int.class, 1
+            );
 
     public static final Class<?> clazz$AABB = requireNonNull(
             ReflectionUtils.getClazz(
@@ -2377,11 +2471,11 @@ public class Reflections {
             )
     );
 
-    public static final Method method$BlockGetter$getBlockState = requireNonNull(
-            ReflectionUtils.getMethod(
-                    clazz$BlockGetter, clazz$BlockState, clazz$BlockPos
-            )
-    );
+//    public static final Method method$BlockGetter$getBlockState = requireNonNull(
+//            ReflectionUtils.getMethod(
+//                    clazz$BlockGetter, clazz$BlockState, clazz$BlockPos
+//            )
+//    );
 
     public static final Method method$LevelAccessor$scheduleTick = requireNonNull(
             ReflectionUtils.getMethod(
@@ -2575,11 +2669,30 @@ public class Reflections {
             )
     );
 
-    public static final Method method$ChunkHolder$getPlayers = requireNonNull(
-            ReflectionUtils.getMethod(
-                    clazz$ChunkHolder, List.class, boolean.class
+    public static final Class<?> clazz$ChunkHolder$PlayerProvider = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("server.level.ChunkHolder$PlayerProvider"),
+                    BukkitReflectionUtils.assembleMCClass("server.level.PlayerChunk$d")
             )
     );
+
+    public static final Field field$ChunkHolder$playerProvider = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$ChunkHolder, clazz$ChunkHolder$PlayerProvider, 0
+            )
+    );
+
+    public static final Method method$ChunkHolder$PlayerProvider$getPlayers = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$ChunkHolder$PlayerProvider, List.class, clazz$ChunkPos, boolean.class
+            )
+    );
+
+    // 1.20 ~ 1.21.4
+    public static final Method method$ChunkHolder$getPlayers =
+            ReflectionUtils.getMethod(
+                    clazz$ChunkHolder, List.class, boolean.class
+            );
 
     public static final Field field$ChunkHolder$lightEngine = requireNonNull(
             ReflectionUtils.getDeclaredField(
@@ -3161,6 +3274,20 @@ public class Reflections {
             )
     );
 
+    public static final Object instance$ItemStack$EMPTY;
+
+    static {
+        try {
+            instance$ItemStack$EMPTY = requireNonNull(
+                    ReflectionUtils.getDeclaredField(
+                            clazz$ItemStack, clazz$ItemStack, 0
+                    ).get(null)
+            );
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static final Field field$ServerboundSetCreativeModeSlotPacket$itemStack = requireNonNull(
             ReflectionUtils.getDeclaredField(
                     clazz$ServerboundSetCreativeModeSlotPacket, clazz$ItemStack, 0
@@ -3175,13 +3302,13 @@ public class Reflections {
 
     public static final Method method$CraftItemStack$asCraftMirror = requireNonNull(
             ReflectionUtils.getStaticMethod(
-                    clazz$CraftItemStack, new String[]{"asCraftMirror"}, clazz$CraftItemStack, clazz$ItemStack
+                    clazz$CraftItemStack, clazz$CraftItemStack, new String[]{"asCraftMirror"}, clazz$ItemStack
             )
     );
 
-    public static final Method method$CraftItemStack$asNMSMirror = requireNonNull(
+    public static final Method method$CraftItemStack$asNMSCopy = requireNonNull(
             ReflectionUtils.getStaticMethod(
-                    clazz$CraftItemStack, new String[]{"asNMSCopy"}, clazz$ItemStack, ItemStack.class
+                    clazz$CraftItemStack, clazz$ItemStack, new String[]{"asNMSCopy"}, ItemStack.class
             )
     );
 
@@ -3308,6 +3435,7 @@ public class Reflections {
             )
     );
 
+    @Deprecated
     public static final Method method$Level$getCraftWorld = requireNonNull(
             ReflectionUtils.getMethod(
                     clazz$Level, clazz$CraftWorld
@@ -3384,6 +3512,12 @@ public class Reflections {
     public static final Method method$MutableBlockPos$setWithOffset = requireNonNull(
             ReflectionUtils.getMethod(
                     clazz$MutableBlockPos, clazz$MutableBlockPos, clazz$Vec3i, clazz$Direction
+            )
+    );
+
+    public static final Method method$BlockPos$mutable = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$BlockPos, clazz$MutableBlockPos
             )
     );
 
@@ -3651,6 +3785,7 @@ public class Reflections {
     );
 
     public static final Object instance$Items$AIR;
+    public static final Object instance$Items$WATER_BUCKET;
     public static final Object instance$ItemStack$Air;
 
     static {
@@ -3658,6 +3793,8 @@ public class Reflections {
             Object air = method$ResourceLocation$fromNamespaceAndPath.invoke(null, "minecraft", "air");
             instance$Items$AIR = method$Registry$get.invoke(Reflections.instance$BuiltInRegistries$ITEM, air);
             instance$ItemStack$Air = constructor$ItemStack.newInstance(instance$Items$AIR);
+            Object waterBucket = method$ResourceLocation$fromNamespaceAndPath.invoke(null, "minecraft", "water_bucket");
+            instance$Items$WATER_BUCKET = method$Registry$get.invoke(Reflections.instance$BuiltInRegistries$ITEM, waterBucket);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -3815,9 +3952,9 @@ public class Reflections {
     );
 
     public static final Method method$CraftEventFactory$callBlockPlaceEvent = requireNonNull(
-            ReflectionUtils.getStaticMethod(
-                    clazz$CraftEventFactory, BlockPlaceEvent.class, clazz$ServerLevel, clazz$Player, clazz$InteractionHand, BlockState.class, int.class, int.class, int.class
-            )
+            VersionHelper.isVersionNewerThan1_21_5()
+                    ? ReflectionUtils.getStaticMethod(clazz$CraftEventFactory, BlockPlaceEvent.class, clazz$ServerLevel, clazz$Player, clazz$InteractionHand, BlockState.class, clazz$BlockPos)
+                    : ReflectionUtils.getStaticMethod(clazz$CraftEventFactory, BlockPlaceEvent.class, clazz$ServerLevel, clazz$Player, clazz$InteractionHand, BlockState.class, int.class, int.class, int.class)
     );
 
     public static final Class<?> clazz$Abilities = requireNonNull(
@@ -3876,15 +4013,21 @@ public class Reflections {
     );
 
     public static final Object instance$Fluids$WATER;
+    public static final Object instance$Fluids$FLOWING_WATER;
     public static final Object instance$Fluids$LAVA;
+    public static final Object instance$Fluids$FLOWING_LAVA;
     public static final Object instance$Fluids$EMPTY;
 
     static {
         try {
             Object waterId = method$ResourceLocation$fromNamespaceAndPath.invoke(null, "minecraft", "water");
             instance$Fluids$WATER = method$Registry$get.invoke(instance$BuiltInRegistries$FLUID, waterId);
+            Object flowingWaterId = method$ResourceLocation$fromNamespaceAndPath.invoke(null, "minecraft", "flowing_water");
+            instance$Fluids$FLOWING_WATER = method$Registry$get.invoke(instance$BuiltInRegistries$FLUID, flowingWaterId);
             Object lavaId = method$ResourceLocation$fromNamespaceAndPath.invoke(null, "minecraft", "lava");
             instance$Fluids$LAVA = method$Registry$get.invoke(instance$BuiltInRegistries$FLUID, lavaId);
+            Object flowingLavaId = method$ResourceLocation$fromNamespaceAndPath.invoke(null, "minecraft", "flowing_lava");
+            instance$Fluids$FLOWING_LAVA = method$Registry$get.invoke(instance$BuiltInRegistries$FLUID, flowingLavaId);
             Object emptyId = method$ResourceLocation$fromNamespaceAndPath.invoke(null, "minecraft", "empty");
             instance$Fluids$EMPTY = method$Registry$get.invoke(instance$BuiltInRegistries$FLUID, emptyId);
         } catch (ReflectiveOperationException e) {
@@ -4538,11 +4681,11 @@ public class Reflections {
             )
     );
 
-    public static final Field field$AbstractFurnaceBlockEntity$recipeType = requireNonNull(
-            ReflectionUtils.getDeclaredField(
-                    clazz$AbstractFurnaceBlockEntity, clazz$RecipeType, 0
-            )
-    );
+//    public static final Field field$AbstractFurnaceBlockEntity$recipeType = requireNonNull(
+//            ReflectionUtils.getDeclaredField(
+//                    clazz$AbstractFurnaceBlockEntity, clazz$RecipeType, 0
+//            )
+//    );
 
     public static final Field field$AbstractFurnaceBlockEntity$quickCheck = requireNonNull(
             ReflectionUtils.getDeclaredField(
@@ -4702,9 +4845,9 @@ public class Reflections {
     );
 
     public static final Method method$ServerLevel$levelEvent = requireNonNull(
-            ReflectionUtils.getMethod(
-                    clazz$ServerLevel, void.class, clazz$Player, int.class, clazz$BlockPos, int.class
-            )
+            VersionHelper.isVersionNewerThan1_21_5()
+                    ? ReflectionUtils.getMethod(clazz$ServerLevel, void.class, clazz$Entity, int.class, clazz$BlockPos, int.class)
+                    : ReflectionUtils.getMethod(clazz$ServerLevel, void.class, clazz$Player, int.class, clazz$BlockPos, int.class)
     );
 
     public static final Method method$PalettedContainer$getAndSet = Objects.requireNonNull(
@@ -4990,12 +5133,24 @@ public class Reflections {
             )
     );
 
+    // 1.21.5+
+    public static final Class<?> clazz$TransmuteResult =
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("world.item.crafting.TransmuteResult")
+            );
+
+    public static final Constructor<?> constructor$TransmuteResult = Optional.ofNullable(clazz$TransmuteResult)
+            .map(it -> ReflectionUtils.getConstructor(it, clazz$Item))
+            .orElse(null);
+
     public static final Constructor<?> constructor$SmithingTransformRecipe = requireNonNull(
-            VersionHelper.isVersionNewerThan1_21_2() ?
-                   ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, Optional.class, Optional.class, Optional.class, clazz$ItemStack) :
-                   VersionHelper.isVersionNewerThan1_20_2() ?
-                           ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, clazz$Ingredient, clazz$Ingredient, clazz$Ingredient, clazz$ItemStack) :
-                           ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, clazz$ResourceLocation, clazz$Ingredient, clazz$Ingredient, clazz$Ingredient, clazz$ItemStack)
+            VersionHelper.isVersionNewerThan1_21_5()
+                    ? ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, Optional.class, clazz$Ingredient, Optional.class, clazz$TransmuteResult)
+                    : VersionHelper.isVersionNewerThan1_21_2()
+                        ? ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, Optional.class, Optional.class, Optional.class, clazz$ItemStack)
+                        : VersionHelper.isVersionNewerThan1_20_2()
+                            ? ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, clazz$Ingredient, clazz$Ingredient, clazz$Ingredient, clazz$ItemStack)
+                            : ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, clazz$ResourceLocation, clazz$Ingredient, clazz$Ingredient, clazz$Ingredient, clazz$ItemStack)
     );
 
     public static final Method method$RecipeManager$addRecipe = requireNonNull(
@@ -5199,6 +5354,421 @@ public class Reflections {
     public static final Field field$ServerboundSignUpdatePacket$lines = requireNonNull(
             ReflectionUtils.getDeclaredField(
                     clazz$ServerboundSignUpdatePacket, String[].class, 0
+            )
+    );
+
+    public static final Class<?> clazz$AdventureComponent = requireNonNull(
+            ReflectionUtils.getClazz(
+                    "net{}kyori{}adventure{}text{}Component".replace("{}", ".")
+            )
+    );
+
+    @SuppressWarnings("UnstableApiUsage")
+    public static final Field field$AsyncChatDecorateEvent$originalMessage = requireNonNull(
+            ReflectionUtils.getDeclaredField(AsyncChatDecorateEvent.class, clazz$AdventureComponent, 0)
+    );
+
+    public static final Class<?> clazz$ComponentSerializer = requireNonNull(
+            ReflectionUtils.getClazz(
+                    "net{}kyori{}adventure{}text{}serializer{}ComponentSerializer".replace("{}", ".")
+            )
+    );
+
+    public static final Class<?> clazz$GsonComponentSerializer = requireNonNull(
+            ReflectionUtils.getClazz(
+                    "net{}kyori{}adventure{}text{}serializer{}gson{}GsonComponentSerializer".replace("{}", ".")
+            )
+    );
+
+    public static final Class<?> clazz$GsonComponentSerializer$Builder = requireNonNull(
+            ReflectionUtils.getClazz(
+                    "net{}kyori{}adventure{}text{}serializer{}gson{}GsonComponentSerializer$Builder".replace("{}", ".")
+            )
+    );
+
+    public static final Method method$GsonComponentSerializer$builder = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$GsonComponentSerializer, clazz$GsonComponentSerializer$Builder
+            )
+    );
+
+    public static final Method method$GsonComponentSerializer$Builder$build = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$GsonComponentSerializer$Builder, clazz$GsonComponentSerializer
+            )
+    );
+
+    public static final Method method$ComponentSerializer$serialize = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$ComponentSerializer, Object.class, new String[] {"serialize"}, clazz$AdventureComponent
+            )
+    );
+
+    public static final Method method$ComponentSerializer$deserialize = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$ComponentSerializer, Object.class, new String[] {"deserialize"}, Object.class
+            )
+    );
+
+    @SuppressWarnings("UnstableApiUsage")
+    public static final Method method$AsyncChatDecorateEvent$result = requireNonNull(
+            ReflectionUtils.getMethod(
+                    AsyncChatDecorateEvent.class, void.class, clazz$AdventureComponent
+            )
+    );
+
+    public static final Class<?> clazz$ServerboundEditBookPacket = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("network.protocol.game.ServerboundEditBookPacket"),
+                    BukkitReflectionUtils.assembleMCClass("network.protocol.game.PacketPlayInBEdit")
+            )
+    );
+
+    public static final Field field$ServerboundEditBookPacket$slot = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$ServerboundEditBookPacket, int.class, 0
+            )
+    );
+
+    public static final Field field$ServerboundEditBookPacket$pages = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$ServerboundEditBookPacket, List.class, 0
+            )
+    );
+
+    public static final Field field$ServerboundEditBookPacket$title = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$ServerboundEditBookPacket, Optional.class, 0
+            )
+    );
+
+    public static final Constructor<?> constructor$ServerboundEditBookPacket = requireNonNull(
+            ReflectionUtils.getConstructor(
+                    clazz$ServerboundEditBookPacket, int.class, List.class, Optional.class
+            )
+    );
+
+    public static final Class<?> clazz$SimpleWaterloggedBlock = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("world.level.block.SimpleWaterloggedBlock"),
+                    BukkitReflectionUtils.assembleMCClass("world.level.block.IBlockWaterlogged")
+            )
+    );
+
+    public static final Method method$SimpleWaterloggedBlock$canPlaceLiquid = requireNonNull(
+            VersionHelper.isVersionNewerThan1_21_5()
+                    ? ReflectionUtils.getMethod(clazz$SimpleWaterloggedBlock, boolean.class, clazz$LivingEntity, clazz$BlockGetter, clazz$BlockPos, clazz$BlockState, clazz$Fluid)
+                    : VersionHelper.isVersionNewerThan1_20_2()
+                        ? ReflectionUtils.getMethod(clazz$SimpleWaterloggedBlock, boolean.class, clazz$Player, clazz$BlockGetter, clazz$BlockPos, clazz$BlockState, clazz$Fluid)
+                        : ReflectionUtils.getMethod(clazz$SimpleWaterloggedBlock, boolean.class, clazz$BlockGetter, clazz$BlockPos, clazz$BlockState, clazz$Fluid)
+    );
+
+    public static final Method method$SimpleWaterloggedBlock$placeLiquid = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$SimpleWaterloggedBlock, boolean.class, clazz$LevelAccessor, clazz$BlockPos, clazz$BlockState, clazz$FluidState
+            )
+    );
+
+    public static final Method method$SimpleWaterloggedBlock$pickupBlock = requireNonNull(
+            VersionHelper.isVersionNewerThan1_21_5()
+                    ? ReflectionUtils.getMethod(clazz$SimpleWaterloggedBlock, clazz$ItemStack, clazz$LivingEntity, clazz$LevelAccessor, clazz$BlockPos, clazz$BlockState)
+                    : VersionHelper.isVersionNewerThan1_20_2()
+                        ? ReflectionUtils.getMethod(clazz$SimpleWaterloggedBlock, clazz$ItemStack, clazz$Player, clazz$LevelAccessor, clazz$BlockPos, clazz$BlockState)
+                        : ReflectionUtils.getMethod(clazz$SimpleWaterloggedBlock, clazz$ItemStack, clazz$LevelAccessor, clazz$BlockPos, clazz$BlockState)
+    );
+
+    public static final Method method$Fluid$getTickDelay = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$Fluid, int.class, clazz$LevelReader
+            )
+    );
+
+    public static final Method method$Fluid$defaultFluidState = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$Fluid, clazz$FluidState, 0
+            )
+    );
+
+    public static final Object instance$Fluid$EMPTY$defaultState;
+
+    static {
+        try {
+            instance$Fluid$EMPTY$defaultState = method$Fluid$defaultFluidState.invoke(instance$Fluids$EMPTY);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static final Class<?> clazz$SingleValuePalette = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("world.level.chunk.SingleValuePalette")
+            )
+    );
+
+    public static final Field field$SingleValuePalette$value = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$SingleValuePalette, Object.class, 0
+            )
+    );
+
+    public static final Class<?> clazz$HashMapPalette = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("world.level.chunk.HashMapPalette"),
+                    BukkitReflectionUtils.assembleMCClass("world.level.chunk.DataPaletteHash")
+            )
+    );
+
+    public static final Class<?> clazz$CrudeIncrementalIntIdentityHashBiMap = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("util.CrudeIncrementalIntIdentityHashBiMap"),
+                    BukkitReflectionUtils.assembleMCClass("util.RegistryID")
+            )
+    );
+
+    public static final Field field$CrudeIncrementalIntIdentityHashBiMap$keys = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$CrudeIncrementalIntIdentityHashBiMap, Object.class.arrayType(), 0
+            )
+    );
+
+    public static final Field field$HashMapPalette$values = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$HashMapPalette, clazz$CrudeIncrementalIntIdentityHashBiMap, 0
+            )
+    );
+
+    public static final Class<?> clazz$LinearPalette = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("world.level.chunk.LinearPalette"),
+                    BukkitReflectionUtils.assembleMCClass("world.level.chunk.DataPaletteLinear")
+            )
+    );
+
+    public static final Field field$LinearPalette$values = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$LinearPalette, Object.class.arrayType(), 0
+            )
+    );
+
+    public static final Object instance$Entity$DATA_SILENT;
+
+    static {
+        int i = 0;
+        Field targetField = null;
+        for (Field field : clazz$Entity.getDeclaredFields()) {
+            Type fieldType = field.getGenericType();
+            if (field.getType() == clazz$EntityDataAccessor && fieldType instanceof ParameterizedType paramType) {
+                if (paramType.getActualTypeArguments()[0] == Boolean.class) {
+                    i++;
+                    if (i == 2) {
+                        targetField = field;
+                        break;
+                    }
+                }
+            }
+        }
+        try {
+            instance$Entity$DATA_SILENT = ReflectionUtils.setAccessible(requireNonNull(targetField)).get(null);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static final Field field$Entity$entityData = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$Entity, clazz$SynchedEntityData, 0
+            )
+    );
+
+    public static final Class<?> clazz$SupportType = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("world.level.block.SupportType"),
+                    BukkitReflectionUtils.assembleMCClass("world.level.block.EnumBlockSupport")
+            )
+    );
+
+    public static final Method method$SupportType$values = requireNonNull(
+            ReflectionUtils.getStaticMethod(
+                    clazz$SupportType, clazz$SupportType.arrayType()
+            )
+    );
+
+    public static final Object instance$SupportType$FULL;
+    public static final Object instance$SupportType$CENTER;
+    public static final Object instance$SupportType$RIGID;
+
+    static {
+        try {
+            Object[] values = (Object[]) method$SupportType$values.invoke(null);
+            instance$SupportType$FULL = values[0];
+            instance$SupportType$CENTER = values[1];
+            instance$SupportType$RIGID = values[2];
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static final Method method$BlockStateBase$isFaceSturdy = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$BlockStateBase, boolean.class, clazz$BlockGetter, clazz$BlockPos, clazz$Direction, clazz$SupportType
+            )
+    );
+
+    public static final Method method$CraftEventFactory$handleBlockFormEvent = requireNonNull(
+            ReflectionUtils.getStaticMethod(
+                    clazz$CraftEventFactory, boolean.class, new String[] { "handleBlockFormEvent" }, clazz$Level, clazz$BlockPos, clazz$BlockState, int.class
+            )
+    );
+
+    public static final Constructor<?> constructor$ClientboundLevelChunkWithLightPacket = requireNonNull(
+            ReflectionUtils.getConstructor(
+                    clazz$ClientboundLevelChunkWithLightPacket, clazz$LevelChunk, clazz$LevelLightEngine, BitSet.class, BitSet.class
+            )
+    );
+
+    public static final Class<?> clazz$BlockInWorld = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("world.level.block.state.pattern.BlockInWorld"),
+                    BukkitReflectionUtils.assembleMCClass("world.level.block.state.pattern.ShapeDetectorBlock")
+            )
+    );
+
+    public static final Constructor<?> constructor$BlockInWorld = requireNonNull(
+            ReflectionUtils.getConstructor(
+                    clazz$BlockInWorld, 0
+            )
+    );
+
+    // 1.20.5+
+    public static final Method method$ItemStack$canBreakBlockInAdventureMode =
+            ReflectionUtils.getMethod(
+                    clazz$ItemStack, new String[]{"canBreakBlockInAdventureMode"}, clazz$BlockInWorld
+            );
+
+    // 1.20 ~ 1.20.4
+    // instance$BuiltInRegistries$BLOCK
+    public static final Method method$ItemStack$canDestroy =
+            ReflectionUtils.getMethod(
+                    clazz$ItemStack,new String[]{"b"}, clazz$Registry, clazz$BlockInWorld
+            );
+
+    public static final Method method$BlockStateBase$getBlock = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$BlockStateBase, clazz$Block
+            )
+    );
+
+    public static final Method method$BlockBehaviour$getDescriptionId = requireNonNull(
+            VersionHelper.isVersionNewerThan1_21_2()
+                    ? ReflectionUtils.getMethod(clazz$BlockBehaviour, String.class)
+                    : ReflectionUtils.getMethod(clazz$Block, String.class)
+    );
+
+    public static final Class<?> clazz$ServerboundCustomPayloadPacket = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("network.protocol.common.ServerboundCustomPayloadPacket"),
+                    BukkitReflectionUtils.assembleMCClass("network.protocol.game.PacketPlayInCustomPayload")
+            )
+    );
+
+    // 1.20.2+
+    public static final Class<?> clazz$CustomPacketPayload =
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("network.protocol.common.custom.CustomPacketPayload")
+            );
+
+    // 1.20.5+
+    public static final Class<?> clazz$CustomPacketPayload$Type =
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("network.protocol.common.custom.CustomPacketPayload$Type")
+            );
+
+    // 1.20.2+
+    public static final Field field$ServerboundCustomPayloadPacket$payload = Optional.ofNullable(clazz$CustomPacketPayload)
+            .map(it -> ReflectionUtils.getDeclaredField(clazz$ServerboundCustomPayloadPacket, it, 0))
+            .orElse(null);
+
+    // 1.20.2+
+    public static final Class<?> clazz$DiscardedPayload =
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("network.protocol.common.custom.DiscardedPayload")
+            );
+
+    // 1.20.5+
+    public static final Method method$CustomPacketPayload$type = Optional.ofNullable(clazz$CustomPacketPayload$Type)
+            .map(it -> ReflectionUtils.getMethod(clazz$CustomPacketPayload, it))
+            .orElse(null);
+
+    // 1.20.5+
+    public static final Method method$CustomPacketPayload$Type$id = Optional.ofNullable(clazz$CustomPacketPayload$Type)
+            .map(it -> ReflectionUtils.getMethod(it, clazz$ResourceLocation))
+            .orElse(null);
+
+    // 1.20.5~1.21.4#221
+    public static final Method method$DiscardedPayload$data = Optional.ofNullable(clazz$DiscardedPayload)
+            .map(it -> ReflectionUtils.getMethod(it, ByteBuf.class))
+            .orElse(null);
+
+    // 1.21.4#222+
+    public static final Method method$DiscardedPayload$dataByteArray = Optional.ofNullable(method$DiscardedPayload$data)
+            .map(m -> (Method) null)
+            .orElseGet(() -> Optional.ofNullable(clazz$DiscardedPayload)
+                    .map(clazz -> ReflectionUtils.getMethod(clazz, byte[].class))
+                    .orElse(null)
+            );
+
+    public static final Class<?> clazz$ClientboundDisconnectPacket = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("network.protocol.common.ClientboundDisconnectPacket"),
+                    BukkitReflectionUtils.assembleMCClass("network.protocol.game.PacketPlayOutKickDisconnect")
+            )
+    );
+
+    public static final Constructor<?> constructor$ClientboundDisconnectPacket = requireNonNull(
+            ReflectionUtils.getConstructor(
+                    clazz$ClientboundDisconnectPacket, clazz$Component
+            )
+    );
+
+    public static final Method method$CraftEventFactory$handleBlockGrowEvent = requireNonNull(
+            VersionHelper.isVersionNewerThan1_21_5() ?
+            ReflectionUtils.getStaticMethod(
+                    clazz$CraftEventFactory, boolean.class, clazz$Level, clazz$BlockPos, clazz$BlockState, int.class
+            ) :
+            ReflectionUtils.getStaticMethod(
+                    clazz$CraftEventFactory, boolean.class, clazz$Level, clazz$BlockPos, clazz$BlockState
+            )
+    );
+
+    public static final Class<?> clazz$BlockAndTintGetter = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("world.level.BlockAndTintGetter"),
+                    BukkitReflectionUtils.assembleMCClass("world.level.IBlockLightAccess")
+            )
+    );
+
+    public static final Method method$BlockAndTintGetter$getRawBrightness = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$BlockAndTintGetter, int.class, clazz$BlockPos, int.class
+            )
+    );
+
+    public static final Field field$Level$random = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$Level, clazz$RandomSource, 0
+            )
+    );
+
+    public static final Class<?> clazz$Mth = requireNonNull(
+            ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("util.Mth"),
+                    BukkitReflectionUtils.assembleMCClass("util.MathHelper")
+            )
+    );
+
+    public static final Method method$nextInt = requireNonNull(
+            ReflectionUtils.getMethod(
+                    clazz$Mth, int.class, clazz$RandomSource, int.class, int.class
             )
     );
 }

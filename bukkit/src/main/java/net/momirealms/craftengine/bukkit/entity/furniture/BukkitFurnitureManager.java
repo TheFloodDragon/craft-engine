@@ -7,6 +7,7 @@ import net.momirealms.craftengine.core.loot.LootTable;
 import net.momirealms.craftengine.core.pack.Pack;
 import net.momirealms.craftengine.core.plugin.config.ConfigManager;
 import net.momirealms.craftengine.core.plugin.scheduler.SchedulerTask;
+import net.momirealms.craftengine.core.sound.SoundData;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
 import net.momirealms.craftengine.core.util.VersionHelper;
@@ -15,6 +16,7 @@ import org.bukkit.entity.*;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.persistence.PersistentDataType;
+import org.incendo.cloud.suggestion.Suggestion;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
@@ -40,6 +42,8 @@ public class BukkitFurnitureManager implements FurnitureManager {
     private final FurnitureEventListener furnitureEventListener;
     // tick task
     private SchedulerTask tickTask;
+    // Cached command suggestions
+    private final List<Suggestion> cachedSuggestions = new ArrayList<>();
 
     public static BukkitFurnitureManager instance() {
         return instance;
@@ -53,16 +57,39 @@ public class BukkitFurnitureManager implements FurnitureManager {
     }
 
     public LoadedFurniture place(CustomFurniture furniture, Location location, AnchorType anchorType, boolean playSound) {
+        if (furniture.isAllowedPlacement(anchorType)) {
+            anchorType = furniture.getAnyPlacement();
+        }
+        AnchorType finalAnchorType = anchorType;
         Entity furnitureEntity = EntityUtils.spawnEntity(location.getWorld(), location, EntityType.ITEM_DISPLAY, entity -> {
             ItemDisplay display = (ItemDisplay) entity;
             display.getPersistentDataContainer().set(BukkitFurnitureManager.FURNITURE_KEY, PersistentDataType.STRING, furniture.id().toString());
-            display.getPersistentDataContainer().set(BukkitFurnitureManager.FURNITURE_ANCHOR_KEY, PersistentDataType.STRING, anchorType.name());
+            display.getPersistentDataContainer().set(BukkitFurnitureManager.FURNITURE_ANCHOR_KEY, PersistentDataType.STRING, finalAnchorType.name());
             handleEntityLoadEarly(display);
         });
         if (playSound) {
-            location.getWorld().playSound(location, furniture.settings().sounds().placeSound().toString(), SoundCategory.BLOCKS,1f, 1f);
+            SoundData data = furniture.settings().sounds().placeSound();
+            location.getWorld().playSound(location, data.id().toString(), SoundCategory.BLOCKS, data.volume(), data.pitch());
         }
         return getLoadedFurnitureByBaseEntityId(furnitureEntity.getEntityId());
+    }
+
+    @Override
+    public void delayedLoad() {
+        this.initSuggestions();
+    }
+
+    @Override
+    public void initSuggestions() {
+        this.cachedSuggestions.clear();
+        for (Key key : this.byId.keySet()) {
+            this.cachedSuggestions.add(Suggestion.suggestion(key.toString()));
+        }
+    }
+
+    @Override
+    public Collection<Suggestion> cachedSuggestions() {
+        return Collections.unmodifiableCollection(this.cachedSuggestions);
     }
 
     @SuppressWarnings("unchecked")

@@ -1,0 +1,9 @@
+images:
+  default:icons:
+    height: 10
+    ascent: 9
+    font: minecraft:icons # Do not use 'minecraft:default' unless other plugins don't support custom font!
+    file: minecraft:font/image/icons.png
+    chars:
+     - '\ub000\ub001'
+     - '\ub002\ub003'

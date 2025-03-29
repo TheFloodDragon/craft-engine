@@ -24,6 +24,8 @@ public interface BlockManager extends Reloadable, ModelGenerator, ConfigSectionP
 
     Map<Key, Map<String, JsonElement>> blockOverrides();
 
+    Map<Key, JsonElement> modBlockStates();
+
     Map<Key, CustomBlock> blocks();
 
     Optional<CustomBlock> getBlock(Key key);

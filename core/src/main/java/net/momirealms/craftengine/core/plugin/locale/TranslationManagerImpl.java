@@ -33,7 +33,6 @@ public class TranslationManagerImpl implements TranslationManager {
     private final Plugin plugin;
     private final Set<Locale> installed = ConcurrentHashMap.newKeySet();
     private final Path translationsDirectory;
-    private final Map<Locale, I18NData> i18nData = new HashMap<>();
     private final ClientLangManager clientLangManager;
     private final String langVersion;
     private final String[] supportedLanguages;
@@ -66,7 +65,6 @@ public class TranslationManagerImpl implements TranslationManager {
     @Override
     public void reload() {
         // clear old data
-        this.i18nData.clear();
         this.clientLangManager.reload();
 
         // remove any previous registry
@@ -90,9 +88,6 @@ public class TranslationManagerImpl implements TranslationManager {
     private void setSelectedLocale() {
         if (this.forcedLocale != null) {
             this.selectedLocale = forcedLocale;
-            if (!this.installed.contains(forcedLocale)) {
-                this.plugin.logger().warn("The forced locale is set to " + forcedLocale + ", but it is not available.");
-            }
             return;
         }
 
@@ -214,42 +209,20 @@ public class TranslationManagerImpl implements TranslationManager {
     }
 
     @Override
-    public String translateI18NTag(String i18nId) {
-        I18NData data = this.i18nData.get(this.selectedLocale);
-        String translation = getI18NOrNull(data, i18nId);
-        if (translation != null) return translation;
-        Locale lang = Locale.of(selectedLocale.getLanguage());
-        if (!this.selectedLocale.equals(lang)) {
-            data = this.i18nData.get(lang);
-            translation = getI18NOrNull(data, i18nId);
-            if (translation != null) return translation;
-        }
-        I18NData fallback = this.i18nData.get(DEFAULT_LOCALE);
-        if (fallback != null) {
-            translation = fallback.translate(i18nId);
-            return translation == null ? i18nId : translation;
-        }
-        return i18nId;
-    }
-
-    @Nullable
-    private String getI18NOrNull(I18NData data, String i18nId) {
-        if (data == null) return null;
-        return data.translate(i18nId);
-    }
-
-    @Override
     public void parseSection(Pack pack, Path path, net.momirealms.craftengine.core.util.Key id, Map<String, Object> section) {
         Locale locale = TranslationManager.parseLocale(id.value());
         if (locale == null) {
             throw new IllegalStateException("Unknown locale '" + id.value() + "' - unable to register.");
         }
 
-        I18NData data = this.i18nData.computeIfAbsent(locale, k -> new I18NData());
+        Map<String, String> bundle = new HashMap<>();
         for (Map.Entry<String, Object> entry : section.entrySet()) {
             String key = entry.getKey();
-            data.addTranslation(key, entry.getValue().toString());
+            bundle.put(key, entry.getValue().toString());
         }
+
+        this.registry.registerAll(locale, bundle);
+        this.installed.add(locale);
     }
 
     @Override

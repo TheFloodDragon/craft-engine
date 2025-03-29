@@ -2,6 +2,7 @@ package net.momirealms.craftengine.core.util;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.gson.JsonElement;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -180,6 +181,24 @@ public class AdventureHelper {
      */
     public static String componentToJson(Component component) {
         return getGson().serialize(component);
+    }
+
+    /**
+     * Converts a JsonElement to a Component.
+     * @param gson the JsonElement to convert
+     * @return the resulting Component
+     */
+    public static Component jsonElementToComponent(JsonElement gson) {
+        return GsonComponentSerializer.gson().deserializeFromTree(gson);
+    }
+
+    /**
+     * Converts a JsonElement to a JSON string.
+     * @param jsonElement the JsonElement to convert
+     * @return the JSON string representation
+     */
+    public static String jsonElementToStringJson(JsonElement jsonElement) {
+        return componentToJson(jsonElementToComponent(jsonElement));
     }
 
     /**

@@ -1,6 +1,7 @@
 package net.momirealms.craftengine.bukkit.block.behavior;
 
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.BlockTags;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
@@ -8,31 +9,38 @@ import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.bukkit.world.BukkitWorld;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
+import net.momirealms.craftengine.core.block.behavior.AbstractBlockBehavior;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.loot.parameter.LootParameters;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
+import net.momirealms.craftengine.core.util.Tuple;
 import net.momirealms.craftengine.core.util.VersionHelper;
 import net.momirealms.craftengine.core.util.context.ContextHolder;
 import net.momirealms.craftengine.core.world.BlockPos;
 import net.momirealms.craftengine.core.world.Vec3d;
 import net.momirealms.craftengine.shared.block.BlockBehavior;
-import org.bukkit.World;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 
-public class BushBlockBehavior extends BlockBehavior {
+public class BushBlockBehavior extends AbstractBlockBehavior {
     public static final Factory FACTORY = new Factory();
-    protected static final Object DIRT_TAG = BlockTags.getOrCreate(Key.of("minecraft", "dirt"));
-    protected static final Object FARMLAND = BlockTags.getOrCreate(Key.of("minecraft", "farmland"));
-    public static final BushBlockBehavior INSTANCE = new BushBlockBehavior(List.of(DIRT_TAG, FARMLAND));
     protected final List<Object> tagsCanSurviveOn;
+    protected final Set<Object> blocksCansSurviveOn;
+    protected final Set<String> customBlocksCansSurviveOn;
+    protected final boolean any;
 
-    public BushBlockBehavior(List<Object> tagsCanSurviveOn) {
+    public BushBlockBehavior(List<Object> tagsCanSurviveOn, Set<Object> blocksCansSurviveOn, Set<String> customBlocksCansSurviveOn) {
         this.tagsCanSurviveOn = tagsCanSurviveOn;
+        this.blocksCansSurviveOn = blocksCansSurviveOn;
+        this.customBlocksCansSurviveOn = customBlocksCansSurviveOn;
+        this.any = this.tagsCanSurviveOn.isEmpty() && this.blocksCansSurviveOn.isEmpty() && this.customBlocksCansSurviveOn.isEmpty();
     }
 
     @Override
@@ -60,7 +68,7 @@ public class BushBlockBehavior extends BlockBehavior {
                 ContextHolder.Builder builder = ContextHolder.builder();
                 BlockPos pos = LocationUtils.fromBlockPos(blockPos);
                 Vec3d vec3d = Vec3d.atCenterOf(pos);
-                net.momirealms.craftengine.core.world.World world = new BukkitWorld((World) Reflections.method$Level$getCraftWorld.invoke(level));
+                net.momirealms.craftengine.core.world.World world = new BukkitWorld(FastNMS.INSTANCE.method$Level$getCraftWorld(level));
                 builder.withParameter(LootParameters.LOCATION, vec3d);
                 builder.withParameter(LootParameters.WORLD, world);
                 for (Item<Object> item : previousState.getDrops(builder, world)) {
@@ -81,31 +89,70 @@ public class BushBlockBehavior extends BlockBehavior {
     }
 
     public static class Factory implements BlockBehaviorFactory {
+
         @Override
         public BlockBehavior create(CustomBlock block, Map<String, Object> arguments) {
-            if (arguments.containsKey("bottom-block-tags")) {
-                return new BushBlockBehavior(MiscUtils.getAsStringList(arguments.get("bottom-block-tags")).stream().map(it -> BlockTags.getOrCreate(Key.of(it))).toList());
-            } else if (arguments.containsKey("tags")) {
-                return new BushBlockBehavior(MiscUtils.getAsStringList(arguments.get("tags")).stream().map(it -> BlockTags.getOrCreate(Key.of(it))).toList());
-            } else {
-                return INSTANCE;
-            }
+            Tuple<List<Object>, Set<Object>, Set<String>> tuple = readTagsAndState(arguments);
+            return new BushBlockBehavior(tuple.left(), tuple.mid(), tuple.right());
         }
     }
 
-    private boolean canSurvive(Object thisBlock, Object state, Object world, Object blockPos) throws ReflectiveOperationException {
-        int y = Reflections.field$Vec3i$y.getInt(blockPos);
-        int x = Reflections.field$Vec3i$x.getInt(blockPos);
-        int z = Reflections.field$Vec3i$z.getInt(blockPos);
-        Object belowPos = Reflections.constructor$BlockPos.newInstance(x, y - 1, z);
-        Object belowState = Reflections.method$BlockGetter$getBlockState.invoke(world, belowPos);
+    public static Tuple<List<Object>, Set<Object>, Set<String>> readTagsAndState(Map<String, Object> arguments) {
+        List<Object> mcTags = new ArrayList<>();
+        for (String tag : MiscUtils.getAsStringList(arguments.getOrDefault("bottom-block-tags", List.of()))) {
+            mcTags.add(BlockTags.getOrCreate(Key.of(tag)));
+        }
+        Set<Object> mcBlocks = new HashSet<>();
+        Set<String> customBlocks = new HashSet<>();
+        for (String blockStateStr : MiscUtils.getAsStringList(arguments.getOrDefault("bottom-blocks", List.of()))) {
+            int index = blockStateStr.indexOf('[');
+            Key blockType = index != -1 ? Key.from(blockStateStr.substring(0, index)) : Key.from(blockStateStr);
+            Material material = Registry.MATERIAL.get(new NamespacedKey(blockType.namespace(), blockType.value()));
+            if (material != null) {
+                if (index == -1) {
+                    // vanilla
+                    mcBlocks.addAll(BlockStateUtils.getAllVanillaBlockStates(blockType));
+                } else {
+                    mcBlocks.add(BlockStateUtils.blockDataToBlockState(Bukkit.createBlockData(blockStateStr)));
+                }
+            } else {
+                // custom maybe
+                customBlocks.add(blockStateStr);
+            }
+        }
+        return new Tuple<>(mcTags, mcBlocks, customBlocks);
+    }
+
+    protected boolean canSurvive(Object thisBlock, Object state, Object world, Object blockPos) throws ReflectiveOperationException {
+        int y = FastNMS.INSTANCE.field$Vec3i$y(blockPos);
+        int x = FastNMS.INSTANCE.field$Vec3i$x(blockPos);
+        int z = FastNMS.INSTANCE.field$Vec3i$z(blockPos);
+        Object belowPos = FastNMS.INSTANCE.constructor$BlockPos(x, y - 1, z);
+        Object belowState = FastNMS.INSTANCE.method$BlockGetter$getBlockState(world, belowPos);
         return mayPlaceOn(belowState, world, belowPos);
     }
 
     protected boolean mayPlaceOn(Object belowState, Object world, Object belowPos) throws ReflectiveOperationException {
+        if (this.any) return true;
         for (Object tag : this.tagsCanSurviveOn) {
             if ((boolean) Reflections.method$BlockStateBase$hasTag.invoke(belowState, tag)) {
                 return true;
+            }
+        }
+        int id = BlockStateUtils.blockStateToId(belowState);
+        if (BlockStateUtils.isVanillaBlock(id)) {
+            if (!this.blocksCansSurviveOn.isEmpty() && this.blocksCansSurviveOn.contains(belowState)) {
+                return true;
+            }
+        } else {
+            ImmutableBlockState previousState = BukkitBlockManager.instance().getImmutableBlockState(id);
+            if (previousState != null && !previousState.isEmpty()) {
+                if (this.customBlocksCansSurviveOn.contains(previousState.owner().value().id().toString())) {
+                    return true;
+                }
+                if (this.customBlocksCansSurviveOn.contains(previousState.toString())) {
+                    return true;
+                }
             }
         }
         return false;

@@ -282,6 +282,10 @@ public abstract class AbstractPackManager implements PackManager {
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/chinese_lantern.png.mcmeta");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/chinese_lantern_top.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/chinese_lantern_top.png.mcmeta");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/netherite_anvil.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/netherite_anvil_top.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/solid_gunpowder_block.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/gunpowder_block.png");
         // items
         plugin.saveResource("resources/default/configuration/items.yml");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/topaz_rod.png");
@@ -327,8 +331,15 @@ public abstract class AbstractPackManager implements PackManager {
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/fairy_flower_3.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/fairy_flower_4.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/reed.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/flame_cane_1.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/flame_cane_2.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/ender_pearl_flower_stage_0.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/ender_pearl_flower_stage_1.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/block/custom/ender_pearl_flower_stage_2.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/fairy_flower.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/reed.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/flame_cane.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/ender_pearl_flower_seeds.png");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/models/block/custom/fairy_flower_1.json");
         plugin.saveResource("resources/default/resourcepack/assets/minecraft/models/block/custom/reed.json");
         // furniture
@@ -758,7 +769,32 @@ public abstract class AbstractPackManager implements PackManager {
             try (BufferedWriter writer = Files.newBufferedWriter(overridedBlockPath)) {
                 GsonHelper.get().toJson(stateJson, writer);
             } catch (IOException e) {
-                plugin.logger().warn("Failed to save item model for [" + key + "]");
+                plugin.logger().warn("Failed to create block states for [" + key + "]");
+            }
+        }
+
+        if (!ConfigManager.generateModAssets()) return;
+        for (Map.Entry<Key, JsonElement> entry : plugin.blockManager().modBlockStates().entrySet()) {
+            Key key = entry.getKey();
+            Path overridedBlockPath = generatedPackPath
+                    .resolve("assets")
+                    .resolve(key.namespace())
+                    .resolve("blockstates")
+                    .resolve(key.value() + ".json");
+            JsonObject stateJson = new JsonObject();
+            JsonObject variants = new JsonObject();
+            stateJson.add("variants", variants);
+            variants.add("", entry.getValue());
+            try {
+                Files.createDirectories(overridedBlockPath.getParent());
+            } catch (IOException e) {
+                plugin.logger().severe("Error creating " + overridedBlockPath.toAbsolutePath());
+                continue;
+            }
+            try (BufferedWriter writer = Files.newBufferedWriter(overridedBlockPath)) {
+                GsonHelper.get().toJson(stateJson, writer);
+            } catch (IOException e) {
+                plugin.logger().warn("Failed to create block states for [" + key + "]");
             }
         }
     }

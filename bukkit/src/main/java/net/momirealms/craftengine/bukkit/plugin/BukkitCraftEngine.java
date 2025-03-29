@@ -4,24 +4,24 @@ import net.momirealms.antigrieflib.AntiGriefLib;
 import net.momirealms.craftengine.bukkit.api.event.CraftEngineReloadEvent;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.block.behavior.BukkitBlockBehaviors;
+import net.momirealms.craftengine.bukkit.compatibility.papi.PlaceholderAPIUtils;
 import net.momirealms.craftengine.bukkit.entity.furniture.BukkitFurnitureManager;
+import net.momirealms.craftengine.bukkit.font.BukkitImageManager;
 import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.item.behavior.BukkitItemBehaviors;
 import net.momirealms.craftengine.bukkit.item.recipe.BukkitRecipeManager;
 import net.momirealms.craftengine.bukkit.loot.BukkitVanillaLootManager;
 import net.momirealms.craftengine.bukkit.pack.BukkitPackManager;
+import net.momirealms.craftengine.bukkit.plugin.bstats.CraftEngineMetrics;
 import net.momirealms.craftengine.bukkit.plugin.command.BukkitCommandManager;
 import net.momirealms.craftengine.bukkit.plugin.command.BukkitSenderFactory;
 import net.momirealms.craftengine.bukkit.plugin.gui.BukkitGuiManager;
 import net.momirealms.craftengine.bukkit.plugin.injector.BukkitInjector;
 import net.momirealms.craftengine.bukkit.plugin.network.BukkitNetworkManager;
-import net.momirealms.craftengine.bukkit.plugin.papi.ImageExpansion;
-import net.momirealms.craftengine.bukkit.plugin.papi.ShiftExpansion;
 import net.momirealms.craftengine.bukkit.plugin.scheduler.BukkitSchedulerAdapter;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.bukkit.sound.BukkitSoundManager;
 import net.momirealms.craftengine.bukkit.util.EventUtils;
-import net.momirealms.craftengine.bukkit.util.PlaceholderAPIUtils;
 import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.bukkit.world.BukkitWorldManager;
 import net.momirealms.craftengine.core.entity.player.Player;
@@ -56,6 +56,7 @@ public class BukkitCraftEngine extends CraftEngine {
     private final JavaPlugin bootstrap;
     private SchedulerTask tickTask;
     private boolean successfullyLoaded = false;
+    private boolean successfullyEnabled = false;
     private boolean requiresRestart = false;
     private boolean hasMod = false;
     private AntiGriefLib antiGrief;
@@ -103,6 +104,18 @@ public class BukkitCraftEngine extends CraftEngine {
 
     @Override
     public void enable() {
+        if (successfullyEnabled) {
+            logger().severe(" ");
+            logger().severe(" ");
+            logger().severe(" ");
+            logger().severe("Please do not restart plugins at runtime.");
+            logger().severe(" ");
+            logger().severe(" ");
+            logger().severe(" ");
+            Bukkit.getPluginManager().disablePlugin(this.bootstrap);
+            return;
+        }
+        this.successfullyEnabled = true;
         if (this.hasMod && this.requiresRestart) {
             logger().warn(" ");
             logger().warn(" ");
@@ -128,6 +141,7 @@ public class BukkitCraftEngine extends CraftEngine {
         }
         BukkitBlockBehaviors.init();
         BukkitItemBehaviors.init();
+        CraftEngineMetrics.init(this);
         super.packManager = new BukkitPackManager(this);
         super.senderFactory = new BukkitSenderFactory(this);
         super.itemManager = new BukkitItemManager(this);
@@ -138,6 +152,7 @@ public class BukkitCraftEngine extends CraftEngine {
         super.worldManager = new BukkitWorldManager(this);
         super.soundManager = new BukkitSoundManager(this);
         super.vanillaLootManager = new BukkitVanillaLootManager(this);
+        this.imageManager = new BukkitImageManager(this);
         super.enable();
         // tick task
         if (VersionHelper.isFolia()) {
@@ -159,15 +174,8 @@ public class BukkitCraftEngine extends CraftEngine {
         // compatibility
         // register expansion
         if (this.isPluginEnabled("PlaceholderAPI")) {
-            new ShiftExpansion(this).register();
-            new ImageExpansion(this).register();
+            PlaceholderAPIUtils.registerExpansions(this);
             this.hasPlaceholderAPI = true;
-        }
-        // WorldEdit
-        if (this.isPluginEnabled("FastAsyncWorldEdit")) {
-            this.blockManager().initFastAsyncWorldEditHook();
-        } else if (this.isPluginEnabled("WorldEdit")) {
-            this.blockManager().initWorldEditHook();
         }
     }
 
@@ -175,6 +183,16 @@ public class BukkitCraftEngine extends CraftEngine {
     public void disable() {
         super.disable();
         if (this.tickTask != null) this.tickTask.cancel();
+        if (!Bukkit.getServer().isStopping()) {
+            logger().severe(" ");
+            logger().severe(" ");
+            logger().severe(" ");
+            logger().severe("Please do not disable plugins at runtime.");
+            logger().severe(" ");
+            logger().severe(" ");
+            logger().severe(" ");
+            Bukkit.getServer().shutdown();
+        }
     }
 
     @Override

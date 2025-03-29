@@ -2,6 +2,7 @@ package net.momirealms.craftengine.bukkit.item;
 
 import net.momirealms.craftengine.bukkit.compatibility.item.NeigeItemsProvider;
 import net.momirealms.craftengine.bukkit.item.behavior.AxeItemBehavior;
+import net.momirealms.craftengine.bukkit.item.behavior.BoneMealItemBehavior;
 import net.momirealms.craftengine.bukkit.item.behavior.BucketItemBehavior;
 import net.momirealms.craftengine.bukkit.item.behavior.WaterBucketItemBehavior;
 import net.momirealms.craftengine.bukkit.item.factory.BukkitItemFactory;
@@ -50,6 +51,7 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
         registerVanillaItemExtraBehavior(AxeItemBehavior.INSTANCE, ItemKeys.AXES);
         registerVanillaItemExtraBehavior(WaterBucketItemBehavior.INSTANCE, ItemKeys.WATER_BUCKETS);
         registerVanillaItemExtraBehavior(BucketItemBehavior.INSTANCE, ItemKeys.BUCKET);
+        registerVanillaItemExtraBehavior(BoneMealItemBehavior.INSTANCE, ItemKeys.BONE_MEAL);
     }
 
     private static BukkitItemManager instance;
@@ -109,16 +111,6 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
     @Override
     public int fuelTime(Key id) {
         return getCustomItem(id).map(it -> it.settings().fuelTime()).orElse(0);
-    }
-
-    @Override
-    public void load() {
-        super.load();
-    }
-
-    @Override
-    public void unload() {
-        super.unload();
     }
 
     @Override

@@ -26,8 +26,6 @@ public interface TranslationManager extends Reloadable, ConfigSectionParser {
 
     String miniMessageTranslation(String key, @Nullable Locale locale);
 
-    String translateI18NTag(String i18nId);
-
     default Component render(Component component) {
         return render(component, null);
     }
@@ -47,5 +45,4 @@ public interface TranslationManager extends Reloadable, ConfigSectionParser {
     default String sectionId() {
         return CONFIG_SECTION_NAME;
     }
-
 }

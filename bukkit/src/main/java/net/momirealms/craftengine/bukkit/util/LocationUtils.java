@@ -1,5 +1,6 @@
 package net.momirealms.craftengine.bukkit.util;
 
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.core.world.BlockPos;
 import net.momirealms.craftengine.core.world.Vec3d;
 import org.bukkit.Location;
@@ -13,38 +14,29 @@ public class LocationUtils {
         return new Vec3d(loc.getX(), loc.getY(), loc.getZ());
     }
 
-    public static Vec3d fromVec(Object vec) throws ReflectiveOperationException {
+    public static Vec3d fromVec(Object vec) {
         return new Vec3d(
-            Reflections.field$Vec3$x.getDouble(vec),
-            Reflections.field$Vec3$y.getDouble(vec),
-            Reflections.field$Vec3$z.getDouble(vec)
+            FastNMS.INSTANCE.field$Vec3$x(vec),
+            FastNMS.INSTANCE.field$Vec3$y(vec),
+            FastNMS.INSTANCE.field$Vec3$y(vec)
         );
     }
 
     public static Object toBlockPos(BlockPos pos) {
-        try {
-            return Reflections.constructor$BlockPos.newInstance(pos.x(), pos.y(), pos.z());
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Failed to create BlockPos", e);
-        }
+        return toBlockPos(pos.x(), pos.y(), pos.z());
     }
 
     public static Object above(Object blockPos) throws ReflectiveOperationException {
         return toBlockPos(
-            Reflections.field$Vec3i$x.getInt(blockPos),
-            Reflections.field$Vec3i$y.getInt(blockPos) + 1,
-            Reflections.field$Vec3i$z.getInt(blockPos)
+                FastNMS.INSTANCE.field$Vec3i$x(blockPos),
+            FastNMS.INSTANCE.field$Vec3i$y(blockPos) + 1,
+            FastNMS.INSTANCE.field$Vec3i$z(blockPos)
         );
     }
 
     public static Object toBlockPos(int x, int y, int z) {
-        try {
-            return Reflections.constructor$BlockPos.newInstance(x, y, z);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Failed to create BlockPos", e);
-        }
+        return FastNMS.INSTANCE.constructor$BlockPos(x, y, z);
     }
-
 
     public static BlockPos toBlockPos(Location pos) {
         return new BlockPos(pos.getBlockX(), pos.getBlockY(), pos.getBlockZ());
@@ -52,9 +44,9 @@ public class LocationUtils {
 
     public static BlockPos fromBlockPos(Object pos) throws ReflectiveOperationException {
         return new BlockPos(
-                Reflections.field$Vec3i$x.getInt(pos),
-                Reflections.field$Vec3i$y.getInt(pos),
-                Reflections.field$Vec3i$z.getInt(pos)
+                FastNMS.INSTANCE.field$Vec3i$x(pos),
+                FastNMS.INSTANCE.field$Vec3i$y(pos),
+                FastNMS.INSTANCE.field$Vec3i$z(pos)
         );
     }
 

@@ -76,7 +76,9 @@ public class TemplateManagerImpl implements TemplateManager {
             for (Object template : templates) {
                 processUnknownTypeMember(template, processingResult.arguments(), processedTemplates::add);
             }
-
+            if (processedTemplates.isEmpty()) {
+                return;
+            }
             Object firstTemplate = processedTemplates.get(0);
             // 对于map和list，应当对多模板合并
             if (firstTemplate instanceof Map<?,?>) {
@@ -187,7 +189,7 @@ public class TemplateManagerImpl implements TemplateManager {
     // 合并参数
     private Map<String, TemplateArgument> mergeArguments(@NotNull Map<String, Object> rawChildArguments,
                                                          @NotNull Map<String, TemplateArgument> parentArguments) {
-        Map<String, TemplateArgument> result = new HashMap<>();
+        Map<String, TemplateArgument> result = new HashMap<>(parentArguments);
         // 我们遍历一下当前节点下的所有参数，这些参数可能含有内嵌参数。所以需要对参数map先处理一次后再合并
         // arguments:
         //   argument_1: "{parent_argument}"
@@ -217,6 +219,8 @@ public class TemplateManagerImpl implements TemplateManager {
             } else if (rawArgument == null) {
                 // 使用 null 覆写其父参数内容
                 result.put(placeholder, NullTemplateArgument.INSTANCE);
+            } else if (rawArgument instanceof Number number) {
+                result.put(placeholder, new ObjectTemplateArgument(number));
             } else {
                 // 将参数字符串化后，应用参数再放入
                 Object applied = applyArgument(rawArgument.toString(), parentArguments);

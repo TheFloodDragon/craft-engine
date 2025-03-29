@@ -15,7 +15,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.Fallable;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.momirealms.craftengine.mod.util.NoteBlockUtils;
@@ -23,7 +22,11 @@ import net.momirealms.craftengine.shared.ObjectHolder;
 import net.momirealms.craftengine.shared.block.*;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftEngineBlock extends Block implements BehaviorHolder, ShapeHolder, NoteBlockIndicator, Fallable, BonemealableBlock {
+public class CraftEngineBlock
+        extends Block
+        implements BehaviorHolder, ShapeHolder, NoteBlockIndicator, Fallable, BonemealableBlock
+        //TODO , SimpleWaterloggedBlock
+{
     private static final StoneBlockShape STONE = new StoneBlockShape(Blocks.STONE.defaultBlockState());
     private boolean isNoteBlock;
     public ObjectHolder<BlockBehavior> behaviorHolder;
@@ -107,10 +110,7 @@ public class CraftEngineBlock extends Block implements BehaviorHolder, ShapeHold
     @Override
     public void onBrokenAfterFall(@NotNull Level level, @NotNull BlockPos pos, @NotNull FallingBlockEntity fallingBlock) {
         try {
-            behaviorHolder.value().onBrokenAfterFall(this, new Object[]{level, pos, fallingBlock}, () -> {
-                Fallable.super.onBrokenAfterFall(level, pos, fallingBlock);
-                return null;
-            });
+            behaviorHolder.value().onBrokenAfterFall(this, new Object[]{level, pos, fallingBlock});
         } catch (Exception e) {
             e.printStackTrace();
             Fallable.super.onBrokenAfterFall(level, pos, fallingBlock);
@@ -171,15 +171,15 @@ public class CraftEngineBlock extends Block implements BehaviorHolder, ShapeHold
         }
     }
 
-    @Override
-    protected @NotNull FluidState getFluidState(@NotNull BlockState state) {
-        try {
-            return (FluidState) behaviorHolder.value().getFluidState(this, new Object[]{state}, () -> super.getFluidState(state));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return super.getFluidState(state);
-        }
-    }
+//    @Override
+//    protected @NotNull FluidState getFluidState(@NotNull BlockState state) {
+//        try {
+//            return (FluidState) behaviorHolder.value().getFluidState(this, new Object[]{state}, () -> super.getFluidState(state));
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return super.getFluidState(state);
+//        }
+//    }
 
     @Override
     public boolean isValidBonemealTarget(@NotNull LevelReader levelReader, @NotNull BlockPos blockPos, @NotNull BlockState blockState) {
@@ -209,4 +209,44 @@ public class CraftEngineBlock extends Block implements BehaviorHolder, ShapeHold
             e.printStackTrace();
         }
     }
+
+    @Override
+    public void onLand(@NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull BlockState replaceableState, @NotNull FallingBlockEntity fallingBlock) {
+        try {
+            behaviorHolder.value().onLand(this, new Object[]{level, pos, state, replaceableState, fallingBlock});
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+//    @Override
+//    public boolean canPlaceLiquid(@Nullable Player player, @NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull Fluid fluid) {
+//        try {
+//            return behaviorHolder.value().canPlaceLiquid(this, new Object[]{player, level, pos, state, fluid}, () -> SimpleWaterloggedBlock.super.canPlaceLiquid(player, level, pos, state, fluid));
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return SimpleWaterloggedBlock.super.canPlaceLiquid(player, level, pos, state, fluid);
+//        }
+//    }
+//
+//    @Override
+//    public boolean placeLiquid(@NotNull LevelAccessor level, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull FluidState fluidState) {
+//        try {
+//            return behaviorHolder.value().placeLiquid(this, new Object[]{level, pos, state, fluidState}, () -> SimpleWaterloggedBlock.super.placeLiquid(level, pos, state, fluidState));
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return SimpleWaterloggedBlock.super.placeLiquid(level, pos, state, fluidState);
+//        }
+//    }
+//
+//    @NotNull
+//    @Override
+//    public ItemStack pickupBlock(@Nullable Player player, @NotNull LevelAccessor level, @NotNull BlockPos pos, @NotNull BlockState state) {
+//        try {
+//            return (ItemStack) behaviorHolder.value().pickupBlock(this, new Object[]{player, level, pos, state}, () -> SimpleWaterloggedBlock.super.pickupBlock(player, level, pos, state));
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return SimpleWaterloggedBlock.super.pickupBlock(player, level, pos, state);
+//        }
+//    }
 }

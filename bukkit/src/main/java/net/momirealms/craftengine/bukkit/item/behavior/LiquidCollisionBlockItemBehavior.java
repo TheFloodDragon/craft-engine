@@ -1,6 +1,7 @@
 package net.momirealms.craftengine.bukkit.item.behavior;
 
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
 import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.core.entity.player.InteractionHand;
@@ -41,7 +42,7 @@ public class LiquidCollisionBlockItemBehavior extends BlockItemBehavior {
         try {
             Object blockHitResult = Reflections.method$Item$getPlayerPOVHitResult.invoke(null, world.serverWorld(), player.serverPlayer(), Reflections.instance$ClipContext$Fluid$SOURCE_ONLY);
             Object blockPos = Reflections.field$BlockHitResul$blockPos.get(blockHitResult);
-            BlockPos above = new BlockPos(Reflections.field$Vec3i$x.getInt(blockPos), Reflections.field$Vec3i$y.getInt(blockPos) + offsetY, Reflections.field$Vec3i$z.getInt(blockPos));
+            BlockPos above = new BlockPos(FastNMS.INSTANCE.field$Vec3i$x(blockPos), FastNMS.INSTANCE.field$Vec3i$y(blockPos) + offsetY, FastNMS.INSTANCE.field$Vec3i$z(blockPos));
             Direction direction = Direction.values()[(int) Reflections.method$Direction$ordinal.invoke(Reflections.field$BlockHitResul$direction.get(blockHitResult))];
             boolean miss = Reflections.field$BlockHitResul$miss.getBoolean(blockHitResult);
             Vec3d hitPos = LocationUtils.fromVec(Reflections.field$HitResult$location.get(blockHitResult));

@@ -9,14 +9,15 @@ import net.momirealms.craftengine.shared.block.BlockBehavior;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class OnLiquidBlockBehavior extends BushBlockBehavior {
     public static final Factory FACTORY = new Factory();
     private final boolean onWater;
     private final boolean onLava;
 
-    public OnLiquidBlockBehavior(List<Object> tagsCanSurviveOn, boolean onWater, boolean onLava) {
-        super(tagsCanSurviveOn);
+    public OnLiquidBlockBehavior(boolean onWater, boolean onLava) {
+        super(List.of(), Set.of(), Set.of());
         this.onWater = onWater;
         this.onLava = onLava;
     }
@@ -33,7 +34,7 @@ public class OnLiquidBlockBehavior extends BushBlockBehavior {
         @Override
         public BlockBehavior create(CustomBlock block, Map<String, Object> arguments) {
             List<String> liquidTypes = MiscUtils.getAsStringList(arguments.getOrDefault("liquid-type", List.of("water")));
-            return new OnLiquidBlockBehavior(List.of(), liquidTypes.contains("water"), liquidTypes.contains("lava"));
+            return new OnLiquidBlockBehavior(liquidTypes.contains("water"), liquidTypes.contains("lava"));
         }
     }
 

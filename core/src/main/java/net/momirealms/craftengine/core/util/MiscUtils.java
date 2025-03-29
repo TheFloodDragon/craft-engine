@@ -6,6 +6,7 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class MiscUtils {
 
@@ -20,6 +21,15 @@ public class MiscUtils {
             return (Map<String, Object>) map;
         }
         throw new IllegalArgumentException("Expected Map, got: " + obj.getClass().getSimpleName());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static List<Map<String, Object>> castToMapListOrThrow(Object obj, Supplier<RuntimeException> exceptionSupplier) {
+        if (obj instanceof List<?> list) {
+            return (List<Map<String, Object>>) list;
+        } else {
+            throw exceptionSupplier.get();
+        }
     }
 
     @SuppressWarnings("unchecked")

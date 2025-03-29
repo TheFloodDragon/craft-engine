@@ -1,6 +1,7 @@
 package net.momirealms.craftengine.bukkit.api;
 
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
@@ -108,14 +109,14 @@ public final class CraftEngineBlocks {
         boolean success;
         try {
             Object worldServer = Reflections.field$CraftWorld$ServerLevel.get(location.getWorld());
-            Object blockPos = Reflections.constructor$BlockPos.newInstance(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+            Object blockPos = FastNMS.INSTANCE.constructor$BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
             Object blockState = block.customBlockState().handle();
-            Object oldBlockState = Reflections.method$BlockGetter$getBlockState.invoke(worldServer, blockPos);
+            Object oldBlockState = FastNMS.INSTANCE.method$BlockGetter$getBlockState(worldServer, blockPos);
             success = (boolean) Reflections.method$LevelWriter$setBlock.invoke(worldServer, blockPos, blockState, option.flags());
             if (success) {
                 Reflections.method$BlockStateBase$onPlace.invoke(blockState, worldServer, blockPos, oldBlockState, true);
                 if (playSound) {
-                    location.getWorld().playSound(location, block.sounds().placeSound().toString(), SoundCategory.BLOCKS, 1, 0.8f);
+                    location.getWorld().playSound(location, block.sounds().placeSound().toString(), SoundCategory.BLOCKS, block.sounds().placeSound().volume(), block.sounds().placeSound().pitch());
                 }
             }
         } catch (ReflectiveOperationException e) {
@@ -178,14 +179,14 @@ public final class CraftEngineBlocks {
             BukkitServerPlayer serverPlayer = BukkitCraftEngine.instance().adapt(player);
             if (player != null) {
                 builder.withParameter(LootParameters.PLAYER, serverPlayer);
-                builder.withParameter(LootParameters.TOOL, serverPlayer.getItemInHand(InteractionHand.MAIN_HAND));
+                builder.withOptionalParameter(LootParameters.TOOL, serverPlayer.getItemInHand(InteractionHand.MAIN_HAND));
             }
             for (Item<?> item : state.getDrops(builder, world)) {
                 world.dropItemNaturally(vec3d, item);
             }
         }
         if (playSound) {
-            world.playBlockSound(vec3d, state.sounds().breakSound(), 1, 0.8f);
+            world.playBlockSound(vec3d, state.sounds().breakSound());
         }
         if (sendParticles) {
             // TODO Particles
@@ -240,6 +241,6 @@ public final class CraftEngineBlocks {
      */
     @NotNull
     public static BlockData createBukkitBlockData(@NotNull ImmutableBlockState blockState) {
-        return BlockStateUtils.createBlockData(blockState.customBlockState().handle());
+        return BlockStateUtils.fromBlockData(blockState.customBlockState().handle());
     }
 }

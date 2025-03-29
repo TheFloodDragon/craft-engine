@@ -1,18 +1,23 @@
 package net.momirealms.craftengine.bukkit.util;
 
+import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
+import net.momirealms.craftengine.core.block.BlockStateParser;
+import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.PushReaction;
 import net.momirealms.craftengine.core.util.Instrument;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MapColor;
 import net.momirealms.craftengine.core.world.BlockPos;
+import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.event.block.BlockPhysicsEvent;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Optional;
 
 public class BlockStateUtils {
     public static final IdentityHashMap<Object, Object> CLIENT_SIDE_NOTE_BLOCKS = new IdentityHashMap<>();
@@ -27,8 +32,36 @@ public class BlockStateUtils {
         hasInit = true;
     }
 
-    @SuppressWarnings("unchecked")
+    public static List<Object> getAllBlockStates(String blockState) {
+        int index = blockState.indexOf('[');
+        if (index == -1) {
+            return getAllBlockStates(Key.of(blockState));
+        } else {
+            String blockTypeString = blockState.substring(0, index);
+            Key block = Key.of(blockTypeString);
+            Optional<CustomBlock> optionalCustomBlock = BukkitBlockManager.instance().getBlock(block);
+            if (optionalCustomBlock.isPresent()) {
+                ImmutableBlockState state = BlockStateParser.deserialize(blockState);
+                if (state == null) {
+                    return List.of();
+                } else {
+                    return List.of(state.customBlockState().handle());
+                }
+            } else {
+                BlockData blockData = Bukkit.createBlockData(blockState);
+                return List.of(blockDataToBlockState(blockData));
+            }
+        }
+    }
+
     public static List<Object> getAllBlockStates(Key block) {
+        Optional<CustomBlock> optionalCustomBlock = BukkitBlockManager.instance().getBlock(block);
+        return optionalCustomBlock.map(customBlock -> customBlock.variantProvider().states().stream().map(it -> it.customBlockState().handle()).toList())
+                .orElseGet(() -> getAllVanillaBlockStates(block));
+    }
+
+    @SuppressWarnings("unchecked")
+    public static List<Object> getAllVanillaBlockStates(Key block) {
         try {
             Object blockIns = Reflections.method$Registry$get.invoke(Reflections.instance$BuiltInRegistries$BLOCK, Reflections.method$ResourceLocation$fromNamespaceAndPath.invoke(null, block.namespace(), block.value()));
             Object definition = Reflections.field$Block$StateDefinition.get(blockIns);
@@ -46,29 +79,12 @@ public class BlockStateUtils {
         }
     }
 
-    public static BlockData createBlockData(Object blockState) {
-        try {
-            return (BlockData) Reflections.method$CraftBlockData$createData.invoke(null, blockState);
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static BlockData fromBlockData(Object blockState) {
-        try {
-            return (BlockData) Reflections.method$CraftBlockData$fromData.invoke(null, blockState);
-        } catch (InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
+        return (BlockData) FastNMS.INSTANCE.method$CraftBlockData$fromData(blockState);
     }
 
     public static int blockDataToId(BlockData blockData) {
-        try {
-            Object blockState = Reflections.field$CraftBlockData$data.get(blockData);
-            return (int) Reflections.method$IdMapper$getId.invoke(Reflections.instance$BLOCK_STATE_REGISTRY, blockState);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        return blockStateToId(blockDataToBlockState(blockData));
     }
 
     public static Key getBlockOwnerId(Block block) {
@@ -90,27 +106,15 @@ public class BlockStateUtils {
     }
 
     public static Object blockDataToBlockState(BlockData blockData) {
-        try {
-            return Reflections.field$CraftBlockData$data.get(blockData);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        return FastNMS.INSTANCE.method$CraftBlockData$getState(blockData);
     }
 
     public static Object idToBlockState(int id) {
-        try {
-            return Reflections.method$IdMapper$byId.invoke(Reflections.instance$BLOCK_STATE_REGISTRY, id);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        return FastNMS.INSTANCE.method$IdMapper$byId(Reflections.instance$BLOCK_STATE_REGISTRY, id);
     }
 
     public static int blockStateToId(Object blockState) {
-        try {
-            return (int) Reflections.method$IdMapper$getId.invoke(Reflections.instance$BLOCK_STATE_REGISTRY, blockState);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        return FastNMS.INSTANCE.method$IdMapper$getId(Reflections.instance$BLOCK_STATE_REGISTRY, blockState);
     }
 
     public static Object getBlockOwner(Object blockState) {
@@ -136,8 +140,8 @@ public class BlockStateUtils {
         Reflections.field$BlockStateBase$lightEmission.set(state, emission);
     }
 
-    public static int getLightEmission(Object state) throws ReflectiveOperationException {
-        return (int) Reflections.field$BlockStateBase$lightEmission.get(state);
+    public static int getLightEmission(Object state) {
+        return FastNMS.INSTANCE.method$BlockStateBase$getLightEmission(state);
     }
 
     public static void setMapColor(Object state, MapColor color) throws ReflectiveOperationException {
@@ -180,7 +184,7 @@ public class BlockStateUtils {
     }
 
     public static boolean isOcclude(Object state) throws ReflectiveOperationException {
-        return (boolean) Reflections.field$BlockStateBase$canOcclude.get(state);
+        return FastNMS.INSTANCE.method$BlockStateBase$canOcclude(state);
     }
 
     public static void setIsRedstoneConductor(Object state, Object predicate) throws ReflectiveOperationException {

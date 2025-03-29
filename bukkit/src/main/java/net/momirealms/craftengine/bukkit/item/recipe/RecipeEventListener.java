@@ -346,7 +346,7 @@ public class RecipeEventListener implements Listener {
             Optional<Object> optionalMCRecipe = (Optional<Object>) Reflections.method$RecipeManager$getRecipeFor1.invoke(
                     BukkitRecipeManager.minecraftRecipeManager(),
                     Reflections.instance$RecipeType$CAMPFIRE_COOKING,
-                    Reflections.constructor$SingleRecipeInput.newInstance(Reflections.method$CraftItemStack$asNMSMirror.invoke(null, itemStack)),
+                    Reflections.constructor$SingleRecipeInput.newInstance(Reflections.method$CraftItemStack$asNMSCopy.invoke(null, itemStack)),
                     Reflections.field$CraftWorld$ServerLevel.get(event.getPlayer().getWorld()),
                     null
             );

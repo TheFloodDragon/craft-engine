@@ -4,6 +4,7 @@ import net.momirealms.craftengine.bukkit.api.CraftEngineBlocks;
 import net.momirealms.craftengine.bukkit.api.event.CustomBlockAttemptPlaceEvent;
 import net.momirealms.craftengine.bukkit.api.event.CustomBlockPlaceEvent;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.util.DirectionUtils;
 import net.momirealms.craftengine.bukkit.util.EventUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
@@ -24,7 +25,11 @@ import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
 import net.momirealms.craftengine.core.world.BlockPos;
-import org.bukkit.*;
+import net.momirealms.craftengine.core.world.Vec3d;
+import org.bukkit.Bukkit;
+import org.bukkit.GameEvent;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
@@ -35,7 +40,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
@@ -120,7 +124,7 @@ public class BlockItemBehavior extends ItemBehavior {
         }
 
         player.swingHand(placeContext.getHand());
-        world.playSound(new Location(world, pos.x(), pos.y(), pos.z()), blockStateToPlace.sounds().placeSound().toString(), SoundCategory.BLOCKS, 1f, 0.8f);
+        placeContext.getLevel().playBlockSound(new Vec3d(pos.x() + 0.5, pos.y() + 0.5, pos.z() + 0.5), blockStateToPlace.sounds().placeSound());
         world.sendGameEvent(bukkitPlayer, GameEvent.BLOCK_PLACE, new Vector(pos.x(), pos.y(), pos.z()));
         return InteractionResult.SUCCESS;
     }
@@ -142,20 +146,15 @@ public class BlockItemBehavior extends ItemBehavior {
 
     protected boolean canPlace(BlockPlaceContext context, ImmutableBlockState state) {
         try {
-            Object player;
-            try {
-                player = Reflections.method$CraftPlayer$getHandle.invoke(context.getPlayer().platformPlayer());
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException("Failed to get server player", e);
-            }
+            Object player = context.getPlayer().serverPlayer();
             Object blockState = state.customBlockState().handle();
             Object blockPos = LocationUtils.toBlockPos(context.getClickedPos());
             Object voxelShape = Reflections.method$CollisionContext$of.invoke(null, player);
             Object world = Reflections.field$CraftWorld$ServerLevel.get(context.getLevel().platformWorld());
             boolean defaultReturn = ((!this.checkStatePlacement() || (boolean) Reflections.method$BlockStateBase$canSurvive.invoke(blockState, world, blockPos))
                     && (boolean) Reflections.method$ServerLevel$checkEntityCollision.invoke(world, blockState, player, voxelShape, blockPos, true));
-            Block block = (Block) Reflections.method$CraftBlock$at.invoke(null, world, blockPos);
-            BlockData blockData = (BlockData) Reflections.method$CraftBlockData$fromData.invoke(null, blockState);
+            Block block = FastNMS.INSTANCE.method$CraftBlock$at(world, blockPos);
+            BlockData blockData = FastNMS.INSTANCE.method$CraftBlockData$fromData(blockState);
             BlockCanBuildEvent canBuildEvent = new BlockCanBuildEvent(block, (org.bukkit.entity.Player) context.getPlayer().platformPlayer(), blockData, defaultReturn, context.getHand() == InteractionHand.MAIN_HAND ? EquipmentSlot.HAND : EquipmentSlot.OFF_HAND);
             Bukkit.getPluginManager().callEvent(canBuildEvent);
             return canBuildEvent.isBuildable();

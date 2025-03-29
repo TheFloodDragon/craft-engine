@@ -26,6 +26,10 @@ public class RandomUtils {
         return min + (max - min) * getInstance().random.nextFloat();
     }
 
+    public static int generateRandomInt(int min, int max) {
+        return min >= max ? min : getInstance().random.nextInt(max - min + 1) + min;
+    }
+
     public static boolean generateRandomBoolean() {
         return getInstance().random.nextBoolean();
     }

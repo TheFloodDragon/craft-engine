@@ -2,10 +2,8 @@ plugins {
     id("java")
 }
 
-val git : String = versionBanner()
-val builder : String = builder()
-ext["git_version"] = git
-ext["builder"] = builder
+ext["git_version"] = "git_version"
+ext["builder"] = "Github CI"
 
 subprojects {
 

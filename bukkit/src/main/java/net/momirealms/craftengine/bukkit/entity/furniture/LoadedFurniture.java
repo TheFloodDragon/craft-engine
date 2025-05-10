@@ -75,9 +75,9 @@ public class LoadedFurniture implements Furniture {
             } catch (Exception e) {
                 CraftEngine.instance().logger().warn("Failed to load external model for furniture " + id, e);
             }
-            hasExternalModel = true;
+            this.hasExternalModel = true;
         } else {
-            hasExternalModel = false;
+            this.hasExternalModel = false;
         }
 
         float yaw = this.location.getYaw();
@@ -174,6 +174,17 @@ public class LoadedFurniture implements Furniture {
     @Override
     public boolean isValid() {
         return baseEntity().isValid();
+    }
+
+    @NotNull
+    public Location dropLocation() {
+        Optional<Vector3f> dropOffset = config().getPlacement(this.anchorType).dropOffset();
+        if (dropOffset.isEmpty()) {
+            return location();
+        }
+        Quaternionf conjugated = QuaternionUtils.toQuaternionf(0, Math.toRadians(180 - this.location.getYaw()), 0).conjugate();
+        Vector3f offset = conjugated.transform(new Vector3f(dropOffset.get()));
+        return new Location(this.location.getWorld(), this.location.getX() + offset.x, this.location.getY() + offset.y, this.location.getZ() - offset.z);
     }
 
     @Override

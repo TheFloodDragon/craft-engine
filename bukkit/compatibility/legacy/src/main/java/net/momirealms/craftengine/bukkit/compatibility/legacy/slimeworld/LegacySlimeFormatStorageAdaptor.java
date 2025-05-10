@@ -2,8 +2,10 @@ package net.momirealms.craftengine.bukkit.compatibility.legacy.slimeworld;
 
 import com.infernalsuite.aswm.api.events.LoadSlimeWorldEvent;
 import com.infernalsuite.aswm.api.world.SlimeWorld;
+import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.world.World;
 import net.momirealms.craftengine.core.world.WorldManager;
+import net.momirealms.craftengine.core.world.chunk.storage.CachedStorage;
 import net.momirealms.craftengine.core.world.chunk.storage.DefaultStorageAdaptor;
 import net.momirealms.craftengine.core.world.chunk.storage.WorldDataStorage;
 import org.bukkit.Bukkit;
@@ -22,7 +24,8 @@ public class LegacySlimeFormatStorageAdaptor extends DefaultStorageAdaptor imple
     @EventHandler
     public void onWorldLoad(LoadSlimeWorldEvent event) {
         org.bukkit.World world = Bukkit.getWorld(event.getSlimeWorld().getName());
-        this.worldManager.loadWorld(this.worldManager.createWorld(this.worldManager.wrap(world), new LegacySlimeWorldDataStorage(event.getSlimeWorld())));
+        this.worldManager.loadWorld(this.worldManager.createWorld(this.worldManager.wrap(world),
+                Config.enableChunkCache() ? new CachedStorage<>(new LegacySlimeWorldDataStorage(event.getSlimeWorld())) : new LegacySlimeWorldDataStorage(event.getSlimeWorld())));
     }
 
     public LegacySlimeFormatStorageAdaptor(WorldManager worldManager, int version) {

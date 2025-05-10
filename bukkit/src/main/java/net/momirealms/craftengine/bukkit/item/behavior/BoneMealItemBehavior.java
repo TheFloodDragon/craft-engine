@@ -8,7 +8,7 @@ import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
 import net.momirealms.craftengine.bukkit.util.Reflections;
-import net.momirealms.craftengine.bukkit.world.BukkitWorldBlock;
+import net.momirealms.craftengine.bukkit.world.BukkitBlockInWorld;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.entity.player.InteractionResult;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
@@ -32,7 +32,7 @@ public class BoneMealItemBehavior extends ItemBehavior {
             return InteractionResult.PASS;
         }
 
-        BukkitWorldBlock clicked = (BukkitWorldBlock) context.getLevel().getBlockAt(context.getClickedPos());
+        BukkitBlockInWorld clicked = (BukkitBlockInWorld) context.getLevel().getBlockAt(context.getClickedPos());
         Block block = clicked.block();
         ImmutableBlockState state = BukkitBlockManager.instance().getImmutableBlockState(BlockStateUtils.blockDataToId(block.getBlockData()));
         if (state == null || state.isEmpty()) return InteractionResult.PASS;

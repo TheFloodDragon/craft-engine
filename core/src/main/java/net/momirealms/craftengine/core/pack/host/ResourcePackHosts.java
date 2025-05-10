@@ -27,7 +27,7 @@ public class ResourcePackHosts {
         register(SELF, SelfHost.FACTORY);
         register(EXTERNAL, ExternalHost.FACTORY);
         register(LOBFILE, LobFileHost.FACTORY);
-        register(S3, S3Host.FACTORY);
+        register(S3, S3HostFactory.INSTANCE);
         register(ALIST, AlistHost.FACTORY);
         register(DROPBOX, DropboxHost.FACTORY);
         register(ONEDRIVE, OneDriveHost.FACTORY);
@@ -45,7 +45,7 @@ public class ResourcePackHosts {
         if (type == null) {
             throw new LocalizedException("warning.config.host.missing_type");
         }
-        Key key = Key.withDefaultNamespace(type, "craftengine");
+        Key key = Key.withDefaultNamespace(type, Key.DEFAULT_NAMESPACE);
         ResourcePackHostFactory factory = BuiltInRegistries.RESOURCE_PACK_HOST_FACTORY.getValue(key);
         if (factory == null) {
             throw new LocalizedException("warning.config.host.invalid_type", type);

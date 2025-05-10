@@ -4,6 +4,7 @@ import net.momirealms.craftengine.core.loot.LootTable;
 import net.momirealms.craftengine.core.util.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 import java.util.EnumMap;
 import java.util.Optional;
@@ -60,6 +61,7 @@ public class CustomFurniture {
                             HitBox[] hitBoxes,
                             RotationRule rotationRule,
                             AlignmentRule alignmentRule,
-                            Optional<ExternalModel> externalModel) {
+                            Optional<ExternalModel> externalModel,
+                            Optional<Vector3f> dropOffset) {
     }
 }

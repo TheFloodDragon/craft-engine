@@ -32,6 +32,10 @@ public enum ProtocolVersion {
         return name;
     }
 
+    public boolean isVersionNewerThan(ProtocolVersion targetVersion) {
+        return this.getId() >= targetVersion.getId();
+    }
+
     public static ProtocolVersion getByName(String name) {
         for (ProtocolVersion version : values()) {
             if (version.getName().equals(name)) {

@@ -19,7 +19,6 @@ public abstract class AbstractJavaScheduler<T> implements SchedulerAdapter<T> {
 
     public AbstractJavaScheduler(Plugin plugin) {
         this.plugin = plugin;
-
         this.scheduler = new ScheduledThreadPoolExecutor(4, r -> {
             Thread thread = Executors.defaultThreadFactory().newThread(r);
             thread.setName("craft-engine-scheduler");

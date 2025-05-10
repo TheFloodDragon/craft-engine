@@ -27,7 +27,7 @@ public class BlockBehaviors {
     public static BlockBehavior fromMap(CustomBlock block, @Nullable Map<String, Object> map) {
         if (map == null || map.isEmpty()) return EmptyBlockBehavior.INSTANCE;
         String type = ResourceConfigUtils.requireNonEmptyStringOrThrow(map.get("type"), "warning.config.block.behavior.missing_type");
-        Key key = Key.withDefaultNamespace(type, "craftengine");
+        Key key = Key.withDefaultNamespace(type, Key.DEFAULT_NAMESPACE);
         BlockBehaviorFactory factory = BuiltInRegistries.BLOCK_BEHAVIOR_FACTORY.getValue(key);
         if (factory == null) {
             throw new LocalizedResourceConfigException("warning.config.block.behavior.invalid_type", type.toString());

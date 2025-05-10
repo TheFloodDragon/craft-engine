@@ -1,7 +1,7 @@
 package net.momirealms.craftengine.core.loot.entry;
 
 import net.momirealms.craftengine.core.loot.LootContext;
-import net.momirealms.craftengine.core.loot.condition.LootCondition;
+import net.momirealms.craftengine.core.plugin.context.Condition;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -10,7 +10,7 @@ public abstract class AbstractCompositeLootEntryContainer<T> extends AbstractLoo
     protected final List<LootEntryContainer<T>> children;
     private final LootEntryContainer<T> composedChildren;
 
-    protected AbstractCompositeLootEntryContainer(List<LootCondition> conditions, List<LootEntryContainer<T>> children) {
+    protected AbstractCompositeLootEntryContainer(List<Condition<LootContext>> conditions, List<LootEntryContainer<T>> children) {
         super(conditions);
         this.children = children;
         this.composedChildren = compose(children);

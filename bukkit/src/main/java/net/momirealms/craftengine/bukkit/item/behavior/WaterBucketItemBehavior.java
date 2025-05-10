@@ -4,7 +4,7 @@ import net.momirealms.craftengine.bukkit.api.CraftEngineBlocks;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
-import net.momirealms.craftengine.bukkit.world.BukkitWorldBlock;
+import net.momirealms.craftengine.bukkit.world.BukkitBlockInWorld;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.UpdateOption;
@@ -33,7 +33,7 @@ public class WaterBucketItemBehavior extends ItemBehavior {
     public InteractionResult useOnBlock(UseOnContext context) {
         if (context.getPlayer().isAdventureMode()) return InteractionResult.PASS;
         BlockPos pos = context.getClickedPos();
-        BukkitWorldBlock clicked = (BukkitWorldBlock) context.getLevel().getBlockAt(pos);
+        BukkitBlockInWorld clicked = (BukkitBlockInWorld) context.getLevel().getBlockAt(pos);
         Block block = clicked.block();
         ImmutableBlockState state = BukkitBlockManager.instance().getImmutableBlockState(BlockStateUtils.blockDataToId(block.getBlockData()));
         if (state == null || state.isEmpty()) return InteractionResult.PASS;

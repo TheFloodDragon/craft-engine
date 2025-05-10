@@ -7,7 +7,7 @@ import net.momirealms.craftengine.core.pack.Pack;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.Plugin;
 import net.momirealms.craftengine.core.plugin.PluginProperties;
-import net.momirealms.craftengine.core.plugin.config.ConfigSectionParser;
+import net.momirealms.craftengine.core.plugin.config.ConfigParser;
 import net.momirealms.craftengine.core.plugin.config.StringKeyConstructor;
 import net.momirealms.craftengine.core.plugin.text.minimessage.IndexedArgumentTag;
 import net.momirealms.craftengine.core.util.AdventureHelper;
@@ -63,8 +63,8 @@ public class TranslationManagerImpl implements TranslationManager {
     }
 
     @Override
-    public ConfigSectionParser[] parsers() {
-        return new ConfigSectionParser[] {this.langParser, this.i18nParser};
+    public ConfigParser[] parsers() {
+        return new ConfigParser[] {this.langParser, this.i18nParser};
     }
 
     @Override
@@ -93,7 +93,7 @@ public class TranslationManagerImpl implements TranslationManager {
             this.plugin.saveResource("translations/" + lang + ".yml");
         }
 
-        this.registry = MiniMessageTranslationRegistry.create(Key.key("craftengine", "main"), AdventureHelper.miniMessage());
+        this.registry = MiniMessageTranslationRegistry.create(Key.key(net.momirealms.craftengine.core.util.Key.DEFAULT_NAMESPACE, "main"), AdventureHelper.miniMessage());
         this.registry.defaultLocale(DEFAULT_LOCALE);
         this.loadFromFileSystem(this.translationsDirectory, false);
         MiniMessageTranslator.translator().addSource(this.registry);
@@ -277,7 +277,7 @@ public class TranslationManagerImpl implements TranslationManager {
         }
     }
 
-    public class I18NParser implements ConfigSectionParser {
+    public class I18NParser implements ConfigParser {
         public static final String[] CONFIG_SECTION_NAME = new String[] {"i18n", "internationalization", "translation", "translations"};
 
         @Override
@@ -308,7 +308,7 @@ public class TranslationManagerImpl implements TranslationManager {
         }
     }
 
-    public class LangParser implements ConfigSectionParser {
+    public class LangParser implements ConfigParser {
         public static final String[] CONFIG_SECTION_NAME = new String[] {"lang", "language", "languages"};
 
         @Override

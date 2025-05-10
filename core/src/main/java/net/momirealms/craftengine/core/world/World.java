@@ -15,9 +15,9 @@ public interface World {
 
     WorldHeight worldHeight();
 
-    WorldBlock getBlockAt(int x, int y, int z);
+    BlockInWorld getBlockAt(int x, int y, int z);
 
-    default WorldBlock getBlockAt(final BlockPos pos) {
+    default BlockInWorld getBlockAt(final BlockPos pos) {
         return getBlockAt(pos.x(), pos.y(), pos.z());
     }
 

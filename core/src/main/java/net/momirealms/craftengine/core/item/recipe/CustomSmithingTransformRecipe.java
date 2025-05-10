@@ -184,16 +184,16 @@ public class CustomSmithingTransformRecipe<T> implements Recipe<T> {
             if (type == null) {
                 throw new LocalizedResourceConfigException("warning.config.recipe.smithing_transform.post_processor.missing_type");
             }
-            Key key = Key.withDefaultNamespace(type, "craftengine");
-            ItemDataProcessor.Factory factory = BuiltInRegistries.SMITHING_RESULT_PROCESSOR_FACTORY.getValue(key);
+            Key key = Key.withDefaultNamespace(type, Key.DEFAULT_NAMESPACE);
+            ItemDataProcessor.ProcessorFactory factory = BuiltInRegistries.SMITHING_RESULT_PROCESSOR_FACTORY.getValue(key);
             if (factory == null) {
                 throw new LocalizedResourceConfigException("warning.config.recipe.smithing_transform.post_processor.invalid_type", type);
             }
             return factory.create(map);
         }
 
-        public static void register(Key key, ItemDataProcessor.Factory factory) {
-            Holder.Reference<ItemDataProcessor.Factory> holder = ((WritableRegistry<ItemDataProcessor.Factory>) BuiltInRegistries.SMITHING_RESULT_PROCESSOR_FACTORY)
+        public static void register(Key key, ItemDataProcessor.ProcessorFactory factory) {
+            Holder.Reference<ItemDataProcessor.ProcessorFactory> holder = ((WritableRegistry<ItemDataProcessor.ProcessorFactory>) BuiltInRegistries.SMITHING_RESULT_PROCESSOR_FACTORY)
                     .registerForHolder(new ResourceKey<>(Registries.SMITHING_RESULT_PROCESSOR_FACTORY.location(), key));
             holder.bindValue(factory);
         }
@@ -203,7 +203,7 @@ public class CustomSmithingTransformRecipe<T> implements Recipe<T> {
 
         Key type();
 
-        interface Factory {
+        interface ProcessorFactory {
             ItemDataProcessor create(Map<String, Object> arguments);
         }
     }
@@ -231,7 +231,7 @@ public class CustomSmithingTransformRecipe<T> implements Recipe<T> {
             return ItemDataProcessors.KEEP_COMPONENTS;
         }
 
-        public static class Factory implements ItemDataProcessor.Factory {
+        public static class Factory implements ProcessorFactory {
 
             @Override
             public ItemDataProcessor create(Map<String, Object> arguments) {
@@ -268,7 +268,7 @@ public class CustomSmithingTransformRecipe<T> implements Recipe<T> {
             return ItemDataProcessors.KEEP_TAGS;
         }
 
-        public static class Factory implements ItemDataProcessor.Factory {
+        public static class Factory implements ProcessorFactory {
 
             @Override
             public ItemDataProcessor create(Map<String, Object> arguments) {

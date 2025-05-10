@@ -12,6 +12,7 @@ import net.momirealms.craftengine.core.plugin.classpath.ClassPathAppender;
 import net.momirealms.craftengine.core.plugin.command.sender.SenderFactory;
 import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.plugin.config.template.TemplateManager;
+import net.momirealms.craftengine.core.plugin.context.GlobalVariableManager;
 import net.momirealms.craftengine.core.plugin.dependency.DependencyManager;
 import net.momirealms.craftengine.core.plugin.gui.GuiManager;
 import net.momirealms.craftengine.core.plugin.gui.category.ItemBrowserManager;
@@ -90,4 +91,8 @@ public interface Plugin {
     void debug(Supplier<String> message);
 
     CompatibilityManager compatibilityManager();
+
+    GlobalVariableManager globalVariableManager();
+
+    Platform platform();
 }

@@ -1,6 +1,6 @@
 package net.momirealms.craftengine.core.plugin.gui;
 
-import net.momirealms.craftengine.core.util.context.ContextKey;
+import net.momirealms.craftengine.core.plugin.context.ContextKey;
 
 public class GuiParameters {
     public static final ContextKey<String> MAX_PAGE = ContextKey.of("max_page");

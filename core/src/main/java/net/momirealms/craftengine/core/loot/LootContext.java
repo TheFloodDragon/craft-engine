@@ -1,50 +1,38 @@
 package net.momirealms.craftengine.core.loot;
 
-import net.momirealms.craftengine.core.util.context.ContextHolder;
-import net.momirealms.craftengine.core.util.context.ContextKey;
+import net.momirealms.craftengine.core.entity.player.Player;
+import net.momirealms.craftengine.core.item.Item;
+import net.momirealms.craftengine.core.plugin.context.ContextHolder;
+import net.momirealms.craftengine.core.plugin.context.PlayerOptionalContext;
 import net.momirealms.craftengine.core.world.World;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.Optional;
-import java.util.Random;
+import javax.annotation.Nullable;
 
-public class LootContext {
+public class LootContext extends PlayerOptionalContext {
     private final World world;
-    private final ContextHolder contexts;
-    private final Random randomSource;
     private final float luck;
+    private Item<?> tempLoot;
 
-    public LootContext(World world, ContextHolder contexts, Random randomSource, float luck) {
-        this.randomSource = randomSource;
-        this.contexts = contexts;
+    public LootContext(@NotNull World world, @Nullable Player player, float luck, @NotNull ContextHolder contexts) {
+        super(player, contexts);
         this.world = world;
         this.luck = luck;
     }
 
-    public Random randomSource() {
-        return randomSource;
-    }
-
-    public <T> Optional<T> getOptionalParameter(ContextKey<T> parameter) {
-        return this.contexts.getOptional(parameter);
-    }
-
-    public boolean hasParameter(ContextKey<?> parameter) {
-        return this.contexts.has(parameter);
-    }
-
-    public <T> T getParameterOrThrow(ContextKey<T> parameter) {
-        return this.contexts.getOrThrow(parameter);
-    }
-
     public float luck() {
-        return luck;
-    }
-
-    public ContextHolder contexts() {
-        return contexts;
+        return this.luck;
     }
 
     public World world() {
-        return world;
+        return this.world;
+    }
+
+    public Item<?> tempLoot() {
+        return this.tempLoot;
+    }
+
+    public void setTempLoot(Item<?> tempLoot) {
+        this.tempLoot = tempLoot;
     }
 }

@@ -20,10 +20,10 @@ public class Resolutions {
 
     static {
         register(RETAIN_MATCHING, RetainMatchingResolution.FACTORY);
-        register(MERGE_JSON, MergeJsonResolution.FACTORY);
-        register(CONDITIONAL, ConditionalResolution.FACTORY);
-        register(MERGE_PACK_MCMETA, MergePackMcMetaResolution.FACTORY);
-        register(MERGE_ATLAS, MergeAltasResolution.FACTORY);
+        register(MERGE_JSON, ResolutionMergeJson.FACTORY);
+        register(CONDITIONAL, ResolutionConditional.FACTORY);
+        register(MERGE_PACK_MCMETA, ResolutionMergePackMcMeta.FACTORY);
+        register(MERGE_ATLAS, ResolutionMergeAltas.FACTORY);
     }
 
     public static void register(Key key, ResolutionFactory factory) {
@@ -33,7 +33,7 @@ public class Resolutions {
 
     public static Resolution fromMap(Map<String, Object> map) {
         String type = ResourceConfigUtils.requireNonEmptyStringOrThrow(map.get("type"), () -> new LocalizedException("warning.config.conflict_resolution.missing_type"));
-        Key key = Key.withDefaultNamespace(type, "craftengine");
+        Key key = Key.withDefaultNamespace(type, Key.DEFAULT_NAMESPACE);
         ResolutionFactory factory = BuiltInRegistries.RESOLUTION_FACTORY.getValue(key);
         if (factory == null) {
             throw new LocalizedException("warning.config.conflict_resolution.invalid_type", type);

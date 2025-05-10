@@ -5,9 +5,9 @@ import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.bukkit.world.BukkitWorld;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.item.Item;
-import net.momirealms.craftengine.core.loot.parameter.LootParameters;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
-import net.momirealms.craftengine.core.util.context.ContextHolder;
+import net.momirealms.craftengine.core.plugin.context.ContextHolder;
+import net.momirealms.craftengine.core.plugin.context.parameter.CommonParameters;
 import net.momirealms.craftengine.core.world.Vec3d;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.event.EventHandler;
@@ -32,15 +32,15 @@ public class FallingBlockRemoveListener implements Listener {
                 ImmutableBlockState immutableBlockState = BukkitBlockManager.instance().getImmutableBlockState(stateId);
                 if (immutableBlockState == null || immutableBlockState.isEmpty()) return;
                 ContextHolder.Builder builder = ContextHolder.builder();
-                builder.withParameter(LootParameters.FALLING_BLOCK, true);
+                builder.withParameter(CommonParameters.FALLING_BLOCK, true);
                 double x = Reflections.field$Entity$xo.getDouble(fallingBlockEntity);
                 double y = Reflections.field$Entity$yo.getDouble(fallingBlockEntity);
                 double z = Reflections.field$Entity$zo.getDouble(fallingBlockEntity);
                 Vec3d vec3d = new Vec3d(x, y, z);
                 net.momirealms.craftengine.core.world.World world = new BukkitWorld(fallingBlock.getWorld());
-                builder.withParameter(LootParameters.LOCATION, vec3d);
-                builder.withParameter(LootParameters.WORLD, world);
-                for (Item<Object> item : immutableBlockState.getDrops(builder, world)) {
+                builder.withParameter(CommonParameters.LOCATION, vec3d);
+                builder.withParameter(CommonParameters.WORLD, world);
+                for (Item<Object> item : immutableBlockState.getDrops(builder, world, null)) {
                     world.dropItemNaturally(vec3d, item);
                 }
                 Object entityData = Reflections.field$Entity$entityData.get(fallingBlockEntity);

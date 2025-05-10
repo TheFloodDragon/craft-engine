@@ -1,11 +1,11 @@
 package net.momirealms.craftengine.core.loot.entry;
 
+import net.momirealms.craftengine.core.loot.LootConditions;
 import net.momirealms.craftengine.core.loot.LootContext;
-import net.momirealms.craftengine.core.loot.condition.LootCondition;
-import net.momirealms.craftengine.core.loot.condition.LootConditions;
-import net.momirealms.craftengine.core.loot.number.NumberProvider;
-import net.momirealms.craftengine.core.loot.number.NumberProviders;
-import net.momirealms.craftengine.core.loot.parameter.LootParameters;
+import net.momirealms.craftengine.core.plugin.context.Condition;
+import net.momirealms.craftengine.core.plugin.context.number.NumberProvider;
+import net.momirealms.craftengine.core.plugin.context.number.NumberProviders;
+import net.momirealms.craftengine.core.plugin.context.parameter.CommonParameters;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 
@@ -19,7 +19,7 @@ public class ExpLootEntryContainer<T> extends AbstractLootEntryContainer<T> {
     public static final Factory<?> FACTORY = new Factory<>();
     private final NumberProvider value;
 
-    protected ExpLootEntryContainer(NumberProvider value, List<LootCondition> conditions) {
+    protected ExpLootEntryContainer(NumberProvider value, List<Condition<LootContext>> conditions) {
         super(conditions);
         this.value = value;
     }
@@ -32,8 +32,8 @@ public class ExpLootEntryContainer<T> extends AbstractLootEntryContainer<T> {
     @Override
     public boolean expand(LootContext context, Consumer<LootEntry<T>> choiceConsumer) {
         if (super.test(context)) {
-            context.getOptionalParameter(LootParameters.WORLD)
-                    .ifPresent(it -> context.getOptionalParameter(LootParameters.LOCATION).ifPresent(loc -> it.dropExp(loc.toCenter(), value.getInt(context))));
+            context.getOptionalParameter(CommonParameters.WORLD)
+                    .ifPresent(it -> context.getOptionalParameter(CommonParameters.LOCATION).ifPresent(loc -> it.dropExp(loc.toCenter(), value.getInt(context))));
             return true;
         } else {
             return false;
@@ -45,7 +45,7 @@ public class ExpLootEntryContainer<T> extends AbstractLootEntryContainer<T> {
         @Override
         public LootEntryContainer<A> create(Map<String, Object> arguments) {
             Object value = ResourceConfigUtils.requireNonNullOrThrow(arguments.get("count"), "warning.config.loot_table.entry.exp.missing_count");
-            List<LootCondition> conditions = Optional.ofNullable(arguments.get("conditions"))
+            List<Condition<LootContext>> conditions = Optional.ofNullable(arguments.get("conditions"))
                     .map(it -> LootConditions.fromMapList((List<Map<String, Object>>) it))
                     .orElse(Collections.emptyList());
             return new ExpLootEntryContainer<>(NumberProviders.fromObject(value), conditions);

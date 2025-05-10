@@ -2,7 +2,7 @@ package net.momirealms.craftengine.core.entity.furniture;
 
 import net.momirealms.craftengine.core.entity.Entity;
 import net.momirealms.craftengine.core.plugin.Manageable;
-import net.momirealms.craftengine.core.plugin.config.ConfigSectionParser;
+import net.momirealms.craftengine.core.plugin.config.ConfigParser;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.world.Vec3d;
 import net.momirealms.craftengine.core.world.World;
@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface FurnitureManager extends Manageable {
     String FURNITURE_ADMIN_NODE = "craftengine.furniture.admin";
 
-    ConfigSectionParser parser();
+    ConfigParser parser();
 
     void initSuggestions();
 

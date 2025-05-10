@@ -91,10 +91,10 @@ tasks {
         relocate("org.apache.commons.io", "net.momirealms.craftengine.libraries.commons.io")
         relocate("org.bstats", "net.momirealms.craftengine.libraries.bstats")
         relocate("com.github.benmanes.caffeine", "net.momirealms.craftengine.libraries.caffeine")
-        relocate("net.objecthunter.exp4j", "net.momirealms.craftengine.libraries.exp4j")
         relocate("net.bytebuddy", "net.momirealms.craftengine.libraries.bytebuddy")
         relocate("org.yaml.snakeyaml", "net.momirealms.craftengine.libraries.snakeyaml")
         relocate("org.ahocorasick", "net.momirealms.craftengine.libraries.ahocorasick")
+        relocate("com.ezylang.evalex", "net.momirealms.craftengine.libraries.evalex")
     }
 }
 

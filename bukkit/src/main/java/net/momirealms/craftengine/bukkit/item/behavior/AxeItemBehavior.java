@@ -4,7 +4,7 @@ import net.momirealms.craftengine.bukkit.api.CraftEngineBlocks;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.block.behavior.StrippableBlockBehavior;
 import net.momirealms.craftengine.bukkit.util.*;
-import net.momirealms.craftengine.bukkit.world.BukkitWorldBlock;
+import net.momirealms.craftengine.bukkit.world.BukkitBlockInWorld;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.UpdateOption;
@@ -43,7 +43,7 @@ public class AxeItemBehavior extends ItemBehavior {
     @SuppressWarnings("unchecked")
     @Override
     public InteractionResult useOnBlock(UseOnContext context) {
-        BukkitWorldBlock clicked = (BukkitWorldBlock) context.getLevel().getBlockAt(context.getClickedPos());
+        BukkitBlockInWorld clicked = (BukkitBlockInWorld) context.getLevel().getBlockAt(context.getClickedPos());
         Block block = clicked.block();
         ImmutableBlockState state = BukkitBlockManager.instance().getImmutableBlockState(BlockStateUtils.blockDataToId(block.getBlockData()));
         if (state == null || state.isEmpty()) return InteractionResult.PASS;

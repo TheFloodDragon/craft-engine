@@ -33,7 +33,7 @@ public class Properties {
 
     public static Property<?> fromMap(String name, Map<String, Object> map) {
         String type = ResourceConfigUtils.requireNonEmptyStringOrThrow(map.get("type"), "warning.config.block.state.property.missing_type");
-        Key key = Key.withDefaultNamespace(type, "craftengine");
+        Key key = Key.withDefaultNamespace(type, Key.DEFAULT_NAMESPACE);
         PropertyFactory factory = BuiltInRegistries.PROPERTY_FACTORY.getValue(key);
         if (factory == null) {
             throw new LocalizedResourceConfigException("warning.config.block.state.property.invalid_type", key.toString(), name);

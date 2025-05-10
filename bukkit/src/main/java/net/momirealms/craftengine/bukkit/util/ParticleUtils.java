@@ -11,7 +11,7 @@ public class ParticleUtils {
         } catch (IllegalArgumentException e) {
             return switch (particle) {
                 case "REDSTONE" -> Particle.valueOf("DUST");
-                case "VILLAGER_HAPPY" -> Particle.valueOf(VersionHelper.isOrAbove1_20_5() ? "HAPPY_VILLAGER" : "VILLAGER_HAPPY");
+                case "VILLAGER_HAPPY", "HAPPY_VILLAGER" -> Particle.valueOf(VersionHelper.isOrAbove1_20_5() ? "HAPPY_VILLAGER" : "VILLAGER_HAPPY");
                 default -> Particle.valueOf(particle);
             };
         }

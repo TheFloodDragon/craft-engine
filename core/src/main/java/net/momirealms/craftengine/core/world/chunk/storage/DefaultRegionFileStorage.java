@@ -147,7 +147,7 @@ public class DefaultRegionFileStorage implements WorldDataStorage {
     }
 
     @Override
-    public void writeChunkAt(@NotNull ChunkPos pos, @NotNull CEChunk chunk, boolean immediately) throws IOException {
+    public void writeChunkAt(@NotNull ChunkPos pos, @NotNull CEChunk chunk) throws IOException {
         CompoundTag nbt = DefaultChunkSerializer.serialize(chunk);
         writeChunkTagAt(pos, nbt);
     }

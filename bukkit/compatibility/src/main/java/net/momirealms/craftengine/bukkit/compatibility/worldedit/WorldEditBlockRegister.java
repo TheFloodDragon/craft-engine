@@ -30,8 +30,12 @@ public class WorldEditBlockRegister {
         this.isFAWE = isFAWE;
         CEBlockParser blockParser = new CEBlockParser(WorldEdit.getInstance());
         WorldEdit.getInstance().getBlockFactory().register(blockParser);
+        if (isFAWE) {
+            FastAsyncWorldEditDelegate.init();
+        }
     }
 
+    @SuppressWarnings("deprecation")
     public void register(Key id) throws ReflectiveOperationException {
         BlockType blockType = new BlockType(id.toString(), blockState -> blockState);
         this.field$BlockType$blockMaterial.set(blockType, LazyReference.from(() -> new BukkitBlockRegistry.BukkitBlockMaterial(null, Material.STONE)));
@@ -45,6 +49,7 @@ public class WorldEditBlockRegister {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public Stream<String> getSuggestions(String input) {
             Set<String> namespacesInUse = manager.namespacesInUse();
 

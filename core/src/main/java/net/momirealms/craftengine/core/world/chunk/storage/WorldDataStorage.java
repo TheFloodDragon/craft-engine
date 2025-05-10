@@ -12,7 +12,7 @@ public interface WorldDataStorage {
     @NotNull
     CEChunk readChunkAt(@NotNull CEWorld world, @NotNull ChunkPos pos) throws IOException;
 
-    void writeChunkAt(@NotNull ChunkPos pos, @NotNull CEChunk chunk, boolean immediately) throws IOException;
+    void writeChunkAt(@NotNull ChunkPos pos, @NotNull CEChunk chunk) throws IOException;
 
     void flush() throws IOException;
 

@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public abstract class Player extends Entity implements NetWorkUser {
+    private static final Key TYPE = Key.of("minecraft:player");
 
     public abstract boolean isSecondaryUseActive();
 
@@ -84,4 +85,13 @@ public abstract class Player extends Entity implements NetWorkUser {
     public abstract void clearView();
 
     public abstract void unloadCurrentResourcePack();
+
+    public abstract void performCommand(String command);
+
+    public abstract double luck();
+
+    @Override
+    public Key type() {
+        return TYPE;
+    }
 }

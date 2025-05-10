@@ -14,7 +14,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 public class ItemBehaviors {
-    public static final Key EMPTY = Key.from("craftengine:empty");
+    public static final Key EMPTY = Key.withDefaultNamespace("empty", Key.DEFAULT_NAMESPACE);
 
     public static void register(Key key, ItemBehaviorFactory factory) {
         Holder.Reference<ItemBehaviorFactory> holder = ((WritableRegistry<ItemBehaviorFactory>) BuiltInRegistries.ITEM_BEHAVIOR_FACTORY)
@@ -25,7 +25,7 @@ public class ItemBehaviors {
     public static ItemBehavior fromMap(Pack pack, Path path, Key id, Map<String, Object> map) {
         if (map == null || map.isEmpty()) return EmptyItemBehavior.INSTANCE;
         String type = ResourceConfigUtils.requireNonEmptyStringOrThrow(map.get("type"), "warning.config.item.behavior.missing_type");
-        Key key = Key.withDefaultNamespace(type, "craftengine");
+        Key key = Key.withDefaultNamespace(type, Key.DEFAULT_NAMESPACE);
         ItemBehaviorFactory factory = BuiltInRegistries.ITEM_BEHAVIOR_FACTORY.getValue(key);
         if (factory == null) {
             throw new LocalizedResourceConfigException("warning.config.item.behavior.invalid_type", type.toString());

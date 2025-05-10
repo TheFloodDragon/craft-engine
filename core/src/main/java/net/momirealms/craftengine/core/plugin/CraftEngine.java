@@ -14,6 +14,7 @@ import net.momirealms.craftengine.core.plugin.command.sender.SenderFactory;
 import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.plugin.config.template.TemplateManager;
 import net.momirealms.craftengine.core.plugin.config.template.TemplateManagerImpl;
+import net.momirealms.craftengine.core.plugin.context.GlobalVariableManager;
 import net.momirealms.craftengine.core.plugin.dependency.Dependencies;
 import net.momirealms.craftengine.core.plugin.dependency.Dependency;
 import net.momirealms.craftengine.core.plugin.dependency.DependencyManager;
@@ -42,11 +43,11 @@ import java.util.function.Supplier;
 
 public abstract class CraftEngine implements Plugin {
     public static final String MOD_CLASS = "net.momirealms.craftengine.mod.CraftEnginePlugin";
-    public static final String NAMESPACE = "craftengine";
     private static CraftEngine instance;
     protected PluginLogger logger;
     protected Consumer<Supplier<String>> debugger = (s) -> {};
     protected Config config;
+    protected Platform platform;
     protected ClassPathAppender classPathAppender;
     protected DependencyManager dependencyManager;
     protected SchedulerAdapter<?> scheduler;
@@ -68,6 +69,7 @@ public abstract class CraftEngine implements Plugin {
     protected VanillaLootManager vanillaLootManager;
     protected AdvancementManager advancementManager;
     protected CompatibilityManager compatibilityManager;
+    protected GlobalVariableManager globalVariableManager;
 
     private final Consumer<CraftEngine> reloadEventDispatcher;
     private boolean isReloading;
@@ -133,6 +135,7 @@ public abstract class CraftEngine implements Plugin {
                 this.translationManager.reload();
                 // clear the outdated cache by reloading the managers
                 this.templateManager.reload();
+                this.globalVariableManager.reload();
                 this.furnitureManager.reload();
                 this.fontManager.reload();
                 this.itemManager.reload();
@@ -198,6 +201,7 @@ public abstract class CraftEngine implements Plugin {
         this.isInitializing = true;
         this.networkManager.init();
         this.templateManager = new TemplateManagerImpl();
+        this.globalVariableManager = new GlobalVariableManager();
         this.itemBrowserManager = new ItemBrowserManagerImpl(this);
         this.commandManager.registerDefaultFeatures();
         // delay the reload so other plugins can register some custom parsers
@@ -245,6 +249,7 @@ public abstract class CraftEngine implements Plugin {
         if (this.soundManager != null) this.soundManager.disable();
         if (this.vanillaLootManager != null) this.vanillaLootManager.disable();
         if (this.translationManager != null) this.translationManager.disable();
+        if (this.globalVariableManager != null) this.globalVariableManager.disable();
         if (this.scheduler != null) this.scheduler.shutdownScheduler();
         if (this.scheduler != null) this.scheduler.shutdownExecutor();
         if (this.commandManager != null) this.commandManager.unregisterFeatures();
@@ -255,6 +260,8 @@ public abstract class CraftEngine implements Plugin {
     protected void registerDefaultParsers() {
         // register template parser
         this.packManager.registerConfigSectionParser(this.templateManager.parser());
+        // register global variables parser
+        this.packManager.registerConfigSectionParser(this.globalVariableManager.parser());
         // register font parser
         this.packManager.registerConfigSectionParsers(this.fontManager.parsers());
         // register item parser
@@ -288,49 +295,16 @@ public abstract class CraftEngine implements Plugin {
                 Dependencies.GEANTY_REF,
                 Dependencies.CLOUD_CORE, Dependencies.CLOUD_SERVICES,
                 Dependencies.GSON,
-                Dependencies.SLF4J_API, Dependencies.SLF4J_SIMPLE,
                 Dependencies.COMMONS_IO,
                 Dependencies.ZSTD,
                 Dependencies.BYTE_BUDDY,
                 Dependencies.SNAKE_YAML,
                 Dependencies.BOOSTED_YAML,
                 Dependencies.MINIMESSAGE,
-                Dependencies.TEXT_SERIALIZER_GSON, Dependencies.TEXT_SERIALIZER_GSON_LEGACY,
-                Dependencies.TEXT_SERIALIZER_JSON,
+                Dependencies.TEXT_SERIALIZER_GSON, Dependencies.TEXT_SERIALIZER_GSON_LEGACY, Dependencies.TEXT_SERIALIZER_JSON,
                 Dependencies.AHO_CORASICK,
                 Dependencies.LZ4,
-                Dependencies.NETTY_HTTP,
-                Dependencies.NETTY_HTTP2,
-                Dependencies.REACTIVE_STREAMS,
-                Dependencies.AMAZON_AWSSDK_S3,
-                Dependencies.AMAZON_AWSSDK_NETTY_NIO_CLIENT,
-                Dependencies.AMAZON_AWSSDK_SDK_CORE,
-                Dependencies.AMAZON_AWSSDK_AUTH,
-                Dependencies.AMAZON_AWSSDK_REGIONS,
-                Dependencies.AMAZON_AWSSDK_IDENTITY_SPI,
-                Dependencies.AMAZON_AWSSDK_HTTP_CLIENT_SPI,
-                Dependencies.AMAZON_AWSSDK_PROTOCOL_CORE,
-                Dependencies.AMAZON_AWSSDK_AWS_XML_PROTOCOL,
-                Dependencies.AMAZON_AWSSDK_JSON_UTILS,
-                Dependencies.AMAZON_AWSSDK_AWS_CORE,
-                Dependencies.AMAZON_AWSSDK_UTILS,
-                Dependencies.AMAZON_AWSSDK_ANNOTATIONS,
-                Dependencies.AMAZON_AWSSDK_CRT_CORE,
-                Dependencies.AMAZON_AWSSDK_CHECKSUMS,
-                Dependencies.AMAZON_EVENTSTREAM,
-                Dependencies.AMAZON_AWSSDK_PROFILES,
-                Dependencies.AMAZON_AWSSDK_RETRIES,
-                Dependencies.AMAZON_AWSSDK_ENDPOINTS_SPI,
-                Dependencies.AMAZON_AWSSDK_ARNS,
-                Dependencies.AMAZON_AWSSDK_AWS_QUERY_PROTOCOL,
-                Dependencies.AMAZON_AWSSDK_HTTP_AUTH_AWS,
-                Dependencies.AMAZON_AWSSDK_HTTP_AUTH_SPI,
-                Dependencies.AMAZON_AWSSDK_HTTP_AUTH,
-                Dependencies.AMAZON_AWSSDK_HTTP_AUTH_AWS_EVENTSTREAM,
-                Dependencies.AMAZON_AWSSDK_CHECKSUMS_SPI,
-                Dependencies.AMAZON_AWSSDK_RETRIES_SPI,
-                Dependencies.AMAZON_AWSSDK_METRICS_SPI,
-                Dependencies.AMAZON_AWSSDK_THIRD_PARTY_JACKSON_CORE
+                Dependencies.EVALEX
         );
     }
 
@@ -461,5 +435,15 @@ public abstract class CraftEngine implements Plugin {
     @Override
     public CompatibilityManager compatibilityManager() {
         return compatibilityManager;
+    }
+
+    @Override
+    public GlobalVariableManager globalVariableManager() {
+        return globalVariableManager;
+    }
+
+    @Override
+    public Platform platform() {
+        return platform;
     }
 }

@@ -1,11 +1,11 @@
 package net.momirealms.craftengine.core.loot.function;
 
 import net.momirealms.craftengine.core.item.Item;
+import net.momirealms.craftengine.core.loot.LootConditions;
 import net.momirealms.craftengine.core.loot.LootContext;
-import net.momirealms.craftengine.core.loot.condition.LootCondition;
-import net.momirealms.craftengine.core.loot.condition.LootConditions;
-import net.momirealms.craftengine.core.loot.number.NumberProvider;
-import net.momirealms.craftengine.core.loot.number.NumberProviders;
+import net.momirealms.craftengine.core.plugin.context.Condition;
+import net.momirealms.craftengine.core.plugin.context.number.NumberProvider;
+import net.momirealms.craftengine.core.plugin.context.number.NumberProviders;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 
@@ -20,7 +20,7 @@ public class SetCountFunction<T> extends AbstractLootConditionalFunction<T> {
     private final NumberProvider value;
     private final boolean add;
 
-    public SetCountFunction(List<LootCondition> conditions, NumberProvider value, boolean add) {
+    public SetCountFunction(List<Condition<LootContext>> conditions, NumberProvider value, boolean add) {
         super(conditions);
         this.value = value;
         this.add = add;
@@ -44,7 +44,7 @@ public class SetCountFunction<T> extends AbstractLootConditionalFunction<T> {
         public LootFunction<A> create(Map<String, Object> arguments) {
             Object value = ResourceConfigUtils.requireNonNullOrThrow(arguments.get("count"), "warning.config.loot_table.function.set_count.missing_count");
             boolean add = (boolean) arguments.getOrDefault("add", false);
-            List<LootCondition> conditions = Optional.ofNullable(arguments.get("conditions"))
+            List<Condition<LootContext>> conditions = Optional.ofNullable(arguments.get("conditions"))
                     .map(it -> LootConditions.fromMapList((List<Map<String, Object>>) it))
                     .orElse(Collections.emptyList());
             return new SetCountFunction<>(conditions, NumberProviders.fromObject(value), add);

@@ -1,15 +1,16 @@
 package net.momirealms.craftengine.core.pack.conflict.matcher;
 
+import net.momirealms.craftengine.core.pack.conflict.PathContext;
+import net.momirealms.craftengine.core.plugin.context.Condition;
+import net.momirealms.craftengine.core.plugin.context.condition.ConditionFactory;
 import net.momirealms.craftengine.core.plugin.locale.LocalizedException;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 
-import java.nio.file.Path;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-public class PathPatternMatcher implements PathMatcher {
-    public static final Factory FACTORY = new Factory();
+public class PathPatternMatcher implements Condition<PathContext> {
     private final Pattern pattern;
 
     public PathPatternMatcher(String pattern) {
@@ -21,8 +22,8 @@ public class PathPatternMatcher implements PathMatcher {
     }
 
     @Override
-    public boolean test(Path path) {
-        String pathStr = path.toString().replace("\\", "/");
+    public boolean test(PathContext path) {
+        String pathStr = path.path().toString().replace("\\", "/");
         return this.pattern.matcher(pathStr).matches();
     }
 
@@ -35,10 +36,10 @@ public class PathPatternMatcher implements PathMatcher {
         return pattern;
     }
 
-    public static class Factory implements PathMatcherFactory {
+    public static class FactoryImpl implements ConditionFactory<PathContext> {
 
         @Override
-        public PathMatcher create(Map<String, Object> arguments) {
+        public Condition<PathContext> create(Map<String, Object> arguments) {
             String pattern = ResourceConfigUtils.requireNonEmptyStringOrThrow(arguments.get("pattern"), () -> new LocalizedException("warning.config.conflict_matcher.pattern.missing_pattern"));
             return new PathPatternMatcher(pattern);
         }

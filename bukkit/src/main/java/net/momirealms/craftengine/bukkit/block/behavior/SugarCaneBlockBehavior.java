@@ -13,9 +13,9 @@ import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
 import net.momirealms.craftengine.core.block.properties.IntegerProperty;
 import net.momirealms.craftengine.core.block.properties.Property;
 import net.momirealms.craftengine.core.item.Item;
-import net.momirealms.craftengine.core.loot.parameter.LootParameters;
+import net.momirealms.craftengine.core.plugin.context.ContextHolder;
+import net.momirealms.craftengine.core.plugin.context.parameter.CommonParameters;
 import net.momirealms.craftengine.core.util.*;
-import net.momirealms.craftengine.core.util.context.ContextHolder;
 import net.momirealms.craftengine.core.world.BlockPos;
 import net.momirealms.craftengine.core.world.Vec3d;
 import net.momirealms.craftengine.core.world.WorldEvents;
@@ -61,9 +61,9 @@ public class SugarCaneBlockBehavior extends BushBlockBehavior {
                 Vec3d vec3d = Vec3d.atCenterOf(LocationUtils.fromBlockPos(blockPos));
                 net.momirealms.craftengine.core.world.World world = new BukkitWorld(FastNMS.INSTANCE.method$Level$getCraftWorld(level));
                 ContextHolder.Builder builder = ContextHolder.builder()
-                        .withParameter(LootParameters.LOCATION, vec3d)
-                        .withParameter(LootParameters.WORLD, world);
-                for (Item<Object> item : currentState.getDrops(builder, world)) {
+                        .withParameter(CommonParameters.LOCATION, vec3d)
+                        .withParameter(CommonParameters.WORLD, world);
+                for (Item<Object> item : currentState.getDrops(builder, world, null)) {
                     world.dropItemNaturally(vec3d, item);
                 }
                 world.playBlockSound(vec3d, currentState.sounds().breakSound());

@@ -2,17 +2,17 @@ package net.momirealms.craftengine.core.loot.function;
 
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.loot.LootContext;
-import net.momirealms.craftengine.core.loot.condition.LootCondition;
+import net.momirealms.craftengine.core.plugin.context.Condition;
 import net.momirealms.craftengine.core.util.MCUtils;
 
 import java.util.List;
 import java.util.function.Predicate;
 
 public abstract class AbstractLootConditionalFunction<T> implements LootFunction<T> {
-    protected final List<LootCondition> predicates;
+    protected final List<Condition<LootContext>> predicates;
     private final Predicate<LootContext> compositePredicates;
 
-    public AbstractLootConditionalFunction(List<LootCondition> predicates) {
+    public AbstractLootConditionalFunction(List<Condition<LootContext>> predicates) {
         this.predicates = predicates;
         this.compositePredicates = MCUtils.allOf(predicates);
     }

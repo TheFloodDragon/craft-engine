@@ -19,7 +19,7 @@ public interface NetworkManager extends Manageable {
 
     Channel getChannel(Player player);
 
-    NetWorkUser[] onlineUsers();
+    Player[] onlineUsers();
 
     default void sendPacket(@NotNull NetWorkUser player, Object packet) {
         sendPacket(player, packet, false);

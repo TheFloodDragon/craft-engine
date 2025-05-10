@@ -42,7 +42,7 @@ public class LootEntryContainers {
     @SuppressWarnings("unchecked")
     public static <T> LootEntryContainer<T> fromMap(Map<String, Object> map) {
         String type = ResourceConfigUtils.requireNonEmptyStringOrThrow(map.get("type"), "warning.config.loot_table.entry.missing_type");
-        Key key = Key.withDefaultNamespace(type, "craftengine");
+        Key key = Key.withDefaultNamespace(type, Key.DEFAULT_NAMESPACE);
         LootEntryContainerFactory<T> factory = (LootEntryContainerFactory<T>) BuiltInRegistries.LOOT_ENTRY_CONTAINER_FACTORY.getValue(key);
         if (factory == null) {
             throw new LocalizedResourceConfigException("warning.config.loot_table.entry.invalid_type", type);

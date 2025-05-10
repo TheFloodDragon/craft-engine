@@ -3,7 +3,9 @@ package net.momirealms.craftengine.bukkit.plugin.command;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.Component;
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
+import net.momirealms.craftengine.bukkit.util.ComponentUtils;
 import net.momirealms.craftengine.core.plugin.command.sender.Sender;
 import net.momirealms.craftengine.core.plugin.command.sender.SenderFactory;
 import net.momirealms.craftengine.core.util.Tristate;
@@ -47,7 +49,9 @@ public class BukkitSenderFactory extends SenderFactory<BukkitCraftEngine, Comman
     @Override
     protected void sendMessage(CommandSender sender, Component message) {
         // we can safely send async for players and the console - otherwise, send it sync
-        if (sender instanceof Player || sender instanceof ConsoleCommandSender || sender instanceof RemoteConsoleCommandSender) {
+        if (sender instanceof Player player) {
+            FastNMS.INSTANCE.sendPacket(FastNMS.INSTANCE.method$CraftPlayer$getHandle(player), FastNMS.INSTANCE.constructor$ClientboundSystemChatPacket(ComponentUtils.adventureToMinecraft(message), false));
+        } else if (sender instanceof ConsoleCommandSender || sender instanceof RemoteConsoleCommandSender) {
             audience(sender).sendMessage(message);
         } else {
             plugin().scheduler().executeSync(() -> audience(sender).sendMessage(message));

@@ -63,3 +63,5 @@ categories:
       - default:gunpowder_block
       - default:solid_gunpowder_block
       - default:ender_pearl_flower_seeds
+      - default:gui_head_size_1
+      - default:gui_head_size_4

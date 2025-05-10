@@ -1,37 +1,25 @@
 package net.momirealms.craftengine.core.util;
 
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class RandomUtils {
-    private final Random random;
+public final class RandomUtils {
 
-    private RandomUtils() {
-        random = ThreadLocalRandom.current();
-    }
-
-    private static class SingletonHolder {
-        private static final RandomUtils INSTANCE = new RandomUtils();
-    }
-
-    private static RandomUtils getInstance() {
-        return SingletonHolder.INSTANCE;
-    }
+    private RandomUtils() {}
 
     public static double generateRandomDouble(double min, double max) {
-        return min + (max - min) * getInstance().random.nextDouble();
+        return min + (max - min) * ThreadLocalRandom.current().nextDouble();
     }
 
     public static float generateRandomFloat(float min, float max) {
-        return min + (max - min) * getInstance().random.nextFloat();
+        return min + (max - min) * ThreadLocalRandom.current().nextFloat();
     }
 
     public static int generateRandomInt(int min, int max) {
-        return min >= max ? min : getInstance().random.nextInt(max - min + 1) + min;
+        return min >= max ? min : ThreadLocalRandom.current().nextInt(max - min) + min;
     }
 
     public static boolean generateRandomBoolean() {
-        return getInstance().random.nextBoolean();
+        return ThreadLocalRandom.current().nextBoolean();
     }
 
     public static double triangle(double mode, double deviation) {
@@ -39,7 +27,7 @@ public class RandomUtils {
     }
 
     public static <T> T getRandomElementFromArray(T[] array) {
-        int index = getInstance().random.nextInt(array.length);
+        int index = ThreadLocalRandom.current().nextInt(array.length);
         return array[index];
     }
 
@@ -50,7 +38,7 @@ public class RandomUtils {
         @SuppressWarnings("unchecked")
         T[] result = (T[]) new Object[count];
         for (int i = 0; i < count; i++) {
-            int index = getInstance().random.nextInt(array.length - i);
+            int index = ThreadLocalRandom.current().nextInt(array.length - i);
             result[i] = array[index];
             array[index] = array[array.length - i - 1];
         }

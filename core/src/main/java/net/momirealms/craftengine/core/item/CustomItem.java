@@ -4,7 +4,6 @@ import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.item.modifier.ItemDataModifier;
 import net.momirealms.craftengine.core.util.Key;
-import net.momirealms.craftengine.core.util.context.ContextHolder;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -35,7 +34,7 @@ public interface CustomItem<I> extends BuildableItem<I> {
     }
 
     default Item<I> buildItem(Player player) {
-        return buildItem(ItemBuildContext.of(player, ContextHolder.EMPTY));
+        return buildItem(ItemBuildContext.of(player));
     }
 
     Item<I> buildItem(ItemBuildContext context);

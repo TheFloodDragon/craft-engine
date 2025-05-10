@@ -6,18 +6,17 @@ import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.KeyUtils;
 import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.bukkit.world.BukkitWorld;
-import net.momirealms.craftengine.core.entity.player.InteractionHand;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.loot.AbstractVanillaLootManager;
 import net.momirealms.craftengine.core.loot.LootTable;
 import net.momirealms.craftengine.core.loot.VanillaLoot;
-import net.momirealms.craftengine.core.loot.parameter.LootParameters;
 import net.momirealms.craftengine.core.pack.LoadingSequence;
 import net.momirealms.craftengine.core.pack.Pack;
-import net.momirealms.craftengine.core.plugin.config.ConfigSectionParser;
+import net.momirealms.craftengine.core.plugin.config.ConfigParser;
+import net.momirealms.craftengine.core.plugin.context.ContextHolder;
+import net.momirealms.craftengine.core.plugin.context.parameter.CommonParameters;
 import net.momirealms.craftengine.core.plugin.locale.LocalizedResourceConfigException;
 import net.momirealms.craftengine.core.util.*;
-import net.momirealms.craftengine.core.util.context.ContextHolder;
 import net.momirealms.craftengine.core.world.Vec3d;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -68,18 +67,19 @@ public class BukkitVanillaLootManager extends AbstractVanillaLootManager impleme
             net.momirealms.craftengine.core.world.World world = new BukkitWorld(entity.getWorld());
             Vec3d vec3d = new Vec3d(location.getBlockX() + 0.5, location.getBlockY() + 0.5, location.getBlockZ() + 0.5);
             ContextHolder.Builder builder = ContextHolder.builder();
-            builder.withParameter(LootParameters.WORLD, world);
-            builder.withParameter(LootParameters.LOCATION, vec3d);
+            builder.withParameter(CommonParameters.WORLD, world);
+            builder.withParameter(CommonParameters.LOCATION, vec3d);
+            BukkitServerPlayer optionalPlayer = null;
             if (VersionHelper.isOrAbove1_20_5()) {
                 if (event.getDamageSource().getCausingEntity() instanceof Player player) {
-                    BukkitServerPlayer serverPlayer = this.plugin.adapt(player);
-                    builder.withParameter(LootParameters.PLAYER, serverPlayer);
-                    builder.withOptionalParameter(LootParameters.TOOL, serverPlayer.getItemInHand(InteractionHand.MAIN_HAND));
+                    optionalPlayer = this.plugin.adapt(player);
+                    builder.withParameter(CommonParameters.PLAYER, optionalPlayer);
+                    //mark item builder.withOptionalParameter(CommonParameters.MAIN_HAND_ITEM, serverPlayer.getItemInHand(InteractionHand.MAIN_HAND));
                 }
             }
             ContextHolder contextHolder = builder.build();
             for (LootTable<?> lootTable : loot.lootTables()) {
-                for (Item<?> item : lootTable.getRandomItems(contextHolder, world)) {
+                for (Item<?> item : lootTable.getRandomItems(contextHolder, world, optionalPlayer)) {
                     world.dropItemNaturally(vec3d, item);
                 }
             }
@@ -87,11 +87,11 @@ public class BukkitVanillaLootManager extends AbstractVanillaLootManager impleme
     }
 
     @Override
-    public ConfigSectionParser parser() {
+    public ConfigParser parser() {
         return this.vanillaLootParser;
     }
 
-    public class VanillaLootParser implements ConfigSectionParser {
+    public class VanillaLootParser implements ConfigParser {
         public static final String[] CONFIG_SECTION_NAME = new String[] {"vanilla-loots", "vanilla-loot", "loots", "loot"};
 
         @Override

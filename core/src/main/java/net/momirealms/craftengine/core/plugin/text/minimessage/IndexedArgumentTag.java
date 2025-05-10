@@ -13,9 +13,6 @@ import java.util.List;
 import java.util.Objects;
 
 public class IndexedArgumentTag implements TagResolver {
-    private static final String NAME_0 = "argument";
-    private static final String NAME_1 = "arg";
-
     private final List<? extends ComponentLike> argumentComponents;
 
     public IndexedArgumentTag(@NotNull List<? extends ComponentLike> argumentComponents) {
@@ -39,6 +36,6 @@ public class IndexedArgumentTag implements TagResolver {
 
     @Override
     public boolean has(@NotNull String name) {
-        return name.equals(NAME_0) || name.equals(NAME_1);
+        return name.equals("arg");
     }
 }

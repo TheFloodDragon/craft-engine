@@ -34,9 +34,9 @@ public class ImageTag implements TagResolver {
             if (arguments.hasNext()) {
                 int row = arguments.popOr("No argument row provided").asInt().orElseThrow(() -> ctx.newException("Invalid argument number", arguments));
                 int column = arguments.popOr("No argument column provided").asInt().orElseThrow(() -> ctx.newException("Invalid argument number", arguments));
-                return Tag.inserting(Component.empty().children(List.of(optional.get().componentAt(row,column))));
+                return Tag.selfClosingInserting(Component.empty().children(List.of(optional.get().componentAt(row,column))));
             } else {
-                return Tag.inserting(Component.empty().children(List.of(optional.get().componentAt(0,0))));
+                return Tag.selfClosingInserting(Component.empty().children(List.of(optional.get().componentAt(0,0))));
             }
         } else {
             throw ctx.newException("Invalid image id", arguments);

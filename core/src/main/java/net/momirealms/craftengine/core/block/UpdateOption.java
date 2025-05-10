@@ -14,6 +14,10 @@ public class UpdateOption {
         return flags;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public static class Builder {
         private int flags;
 

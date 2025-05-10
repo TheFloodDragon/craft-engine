@@ -100,7 +100,7 @@ public class ItemEventListener implements Listener {
 
         if (optionalItemBehaviors.isPresent()) {
             for (ItemBehavior itemBehavior : optionalItemBehaviors.get()) {
-                InteractionResult result = itemBehavior.use(player.level(), player, hand);
+                InteractionResult result = itemBehavior.use(player.world(), player, hand);
                 if (result == InteractionResult.SUCCESS_AND_CANCEL) {
                     event.setCancelled(true);
                     return;
@@ -167,7 +167,7 @@ public class ItemEventListener implements Listener {
                     event.setCancelled(true);
                     return;
                 }
-                int maxY = player.level().worldHeight().getMaxBuildHeight() - 1;
+                int maxY = player.world().worldHeight().getMaxBuildHeight() - 1;
                 if (direction == Direction.UP
                         && result != InteractionResult.SUCCESS
                         && pos.y() >= maxY

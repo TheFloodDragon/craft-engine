@@ -10,11 +10,10 @@ import net.momirealms.craftengine.bukkit.world.BukkitWorld;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.UpdateOption;
-import net.momirealms.craftengine.core.entity.player.InteractionHand;
 import net.momirealms.craftengine.core.item.Item;
-import net.momirealms.craftengine.core.loot.parameter.LootParameters;
+import net.momirealms.craftengine.core.plugin.context.ContextHolder;
+import net.momirealms.craftengine.core.plugin.context.parameter.CommonParameters;
 import net.momirealms.craftengine.core.util.Key;
-import net.momirealms.craftengine.core.util.context.ContextHolder;
 import net.momirealms.craftengine.core.world.Vec3d;
 import net.momirealms.craftengine.core.world.World;
 import net.momirealms.craftengine.core.world.WorldEvents;
@@ -172,13 +171,13 @@ public final class CraftEngineBlocks {
         Location location = block.getLocation();
         Vec3d vec3d = new Vec3d(location.getBlockX() + 0.5, location.getBlockY() + 0.5, location.getBlockZ() + 0.5);
         if (dropLoot) {
-            ContextHolder.Builder builder = new ContextHolder.Builder().withParameter(LootParameters.WORLD, world).withParameter(LootParameters.LOCATION, vec3d);
+            ContextHolder.Builder builder = new ContextHolder.Builder().withParameter(CommonParameters.WORLD, world).withParameter(CommonParameters.LOCATION, vec3d);
             BukkitServerPlayer serverPlayer = BukkitCraftEngine.instance().adapt(player);
             if (player != null) {
-                builder.withParameter(LootParameters.PLAYER, serverPlayer);
-                builder.withOptionalParameter(LootParameters.TOOL, serverPlayer.getItemInHand(InteractionHand.MAIN_HAND));
+                builder.withParameter(CommonParameters.PLAYER, serverPlayer);
+                //mark item builder.withOptionalParameter(CommonParameters.MAIN_HAND_ITEM, serverPlayer.getItemInHand(InteractionHand.MAIN_HAND));
             }
-            for (Item<?> item : state.getDrops(builder, world)) {
+            for (Item<?> item : state.getDrops(builder, world, serverPlayer)) {
                 world.dropItemNaturally(vec3d, item);
             }
         }

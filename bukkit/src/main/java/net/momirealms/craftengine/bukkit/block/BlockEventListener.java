@@ -12,10 +12,10 @@ import net.momirealms.craftengine.core.block.properties.Property;
 import net.momirealms.craftengine.core.entity.player.InteractionHand;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.loot.LootTable;
-import net.momirealms.craftengine.core.loot.parameter.LootParameters;
 import net.momirealms.craftengine.core.plugin.config.Config;
+import net.momirealms.craftengine.core.plugin.context.ContextHolder;
+import net.momirealms.craftengine.core.plugin.context.parameter.CommonParameters;
 import net.momirealms.craftengine.core.util.VersionHelper;
-import net.momirealms.craftengine.core.util.context.ContextHolder;
 import net.momirealms.craftengine.core.world.BlockPos;
 import net.momirealms.craftengine.core.world.Vec3d;
 import org.bukkit.*;
@@ -150,12 +150,12 @@ public class BlockEventListener implements Listener {
                 }
 
                 // drop items
-                ContextHolder.Builder builder = ContextHolder.builder();
-                builder.withParameter(LootParameters.WORLD, world);
-                builder.withParameter(LootParameters.LOCATION, vec3d);
-                builder.withParameter(LootParameters.PLAYER, serverPlayer);
-                builder.withOptionalParameter(LootParameters.TOOL, itemInHand);
-                for (Item<Object> item : state.getDrops(builder, world)) {
+                ContextHolder.Builder builder = ContextHolder.builder()
+                        .withParameter(CommonParameters.WORLD, world)
+                        .withParameter(CommonParameters.LOCATION, vec3d)
+                        .withParameter(CommonParameters.PLAYER, serverPlayer);
+                        //mark item .withOptionalParameter(CommonParameters.MAIN_HAND_ITEM, itemInHand);
+                for (Item<Object> item : state.getDrops(builder, world, serverPlayer)) {
                     world.dropItemNaturally(vec3d, item);
                 }
             }
@@ -171,14 +171,14 @@ public class BlockEventListener implements Listener {
                     BukkitServerPlayer serverPlayer = this.plugin.adapt(player);
                     net.momirealms.craftengine.core.world.World world = new BukkitWorld(player.getWorld());
                     Vec3d vec3d = new Vec3d(location.getBlockX() + 0.5, location.getBlockY() + 0.5, location.getBlockZ() + 0.5);
-                    ContextHolder.Builder builder = ContextHolder.builder();
-                    builder.withParameter(LootParameters.WORLD, world);
-                    builder.withParameter(LootParameters.LOCATION, vec3d);
-                    builder.withParameter(LootParameters.PLAYER, serverPlayer);
-                    builder.withOptionalParameter(LootParameters.TOOL, serverPlayer.getItemInHand(InteractionHand.MAIN_HAND));
+                    ContextHolder.Builder builder = ContextHolder.builder()
+                            .withParameter(CommonParameters.WORLD, world)
+                            .withParameter(CommonParameters.LOCATION, vec3d)
+                            .withParameter(CommonParameters.PLAYER, serverPlayer);
+                            //mark item .withOptionalParameter(CommonParameters.MAIN_HAND_ITEM, serverPlayer.getItemInHand(InteractionHand.MAIN_HAND));
                     ContextHolder contextHolder = builder.build();
                     for (LootTable<?> lootTable : it.lootTables()) {
-                        for (Item<?> item : lootTable.getRandomItems(contextHolder, world)) {
+                        for (Item<?> item : lootTable.getRandomItems(contextHolder, world, serverPlayer)) {
                             world.dropItemNaturally(vec3d, item);
                         }
                     }
@@ -213,10 +213,10 @@ public class BlockEventListener implements Listener {
                 Location location = block.getLocation();
                 net.momirealms.craftengine.core.world.World world = new BukkitWorld(block.getWorld());
                 Vec3d vec3d = new Vec3d(location.getBlockX() + 0.5, location.getBlockY() + 0.5, location.getBlockZ() + 0.5);
-                ContextHolder.Builder builder = ContextHolder.builder();
-                builder.withParameter(LootParameters.WORLD, world);
-                builder.withParameter(LootParameters.LOCATION, vec3d);
-                for (Item<?> item : immutableBlockState.getDrops(builder, world)) {
+                ContextHolder.Builder builder = ContextHolder.builder()
+                        .withParameter(CommonParameters.WORLD, world)
+                        .withParameter(CommonParameters.LOCATION, vec3d);
+                for (Item<?> item : immutableBlockState.getDrops(builder, world, null)) {
                     world.dropItemNaturally(vec3d, item);
                 }
             }
@@ -232,11 +232,11 @@ public class BlockEventListener implements Listener {
                 Vec3d vec3d = new Vec3d(location.getBlockX() + 0.5, location.getBlockY() + 0.5, location.getBlockZ() + 0.5);
                 net.momirealms.craftengine.core.world.World world = new BukkitWorld(location.getWorld());
                 ContextHolder.Builder builder = ContextHolder.builder();
-                builder.withParameter(LootParameters.WORLD, world);
-                builder.withParameter(LootParameters.LOCATION, vec3d);
+                builder.withParameter(CommonParameters.WORLD, world);
+                builder.withParameter(CommonParameters.LOCATION, vec3d);
                 ContextHolder contextHolder = builder.build();
                 for (LootTable<?> lootTable : it.lootTables()) {
-                    for (Item<?> item : lootTable.getRandomItems(contextHolder, world)) {
+                    for (Item<?> item : lootTable.getRandomItems(contextHolder, world, null)) {
                         world.dropItemNaturally(vec3d, item);
                     }
                 }
@@ -329,12 +329,12 @@ public class BlockEventListener implements Listener {
             if (state != null && !state.isEmpty()) {
                 ContextHolder.Builder builder = ContextHolder.builder();
                 Vec3d vec3d = Vec3d.atCenterOf(blockPos);
-                builder.withParameter(LootParameters.LOCATION, vec3d);
-                builder.withParameter(LootParameters.WORLD, world);
+                builder.withParameter(CommonParameters.LOCATION, vec3d);
+                builder.withParameter(CommonParameters.WORLD, world);
                 if (yield < 1f) {
-                    builder.withParameter(LootParameters.EXPLOSION_RADIUS, 1.0f / yield);
+                    builder.withParameter(CommonParameters.EXPLOSION_RADIUS, 1.0f / yield);
                 }
-                for (Item<Object> item : state.getDrops(builder, world)) {
+                for (Item<Object> item : state.getDrops(builder, world, null)) {
                     world.dropItemNaturally(vec3d, item);
                 }
                 world.playBlockSound(vec3d, state.sounds().breakSound());

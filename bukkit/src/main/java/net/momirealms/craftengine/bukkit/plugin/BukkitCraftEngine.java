@@ -40,7 +40,6 @@ import net.momirealms.craftengine.core.util.ReflectionUtils;
 import net.momirealms.craftengine.core.util.VersionHelper;
 import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.inventory.ItemStack;
@@ -75,6 +74,7 @@ public class BukkitCraftEngine extends CraftEngine {
         super.classPathAppender = new ReflectionClassPathAppender(this);
         super.scheduler = new BukkitSchedulerAdapter(this);
         super.logger = new JavaPluginLogger(bootstrap.getLogger());
+        super.platform = new BukkitPlatform();
         // find mod class if present
         Class<?> modClass = ReflectionUtils.getClazz(MOD_CLASS);
         if (modClass != null) {
@@ -191,15 +191,7 @@ public class BukkitCraftEngine extends CraftEngine {
             new Metrics(this.bootstrap(), 24333);
         }
         // tick task
-        if (VersionHelper.isFolia()) {
-            this.tickTask = this.scheduler().sync().runRepeating(() -> {
-                for (BukkitServerPlayer serverPlayer : networkManager().onlineUsers()) {
-                    org.bukkit.entity.Player player = serverPlayer.platformPlayer();
-                    Location location = player.getLocation();
-                    scheduler().sync().run(serverPlayer::tick, player.getWorld(), location.getBlockX() >> 4, location.getBlockZ() >> 4);
-                }
-            }, 1, 1);
-        } else {
+        if (!VersionHelper.isFolia()) {
             this.tickTask = this.scheduler().sync().runRepeating(() -> {
                 for (BukkitServerPlayer serverPlayer : networkManager().onlineUsers()) {
                     serverPlayer.tick();

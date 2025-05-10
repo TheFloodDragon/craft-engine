@@ -78,6 +78,8 @@ resource-pack:
         ip: "localhost"
         port: 8163
         protocol: "http"
+        # The optional URL must be complete and include a trailing slash / at the end.
+        #url: "http://localhost:8163/"
         deny-non-minecraft-request: true
         one-time-token: true
         rate-limit:
@@ -343,16 +345,24 @@ light-system:
   force-update-light: false
 
 chunk-system:
-  # Unloaded chunks may be loaded soon. Delaying serialization can improve performance, especially for those double-dimension mob farms.
-  delay-serialization: 20 # seconds    -1 = disable
+  # With cache system, those frequently load/unload chunks would consume fewer resources on serialization
+  # Enabling this option will increase memory consumption to a certain extent
+  cache-system: true
   # 1 = NONE      |  Compression Speed | Decompress Speed | Compression Ratio | Memory Usage   |
   # 2 = DEFLATE   |     Medium-Slow           Medium          Moderate              Low        |
   # 3 = GZIP      |     Medium-Slow           Medium          Moderate              Low        |
   # 4 = LZ4       |     Blazing-Fast        Blazing-Fast        Low                 Low        |
   # 5 = ZSTD      |     Medium-Fast            Fast             High               Medium      |
   compression-method: 4
-  # This might not work for some server forks that modify how Minecraft saves chunks.
-  fast-palette-injection: false
+  # Settings for injection
+  injection:
+    # Requires a restart to apply
+    # SECTION: Inject the LevelChunkSection (Faster & Experimental) since 0.0.53
+    # PALETTE: Inject the PalettedContainer
+    target: PALETTE
+    # Enables faster injection method
+    # Note: May not work with certain server forks that alter chunk class structure (In most cases it won't conflict)
+    use-fast-method: false
   # Auto-convert custom blocks -> vanilla blocks when unloading chunks
   #
   # - When ENABLED (true):

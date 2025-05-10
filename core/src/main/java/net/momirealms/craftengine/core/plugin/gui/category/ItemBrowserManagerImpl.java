@@ -8,7 +8,9 @@ import net.momirealms.craftengine.core.item.recipe.*;
 import net.momirealms.craftengine.core.pack.LoadingSequence;
 import net.momirealms.craftengine.core.pack.Pack;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
-import net.momirealms.craftengine.core.plugin.config.ConfigSectionParser;
+import net.momirealms.craftengine.core.plugin.config.ConfigParser;
+import net.momirealms.craftengine.core.plugin.context.ContextHolder;
+import net.momirealms.craftengine.core.plugin.context.PlayerOptionalContext;
 import net.momirealms.craftengine.core.plugin.gui.*;
 import net.momirealms.craftengine.core.plugin.gui.Ingredient;
 import net.momirealms.craftengine.core.registry.Holder;
@@ -16,8 +18,6 @@ import net.momirealms.craftengine.core.util.AdventureHelper;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
-import net.momirealms.craftengine.core.util.context.ContextHolder;
-import net.momirealms.craftengine.core.util.context.PlayerContext;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -68,7 +68,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
     }
 
     @Override
-    public ConfigSectionParser parser() {
+    public ConfigParser parser() {
         return this.categoryParser;
     }
 
@@ -93,7 +93,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
         return Optional.ofNullable(this.byId.get(key));
     }
 
-    public class CategoryParser implements ConfigSectionParser {
+    public class CategoryParser implements ConfigParser {
         public static final String[] CONFIG_SECTION_NAME = new String[] {"categories", "category"};
 
         @Override
@@ -137,7 +137,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                             .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.builder()
                                     .withParameter(GuiParameters.CURRENT_PAGE, String.valueOf(element.gui().currentPage()))
                                     .withParameter(GuiParameters.MAX_PAGE, String.valueOf(element.gui().maxPages()))
-                                    .build())))
+                            )))
                             .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + next));
                 }, true)
         )
@@ -147,7 +147,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                             .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.builder()
                                     .withParameter(GuiParameters.CURRENT_PAGE, String.valueOf(element.gui().currentPage()))
                                     .withParameter(GuiParameters.MAX_PAGE, String.valueOf(element.gui().maxPages()))
-                                    .build())))
+                            )))
                             .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + previous));
                 }, false)
         );
@@ -177,7 +177,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                     }
                 })
                 .build()
-                .title(AdventureHelper.miniMessage().deserialize(Constants.BROWSER_TITLE, PlayerContext.of(player, ContextHolder.EMPTY).tagResolvers()))
+                .title(AdventureHelper.miniMessage().deserialize(Constants.BROWSER_TITLE, PlayerOptionalContext.of(player).tagResolvers()))
                 .refresh()
                 .open(player);
     }
@@ -193,7 +193,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
         )
         .addIngredient('A', Ingredient.paged())
         .addIngredient('=', GuiElement.constant(this.plugin.itemManager().getCustomItem(parentGui != null ? Constants.CATEGORY_BACK : Constants.CATEGORY_EXIT)
-                .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.EMPTY)))
+                .map(it -> it.buildItem(ItemBuildContext.of(player)))
                 .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + (parentGui != null ? Constants.CATEGORY_BACK : Constants.CATEGORY_EXIT))),
                 ((element, click) -> {
                     click.cancel();
@@ -211,7 +211,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                             .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.builder()
                                     .withParameter(GuiParameters.CURRENT_PAGE, String.valueOf(element.gui().currentPage()))
                                     .withParameter(GuiParameters.MAX_PAGE, String.valueOf(element.gui().maxPages()))
-                                    .build())))
+                            )))
                             .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + next));
                 }, true)
         )
@@ -221,7 +221,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                             .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.builder()
                                     .withParameter(GuiParameters.CURRENT_PAGE, String.valueOf(element.gui().currentPage()))
                                     .withParameter(GuiParameters.MAX_PAGE, String.valueOf(element.gui().maxPages()))
-                                    .build())))
+                            )))
                             .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + previous));
                 }, false)
         );
@@ -292,7 +292,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                     }
                 })
                 .build()
-                .title(AdventureHelper.miniMessage().deserialize(Constants.CATEGORY_TITLE, PlayerContext.of(player, ContextHolder.EMPTY).tagResolvers()))
+                .title(AdventureHelper.miniMessage().deserialize(Constants.CATEGORY_TITLE, PlayerOptionalContext.of(player).tagResolvers()))
                 .refresh()
                 .open(player);
     }
@@ -332,7 +332,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
             }
         }) : GuiElement.EMPTY)
         .addIngredient('=', GuiElement.constant(this.plugin.itemManager().getCustomItem(parentGui != null ? Constants.RECIPE_BACK : Constants.RECIPE_EXIT)
-                        .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.EMPTY)))
+                        .map(it -> it.buildItem(ItemBuildContext.of(player)))
                         .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + (parentGui != null ? Constants.RECIPE_BACK : Constants.RECIPE_EXIT))),
                 ((element, click) -> {
                     click.cancel();
@@ -353,7 +353,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                     }
                 })
                 .build()
-                .title(AdventureHelper.miniMessage().deserialize(Constants.RECIPE_NONE_TITLE, PlayerContext.of(player, ContextHolder.EMPTY).tagResolvers()))
+                .title(AdventureHelper.miniMessage().deserialize(Constants.RECIPE_NONE_TITLE, PlayerOptionalContext.of(player).tagResolvers()))
                 .refresh()
                 .open(player);
     }
@@ -431,7 +431,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
             }
         }) : GuiElement.EMPTY)
         .addIngredient('=', GuiElement.constant(this.plugin.itemManager().getCustomItem(parentGui != null ? Constants.RECIPE_BACK : Constants.RECIPE_EXIT)
-                        .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.EMPTY)))
+                        .map(it -> it.buildItem(ItemBuildContext.of(player)))
                         .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + (parentGui != null ? Constants.RECIPE_BACK : Constants.RECIPE_EXIT))),
                 ((element, click) -> {
                     click.cancel();
@@ -448,7 +448,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                 .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.builder()
                         .withParameter(GuiParameters.CURRENT_PAGE, String.valueOf(index + 1))
                         .withParameter(GuiParameters.MAX_PAGE, String.valueOf(recipes.size()))
-                        .build())))
+                )))
                 .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + next)), (e, c) -> {
             c.cancel();
             if (index + 1 < recipes.size()) {
@@ -461,7 +461,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                 .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.builder()
                         .withParameter(GuiParameters.CURRENT_PAGE, String.valueOf(index + 1))
                         .withParameter(GuiParameters.MAX_PAGE, String.valueOf(recipes.size()))
-                        .build())))
+                )))
                 .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + previous)), (e, c) -> {
             c.cancel();
             if (index > 0) {
@@ -578,7 +578,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                     }
                 })
                 .build()
-                .title(AdventureHelper.miniMessage().deserialize(Constants.RECIPE_SMITHING_TRANSFORM_TITLE, PlayerContext.of(player, ContextHolder.EMPTY).tagResolvers()))
+                .title(AdventureHelper.miniMessage().deserialize(Constants.RECIPE_SMITHING_TRANSFORM_TITLE, PlayerOptionalContext.of(player).tagResolvers()))
                 .refresh()
                 .open(player);
     }
@@ -664,7 +664,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
             }
         }))
         .addIngredient('=', GuiElement.constant(this.plugin.itemManager().getCustomItem(parentGui != null ? Constants.RECIPE_BACK : Constants.RECIPE_EXIT)
-                        .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.EMPTY)))
+                        .map(it -> it.buildItem(ItemBuildContext.of(player)))
                         .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + (parentGui != null ? Constants.RECIPE_BACK : Constants.RECIPE_EXIT))),
                 ((element, click) -> {
                     click.cancel();
@@ -681,7 +681,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                 .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.builder()
                         .withParameter(GuiParameters.CURRENT_PAGE, String.valueOf(index + 1))
                         .withParameter(GuiParameters.MAX_PAGE, String.valueOf(recipes.size()))
-                        .build())))
+                )))
                 .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + next)), (e, c) -> {
             c.cancel();
             if (index + 1 < recipes.size()) {
@@ -694,7 +694,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                 .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.builder()
                         .withParameter(GuiParameters.CURRENT_PAGE, String.valueOf(index + 1))
                         .withParameter(GuiParameters.MAX_PAGE, String.valueOf(recipes.size()))
-                        .build())))
+                )))
                 .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + previous)), (e, c) -> {
             c.cancel();
             if (index > 0) {
@@ -711,7 +711,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                     }
                 })
                 .build()
-                .title(AdventureHelper.miniMessage().deserialize(Constants.RECIPE_STONECUTTING_TITLE, PlayerContext.of(player, ContextHolder.EMPTY).tagResolvers()))
+                .title(AdventureHelper.miniMessage().deserialize(Constants.RECIPE_STONECUTTING_TITLE, PlayerOptionalContext.of(player).tagResolvers()))
                 .refresh()
                 .open(player);
     }
@@ -764,7 +764,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                 .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.builder()
                         .withParameter(GuiParameters.COOKING_TIME, String.valueOf(recipe.cookingTime()))
                         .withParameter(GuiParameters.COOKING_EXPERIENCE, String.valueOf(recipe.experience()))
-                        .build())))
+                )))
                 .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + Constants.RECIPE_COOKING_INFO)), (e, c) -> c.cancel()))
         .addIngredient('^', player.hasPermission(GET_ITEM_PERMISSION) ? GuiElement.constant(this.plugin.itemManager().createWrappedItem(Constants.RECIPE_GET_ITEM, player), (e, c) -> {
             c.cancel();
@@ -803,7 +803,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
             }
         }))
         .addIngredient('=', GuiElement.constant(this.plugin.itemManager().getCustomItem(parentGui != null ? Constants.RECIPE_BACK : Constants.RECIPE_EXIT)
-                        .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.EMPTY)))
+                        .map(it -> it.buildItem(ItemBuildContext.of(player)))
                         .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + (parentGui != null ? Constants.RECIPE_BACK : Constants.RECIPE_EXIT))),
                 ((element, click) -> {
                     click.cancel();
@@ -820,7 +820,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                 .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.builder()
                         .withParameter(GuiParameters.CURRENT_PAGE, String.valueOf(index + 1))
                         .withParameter(GuiParameters.MAX_PAGE, String.valueOf(recipes.size()))
-                        .build())))
+                )))
                 .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + next)), (e, c) -> {
             c.cancel();
             if (index + 1 < recipes.size()) {
@@ -833,7 +833,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                 .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.builder()
                         .withParameter(GuiParameters.CURRENT_PAGE, String.valueOf(index + 1))
                         .withParameter(GuiParameters.MAX_PAGE, String.valueOf(recipes.size()))
-                        .build())))
+                )))
                 .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + previous)), (e, c) -> {
             c.cancel();
             if (index > 0) {
@@ -861,7 +861,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                     }
                 })
                 .build()
-                .title(AdventureHelper.miniMessage().deserialize(title, PlayerContext.of(player, ContextHolder.EMPTY).tagResolvers()))
+                .title(AdventureHelper.miniMessage().deserialize(title, PlayerOptionalContext.of(player).tagResolvers()))
                 .refresh()
                 .open(player);
     }
@@ -916,7 +916,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
             }
         }) : GuiElement.EMPTY)
         .addIngredient('=', GuiElement.constant(this.plugin.itemManager().getCustomItem(parentGui != null ? Constants.RECIPE_BACK : Constants.RECIPE_EXIT)
-                        .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.EMPTY)))
+                        .map(it -> it.buildItem(ItemBuildContext.of(player)))
                         .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + (parentGui != null ? Constants.RECIPE_BACK : Constants.RECIPE_EXIT))),
                 ((element, click) -> {
                     click.cancel();
@@ -933,7 +933,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                 .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.builder()
                         .withParameter(GuiParameters.CURRENT_PAGE, String.valueOf(index + 1))
                         .withParameter(GuiParameters.MAX_PAGE, String.valueOf(recipes.size()))
-                        .build())))
+                )))
                 .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + next)), (e, c) -> {
             c.cancel();
             if (index + 1 < recipes.size()) {
@@ -946,7 +946,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                 .map(it -> it.buildItem(ItemBuildContext.of(player, ContextHolder.builder()
                         .withParameter(GuiParameters.CURRENT_PAGE, String.valueOf(index + 1))
                         .withParameter(GuiParameters.MAX_PAGE, String.valueOf(recipes.size()))
-                        .build())))
+                )))
                 .orElseThrow(() -> new GuiElementMissingException("Can't find gui element " + previous)), (e, c) -> {
             c.cancel();
             if (index > 0) {
@@ -1056,7 +1056,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                     }
                 })
                 .build()
-                .title(AdventureHelper.miniMessage().deserialize(Constants.RECIPE_CRAFTING_TITLE, PlayerContext.of(player, ContextHolder.EMPTY).tagResolvers()))
+                .title(AdventureHelper.miniMessage().deserialize(Constants.RECIPE_CRAFTING_TITLE, PlayerOptionalContext.of(player).tagResolvers()))
                 .refresh()
                 .open(player);
     }

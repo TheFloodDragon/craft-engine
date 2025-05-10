@@ -36,7 +36,7 @@ public class TemplateArguments {
         if (type == null) {
             return MapTemplateArgument.FACTORY.create(map);
         } else {
-            Key key = Key.withDefaultNamespace(type, "craftengine");
+            Key key = Key.withDefaultNamespace(type, Key.DEFAULT_NAMESPACE);
             TemplateArgumentFactory factory = BuiltInRegistries.TEMPLATE_ARGUMENT_FACTORY.getValue(key);
             if (factory == null) {
                 throw new IllegalArgumentException("Unknown argument type: " + type);

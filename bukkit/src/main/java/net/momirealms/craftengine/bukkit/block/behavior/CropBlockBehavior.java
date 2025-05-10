@@ -12,14 +12,14 @@ import net.momirealms.craftengine.core.block.UpdateOption;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
 import net.momirealms.craftengine.core.block.properties.IntegerProperty;
 import net.momirealms.craftengine.core.block.properties.Property;
-import net.momirealms.craftengine.core.loot.LootContext;
-import net.momirealms.craftengine.core.loot.number.NumberProvider;
-import net.momirealms.craftengine.core.loot.number.NumberProviders;
-import net.momirealms.craftengine.core.loot.parameter.LootParameters;
+import net.momirealms.craftengine.core.plugin.context.ContextHolder;
+import net.momirealms.craftengine.core.plugin.context.SimpleContext;
+import net.momirealms.craftengine.core.plugin.context.number.NumberProvider;
+import net.momirealms.craftengine.core.plugin.context.number.NumberProviders;
+import net.momirealms.craftengine.core.plugin.context.parameter.CommonParameters;
 import net.momirealms.craftengine.core.util.RandomUtils;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 import net.momirealms.craftengine.core.util.Tuple;
-import net.momirealms.craftengine.core.util.context.ContextHolder;
 import net.momirealms.craftengine.core.world.Vec3d;
 import net.momirealms.craftengine.core.world.Vec3i;
 import net.momirealms.craftengine.shared.block.BlockBehavior;
@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class CropBlockBehavior extends BushBlockBehavior {
     public static final Factory FACTORY = new Factory();
@@ -146,17 +145,19 @@ public class CropBlockBehavior extends BushBlockBehavior {
         int x = FastNMS.INSTANCE.field$Vec3i$x(pos);
         int y = FastNMS.INSTANCE.field$Vec3i$y(pos);
         int z = FastNMS.INSTANCE.field$Vec3i$z(pos);
-
-        net.momirealms.craftengine.core.world.World wrappedWorld = new BukkitWorld(world);
-        int i = this.getAge(immutableBlockState) + this.boneMealBonus.getInt(new LootContext(wrappedWorld, ContextHolder.builder()
-                .withParameter(LootParameters.WORLD, wrappedWorld)
-                .withParameter(LootParameters.LOCATION, Vec3d.atCenterOf(new Vec3i(x, y, z)))
-                .build(), ThreadLocalRandom.current(), 1));
+        int i = this.getAge(immutableBlockState) + this.boneMealBonus.getInt(
+                SimpleContext.of(
+                        ContextHolder.builder()
+                            .withParameter(CommonParameters.WORLD, new BukkitWorld(world))
+                            .withParameter(CommonParameters.LOCATION, Vec3d.atCenterOf(new Vec3i(x, y, z)))
+                            .build()
+                )
+        );
         int maxAge = this.ageProperty.max;
         if (i > maxAge) {
             i = maxAge;
         }
-        FastNMS.INSTANCE.method$LevelWriter$setBlock(level, pos, immutableBlockState.with(this.ageProperty, i).customBlockState().handle(), UpdateOption.UPDATE_NONE.flags());
+        FastNMS.INSTANCE.method$LevelWriter$setBlock(level, pos, immutableBlockState.with(this.ageProperty, i).customBlockState().handle(), UpdateOption.UPDATE_ALL.flags());
         if (sendParticles) {
             world.spawnParticle(ParticleUtils.getParticle("HAPPY_VILLAGER"), x + 0.5, y + 0.5, z + 0.5, 15, 0.25, 0.25, 0.25);
         }

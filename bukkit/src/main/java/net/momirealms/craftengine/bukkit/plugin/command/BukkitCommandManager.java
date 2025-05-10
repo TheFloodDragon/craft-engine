@@ -46,6 +46,7 @@ public class BukkitCommandManager extends AbstractCommandManager<CommandSender> 
                 new DebugSetBlockCommand(this, plugin),
                 new DebugSpawnFurnitureCommand(this, plugin),
                 new DebugTargetBlockCommand(this, plugin),
+                new DebugIsSectionInjectedCommand(this, plugin),
                 new TotemAnimationCommand(this, plugin),
                 new EnableResourceCommand(this, plugin),
                 new DisableResourceCommand(this, plugin),

@@ -13,7 +13,7 @@ import dev.dejvokep.boostedyaml.settings.updater.UpdaterSettings;
 import dev.dejvokep.boostedyaml.utils.format.NodeRole;
 import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.core.entity.furniture.ColliderType;
-import net.momirealms.craftengine.core.pack.conflict.resolution.ConditionalResolution;
+import net.momirealms.craftengine.core.pack.conflict.resolution.ResolutionConditional;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.PluginProperties;
 import net.momirealms.craftengine.core.plugin.locale.LocalizedResourceConfigException;
@@ -23,6 +23,7 @@ import net.momirealms.craftengine.core.util.AdventureHelper;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
 import net.momirealms.craftengine.core.util.ReflectionUtils;
+import net.momirealms.craftengine.core.world.InjectionTarget;
 import net.momirealms.craftengine.core.world.chunk.storage.CompressionMethod;
 
 import java.io.File;
@@ -46,6 +47,7 @@ public class Config {
     private final String configVersion;
     private YamlDocument config;
 
+    protected boolean firstTime = true;
     protected boolean debug;
     protected boolean checkUpdate;
     protected boolean metrics;
@@ -54,7 +56,7 @@ public class Config {
     protected boolean resource_pack$remove_tinted_leaves_particle;
     protected boolean resource_pack$generate_mod_assets;
     protected boolean resource_pack$override_uniform_font;
-    protected List<ConditionalResolution> resource_pack$duplicated_files_handler;
+    protected List<ResolutionConditional> resource_pack$duplicated_files_handler;
     protected List<String> resource_pack$merge_external_folders;
 
     protected boolean resource_pack$protection$crash_tools$method_1;
@@ -99,8 +101,9 @@ public class Config {
     protected boolean chunk_system$restore_vanilla_blocks_on_chunk_unload;
     protected boolean chunk_system$restore_custom_blocks_on_chunk_load;
     protected boolean chunk_system$sync_custom_blocks_on_chunk_load;
-    protected int chunk_system$delay_serialization;
-    protected boolean chunk_system$fast_paletted_injection;
+    protected boolean chunk_system$cache_system;
+    protected boolean chunk_system$injection$use_fast_method;
+    protected boolean chunk_system$injection$target;
 
     protected boolean furniture$handle_invalid_furniture_on_chunk_load$enable;
     protected Map<String, String> furniture$handle_invalid_furniture_on_chunk_load$mapping;
@@ -245,7 +248,7 @@ public class Config {
         try {
             resource_pack$duplicated_files_handler = config.getMapList("resource-pack.duplicated-files-handler").stream().map(it -> {
                 Map<String, Object> args = MiscUtils.castToMap(it, false);
-                return ConditionalResolution.FACTORY.create(args);
+                return ResolutionConditional.FACTORY.create(args);
             }).toList();
         } catch (LocalizedResourceConfigException e) {
             TranslationManager.instance().log(e.node(), e.arguments());
@@ -271,8 +274,11 @@ public class Config {
         chunk_system$restore_vanilla_blocks_on_chunk_unload = config.getBoolean("chunk-system.restore-vanilla-blocks-on-chunk-unload", true);
         chunk_system$restore_custom_blocks_on_chunk_load = config.getBoolean("chunk-system.restore-custom-blocks-on-chunk-load", true);
         chunk_system$sync_custom_blocks_on_chunk_load = config.getBoolean("chunk-system.sync-custom-blocks-on-chunk-load", false);
-        chunk_system$delay_serialization = config.getInt("chunk-system.delay-serialization", 20);
-        chunk_system$fast_paletted_injection = config.getBoolean("chunk-system.fast-palette-injection", false);
+        chunk_system$cache_system = config.getBoolean("chunk-system.cache-system", true);
+        chunk_system$injection$use_fast_method = config.getBoolean("chunk-system.injection.use-fast-method", false);
+        if (firstTime) {
+            chunk_system$injection$target = config.getEnum("chunk-system.injection.target", InjectionTarget.class, InjectionTarget.PALETTE) == InjectionTarget.PALETTE;
+        }
 
         // furniture
         furniture$handle_invalid_furniture_on_chunk_load$enable = config.getBoolean("furniture.handle-invalid-furniture-on-chunk-load.enable", false);
@@ -342,6 +348,8 @@ public class Config {
                 plugin.logger().warn("Failed to set max chain update", e);
             }
         }
+
+        firstTime = false;
     }
 
     private static float getVersion(String version) {
@@ -479,7 +487,7 @@ public class Config {
         return instance.resource_pack$delivery$file_to_upload;
     }
 
-    public static List<ConditionalResolution> resolutions() {
+    public static List<ResolutionConditional> resolutions() {
         return instance.resource_pack$duplicated_files_handler;
     }
 
@@ -691,12 +699,16 @@ public class Config {
         return instance.furniture$collision_entity_type;
     }
 
-    public static int delaySerialization() {
-        return instance.chunk_system$delay_serialization;
+    public static boolean enableChunkCache() {
+        return instance.chunk_system$cache_system;
     }
 
-    public static boolean fastPaletteInjection() {
-        return instance.chunk_system$fast_paletted_injection;
+    public static boolean fastInjection() {
+        return instance.chunk_system$injection$use_fast_method;
+    }
+
+    public static boolean injectionTarget() {
+        return instance.chunk_system$injection$target;
     }
 
     public YamlDocument loadOrCreateYamlData(String fileName) {

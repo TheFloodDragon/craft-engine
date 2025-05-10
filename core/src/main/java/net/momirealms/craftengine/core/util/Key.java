@@ -1,7 +1,8 @@
 package net.momirealms.craftengine.core.util;
 
-public record Key(String namespace, String value) {
+import org.jetbrains.annotations.NotNull;
 
+public record Key(String namespace, String value) {
     public static final String DEFAULT_NAMESPACE = "craftengine";
 
     public static Key withDefaultNamespace(String value) {
@@ -28,6 +29,10 @@ public record Key(String namespace, String value) {
         return of(decompose(namespacedId, "minecraft"));
     }
 
+    public static Key fromNamespaceAndPath(String namespace, String path) {
+        return Key.of(namespace, path);
+    }
+
     public String[] decompose() {
         return new String[] { namespace, value };
     }
@@ -48,7 +53,7 @@ public record Key(String namespace, String value) {
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return namespace + ":" + value;
     }
 

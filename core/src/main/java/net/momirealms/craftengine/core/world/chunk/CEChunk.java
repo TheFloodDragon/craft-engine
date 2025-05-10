@@ -47,11 +47,11 @@ public class CEChunk {
     }
 
     public Map<Integer, BlockEntityState> blockEntities() {
-        return blockEntities;
+        return this.blockEntities;
     }
 
     public boolean dirty() {
-        return dirty;
+        return this.dirty;
     }
 
     public void setDirty(boolean dirty) {

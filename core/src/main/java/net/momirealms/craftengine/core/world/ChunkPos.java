@@ -12,6 +12,10 @@ public class ChunkPos {
         this.longKey = asLong(this.x, this.z);
     }
 
+    public static ChunkPos of(final int x, final int z) {
+        return new ChunkPos(x, z);
+    }
+
     public ChunkPos(BlockPos pos) {
         this.x = SectionPos.blockToSectionCoord(pos.x());
         this.z = SectionPos.blockToSectionCoord(pos.z());
@@ -63,5 +67,18 @@ public class ChunkPos {
 
     public static long asLong(int chunkX, int chunkZ) {
         return (long) chunkX & 4294967295L | ((long) chunkZ & 4294967295L) << 32;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof ChunkPos chunkPos)) return false;
+        return x == chunkPos.x && z == chunkPos.z;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = x;
+        result = 31 * result + z;
+        return result;
     }
 }

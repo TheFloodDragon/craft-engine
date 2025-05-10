@@ -3,7 +3,7 @@ package net.momirealms.craftengine.core.pack;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.pack.host.ResourcePackHost;
 import net.momirealms.craftengine.core.plugin.Manageable;
-import net.momirealms.craftengine.core.plugin.config.ConfigSectionParser;
+import net.momirealms.craftengine.core.plugin.config.ConfigParser;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
@@ -16,17 +16,17 @@ public interface PackManager extends Manageable {
     @NotNull
     Collection<Pack> loadedPacks();
 
-    boolean registerConfigSectionParser(ConfigSectionParser parser);
+    boolean registerConfigSectionParser(ConfigParser parser);
 
-    default void registerConfigSectionParsers(ConfigSectionParser[] parsers) {
-        for (ConfigSectionParser parser : parsers) {
+    default void registerConfigSectionParsers(ConfigParser[] parsers) {
+        for (ConfigParser parser : parsers) {
             registerConfigSectionParser(parser);
         }
     }
 
     boolean unregisterConfigSectionParser(String id);
 
-    default void unregisterConfigSectionParser(ConfigSectionParser parser) {
+    default void unregisterConfigSectionParser(ConfigParser parser) {
         for (String id : parser.sectionId()) {
             unregisterConfigSectionParser(id);
         }

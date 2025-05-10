@@ -6,9 +6,9 @@ import net.momirealms.craftengine.bukkit.util.ItemUtils;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.VersionHelper;
+import net.momirealms.craftengine.core.world.BlockInWorld;
 import net.momirealms.craftengine.core.world.Vec3d;
 import net.momirealms.craftengine.core.world.World;
-import net.momirealms.craftengine.core.world.WorldBlock;
 import net.momirealms.craftengine.core.world.WorldHeight;
 import org.bukkit.Location;
 import org.bukkit.SoundCategory;
@@ -51,8 +51,8 @@ public class BukkitWorld implements World {
     }
 
     @Override
-    public WorldBlock getBlockAt(int x, int y, int z) {
-        return new BukkitWorldBlock(platformWorld().getBlockAt(x, y, z));
+    public BlockInWorld getBlockAt(int x, int y, int z) {
+        return new BukkitBlockInWorld(platformWorld().getBlockAt(x, y, z));
     }
 
     @Override

@@ -2,10 +2,10 @@ package net.momirealms.craftengine.core.loot.function;
 
 import net.momirealms.craftengine.core.item.Enchantment;
 import net.momirealms.craftengine.core.item.Item;
+import net.momirealms.craftengine.core.loot.LootConditions;
 import net.momirealms.craftengine.core.loot.LootContext;
-import net.momirealms.craftengine.core.loot.condition.LootCondition;
-import net.momirealms.craftengine.core.loot.condition.LootConditions;
-import net.momirealms.craftengine.core.loot.parameter.LootParameters;
+import net.momirealms.craftengine.core.plugin.context.Condition;
+import net.momirealms.craftengine.core.plugin.context.parameter.PlayerParameters;
 import net.momirealms.craftengine.core.plugin.locale.LocalizedResourceConfigException;
 import net.momirealms.craftengine.core.registry.BuiltInRegistries;
 import net.momirealms.craftengine.core.registry.Holder;
@@ -17,14 +17,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class ApplyBonusCountFunction<T> extends AbstractLootConditionalFunction<T> {
     public static final Factory<?> FACTORY = new Factory<>();
     private final Key enchantment;
     private final Formula formula;
 
-    public ApplyBonusCountFunction(List<LootCondition> predicates, Key enchantment, Formula formula) {
+    public ApplyBonusCountFunction(List<Condition<LootContext>> predicates, Key enchantment, Formula formula) {
         super(predicates);
         this.enchantment = enchantment;
         this.formula = formula;
@@ -32,7 +31,7 @@ public class ApplyBonusCountFunction<T> extends AbstractLootConditionalFunction<
 
     @Override
     protected Item<T> applyInternal(Item<T> item, LootContext context) {
-        Optional<Item<?>> itemInHand = context.getOptionalParameter(LootParameters.TOOL);
+        Optional<Item<?>> itemInHand = context.getOptionalParameter(PlayerParameters.MAIN_HAND_ITEM);
         int level = itemInHand.map(value -> value.getEnchantment(this.enchantment).map(Enchantment::level).orElse(0)).orElse(0);
         int newCount = this.formula.apply(item.count(), level);
         item.count(newCount);
@@ -54,7 +53,7 @@ public class ApplyBonusCountFunction<T> extends AbstractLootConditionalFunction<
             if (formulaMap == null) {
                 throw new LocalizedResourceConfigException("warning.config.loot_table.function.apply_bonus.missing_formula");
             }
-            List<LootCondition> conditions = Optional.ofNullable(arguments.get("conditions"))
+            List<Condition<LootContext>> conditions = Optional.ofNullable(arguments.get("conditions"))
                     .map(it -> LootConditions.fromMapList((List<Map<String, Object>>) it))
                     .orElse(Collections.emptyList());
             return new ApplyBonusCountFunction<>(conditions, Key.from(enchantment), Formulas.fromMap(formulaMap));
@@ -92,7 +91,7 @@ public class ApplyBonusCountFunction<T> extends AbstractLootConditionalFunction<
             if (type == null) {
                 throw new NullPointerException("number type cannot be null");
             }
-            Key key = Key.withDefaultNamespace(type, "craftengine");
+            Key key = Key.withDefaultNamespace(type, Key.DEFAULT_NAMESPACE);
             FormulaFactory factory = BuiltInRegistries.FORMULA_FACTORY.getValue(key);
             if (factory == null) {
                 throw new IllegalArgumentException("Unknown formula type: " + type);
@@ -108,7 +107,7 @@ public class ApplyBonusCountFunction<T> extends AbstractLootConditionalFunction<
         @Override
         public int apply(int initialCount, int enchantmentLevel) {
             if (enchantmentLevel > 0) {
-                int i = ThreadLocalRandom.current().nextInt(enchantmentLevel + 2) - 1;
+                int i = RandomUtils.generateRandomInt(0, enchantmentLevel + 2) - 1;
                 if (i < 0) {
                     i = 0;
                 }

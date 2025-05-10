@@ -11,7 +11,7 @@ import net.momirealms.craftengine.core.loot.LootTable;
 import net.momirealms.craftengine.core.pack.LoadingSequence;
 import net.momirealms.craftengine.core.pack.Pack;
 import net.momirealms.craftengine.core.plugin.config.Config;
-import net.momirealms.craftengine.core.plugin.config.ConfigSectionParser;
+import net.momirealms.craftengine.core.plugin.config.ConfigParser;
 import net.momirealms.craftengine.core.plugin.locale.LocalizedResourceConfigException;
 import net.momirealms.craftengine.core.sound.SoundData;
 import net.momirealms.craftengine.core.util.Key;
@@ -86,11 +86,11 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
     }
 
     @Override
-    public ConfigSectionParser parser() {
+    public ConfigParser parser() {
         return this.furnitureParser;
     }
 
-    public class FurnitureParser implements ConfigSectionParser {
+    public class FurnitureParser implements ConfigParser {
         public static final String[] CONFIG_SECTION_NAME = new String[] { "furniture" };
 
         @Override
@@ -123,6 +123,8 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
                 // anchor type
                 AnchorType anchorType = AnchorType.valueOf(entry.getKey().toUpperCase(Locale.ENGLISH));
                 Map<String, Object> placementArguments = MiscUtils.castToMap(entry.getValue(), true);
+
+                Optional<Vector3f> optionalLootSpawnOffset = Optional.ofNullable(placementArguments.get("loot-spawn-offset")).map(it -> MiscUtils.getAsVector3f(it, "loot-spawn-offset"));
 
                 // furniture display elements
                 List<FurnitureElement> elements = new ArrayList<>();
@@ -178,7 +180,8 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
                             hitboxes.toArray(new HitBox[0]),
                             rotationRule,
                             alignmentRule,
-                            externalModel
+                            externalModel,
+                            optionalLootSpawnOffset
                     ));
                 } else {
                     placements.put(anchorType, new CustomFurniture.Placement(
@@ -186,7 +189,8 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
                             hitboxes.toArray(new HitBox[0]),
                             RotationRule.ANY,
                             AlignmentRule.CENTER,
-                            externalModel
+                            externalModel,
+                            optionalLootSpawnOffset
                     ));
                 }
             }

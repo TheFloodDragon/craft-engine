@@ -248,6 +248,14 @@ public class Dependencies {
             List.of(Relocation.of("jpountz", "net{}jpountz"))
     );
 
+    public static final Dependency EVALEX = new Dependency(
+            "evalex",
+            "com{}ezylang",
+            "EvalEx",
+            "evalex",
+            List.of(Relocation.of("evalex", "com{}ezylang{}evalex"))
+    );
+
     public static final Dependency NETTY_HTTP = new Dependency(
             "netty-codec-http",
             "io{}netty",

@@ -17,7 +17,7 @@ public class UseOnContext {
     private final Item<?> itemStack;
 
     public UseOnContext(Player player, InteractionHand hand, BlockHitResult hit) {
-        this(player.level(), player, hand, player.getItemInHand(hand), hit);
+        this(player.world(), player, hand, player.getItemInHand(hand), hit);
     }
 
     public UseOnContext(World world, Player player, InteractionHand hand, Item<?> stack, BlockHitResult hit) {

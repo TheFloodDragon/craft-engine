@@ -48,6 +48,7 @@ public class SelfHostHttpServer {
     private String ip = "localhost";
     private int port = -1;
     private String protocol = "http";
+    private String url;
     private boolean denyNonMinecraft = true;
     private boolean useToken;
 
@@ -57,12 +58,14 @@ public class SelfHostHttpServer {
 
     public void updateProperties(String ip,
                                  int port,
+                                 String url,
                                  boolean denyNonMinecraft,
                                  String protocol,
                                  int maxRequests,
                                  int resetInternal,
                                  boolean token) {
         this.ip = ip;
+        this.url = url;
         this.denyNonMinecraft = denyNonMinecraft;
         this.protocol = protocol;
         this.rateLimit = maxRequests;
@@ -112,6 +115,9 @@ public class SelfHostHttpServer {
     }
 
     public String url() {
+        if (this.url != null && !this.url.isEmpty()) {
+            return this.url;
+        }
         return this.protocol + "://" + this.ip + ":" + this.port + "/";
     }
 

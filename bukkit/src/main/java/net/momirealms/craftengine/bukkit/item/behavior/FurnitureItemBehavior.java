@@ -120,10 +120,6 @@ public class FurnitureItemBehavior extends ItemBehavior {
             return InteractionResult.FAIL;
         }
 
-        if (!BukkitCraftEngine.instance().antiGrief().canPlace(bukkitPlayer, furnitureLocation)) {
-            return InteractionResult.FAIL;
-        }
-
         FurnitureAttemptPlaceEvent attemptPlaceEvent = new FurnitureAttemptPlaceEvent(bukkitPlayer, customFurniture, anchorType, furnitureLocation.clone(),
                 DirectionUtils.toBlockFace(clickedFace), context.getHand(), world.getBlockAt(context.getClickedPos().x(), context.getClickedPos().y(), context.getClickedPos().z()));
         if (EventUtils.fireAndCheckCancel(attemptPlaceEvent)) {

@@ -13,6 +13,7 @@ import net.kyori.adventure.text.serializer.json.JSONOptions;
 import net.kyori.adventure.text.serializer.json.legacyimpl.NBTLegacyHoverEventSerializer;
 import net.momirealms.sparrow.nbt.Tag;
 import net.momirealms.sparrow.nbt.serializer.NBTComponentSerializer;
+import net.momirealms.sparrow.nbt.serializer.NBTSerializerOptions;
 
 /**
  * Helper class for handling Adventure components and related functionalities.
@@ -34,8 +35,22 @@ public class AdventureHelper {
             builder.legacyHoverEventSerializer(NBTLegacyHoverEventSerializer.get());
             builder.editOptions((b) -> b.value(JSONOptions.EMIT_HOVER_SHOW_ENTITY_ID_AS_INT_ARRAY, false));
         }
+        if (!VersionHelper.isOrAbove1_21_5()) {
+            builder.editOptions((b) -> {
+                b.value(JSONOptions.EMIT_CLICK_EVENT_TYPE, JSONOptions.ClickEventValueMode.CAMEL_CASE);
+                b.value(JSONOptions.EMIT_HOVER_EVENT_TYPE, JSONOptions.HoverEventValueMode.CAMEL_CASE);
+                b.value(JSONOptions.EMIT_HOVER_SHOW_ENTITY_KEY_AS_TYPE_AND_UUID_AS_ID, true);
+            });
+        }
         this.gsonComponentSerializer = builder.build();
-        this.nbtComponentSerializer = NBTComponentSerializer.builder().build();
+        this.nbtComponentSerializer = NBTComponentSerializer.builder()
+                .editOptions((b) -> {
+                    if (!VersionHelper.isOrAbove1_21_5()) {
+                        b.value(NBTSerializerOptions.EMIT_CLICK_EVENT_TYPE, false);
+                        b.value(NBTSerializerOptions.EMIT_HOVER_EVENT_TYPE, false);
+                    }
+                })
+                .build();
     }
 
     private static class SingletonHolder {

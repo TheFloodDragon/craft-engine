@@ -1,7 +1,8 @@
 package net.momirealms.craftengine.core.loot.entry;
 
-import net.momirealms.craftengine.core.loot.condition.LootCondition;
-import net.momirealms.craftengine.core.loot.condition.LootConditions;
+import net.momirealms.craftengine.core.loot.LootConditions;
+import net.momirealms.craftengine.core.loot.LootContext;
+import net.momirealms.craftengine.core.plugin.context.Condition;
 import net.momirealms.craftengine.core.util.Key;
 
 import java.util.*;
@@ -9,7 +10,7 @@ import java.util.*;
 public class AlternativesLootEntryContainer<T> extends AbstractCompositeLootEntryContainer<T> {
     public static final Factory<?> FACTORY = new Factory<>();
 
-    protected AlternativesLootEntryContainer(List<LootCondition> conditions, List<LootEntryContainer<T>> children) {
+    protected AlternativesLootEntryContainer(List<Condition<LootContext>> conditions, List<LootEntryContainer<T>> children) {
         super(conditions, children);
     }
 
@@ -42,7 +43,7 @@ public class AlternativesLootEntryContainer<T> extends AbstractCompositeLootEntr
             List<LootEntryContainer<A>> containers = Optional.ofNullable(arguments.get("children"))
                     .map(it -> (List<LootEntryContainer<A>>) new ArrayList<LootEntryContainer<A>>(LootEntryContainers.fromMapList((List<Map<String, Object>>) it)))
                     .orElse(Collections.emptyList());
-            List<LootCondition> conditions = Optional.ofNullable(arguments.get("conditions"))
+            List<Condition<LootContext>> conditions = Optional.ofNullable(arguments.get("conditions"))
                     .map(it -> LootConditions.fromMapList((List<Map<String, Object>>) it))
                     .orElse(Collections.emptyList());
             return new AlternativesLootEntryContainer<>(conditions, containers);

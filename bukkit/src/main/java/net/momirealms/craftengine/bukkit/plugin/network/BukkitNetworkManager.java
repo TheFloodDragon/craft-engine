@@ -155,7 +155,7 @@ public class BukkitNetworkManager implements NetworkManager, Listener, PluginMes
         registerByteBufPacketConsumer(PacketConsumers.LEVEL_CHUNK_WITH_LIGHT, this.packetIds.clientboundLevelChunkWithLightPacket());
         registerByteBufPacketConsumer(PacketConsumers.SECTION_BLOCK_UPDATE, this.packetIds.clientboundSectionBlocksUpdatePacket());
         registerByteBufPacketConsumer(PacketConsumers.BLOCK_UPDATE, this.packetIds.clientboundBlockUpdatePacket());
-        registerByteBufPacketConsumer(VersionHelper.isOrAbove1_21_3() ? PacketConsumers.LEVEL_PARTICLE_1_21_3 : (VersionHelper.isOrAbove1_20_5() ? PacketConsumers.LEVEL_PARTICLE_1_20_5 : PacketConsumers.LEVEL_PARTICLE_1_20), this.packetIds.clientboundLevelParticlesPacket());
+        registerByteBufPacketConsumer(VersionHelper.isOrAbove1_21_4() ? PacketConsumers.LEVEL_PARTICLE_1_21_4 : (VersionHelper.isOrAbove1_20_5() ? PacketConsumers.LEVEL_PARTICLE_1_20_5 : PacketConsumers.LEVEL_PARTICLE_1_20), this.packetIds.clientboundLevelParticlesPacket());
         registerByteBufPacketConsumer(PacketConsumers.LEVEL_EVENT, this.packetIds.clientboundLevelEventPacket());
         registerByteBufPacketConsumer(VersionHelper.isOrAbove1_20_3() ? PacketConsumers.OPEN_SCREEN_1_20_3 : PacketConsumers.OPEN_SCREEN_1_20, this.packetIds.clientboundOpenScreenPacket());
         registerByteBufPacketConsumer(VersionHelper.isOrAbove1_20_3() ? PacketConsumers.SET_TITLE_TEXT_1_20_3 : PacketConsumers.SET_TITLE_TEXT_1_20, this.packetIds.clientboundSetTitleTextPacket());
@@ -185,6 +185,10 @@ public class BukkitNetworkManager implements NetworkManager, Listener, PluginMes
             user.setPlayer(player);
             this.onlineUsers.put(player.getUniqueId(), user);
             this.resetUserArray();
+            if (VersionHelper.isFolia()) {
+                player.getScheduler().runAtFixedRate(plugin.bootstrap(), (t) -> user.tick(),
+                        () -> plugin.debug(() -> "Player " + player.getName() + "'s entity scheduler is retired"), 1, 1);
+            }
         }
     }
 

@@ -2,9 +2,9 @@ package net.momirealms.craftengine.core.loot.entry;
 
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.loot.LootContext;
-import net.momirealms.craftengine.core.loot.condition.LootCondition;
 import net.momirealms.craftengine.core.loot.function.LootFunction;
 import net.momirealms.craftengine.core.loot.function.LootFunctions;
+import net.momirealms.craftengine.core.plugin.context.Condition;
 
 import java.util.List;
 import java.util.function.BiFunction;
@@ -24,7 +24,7 @@ public abstract class AbstractSingleLootEntryContainer<T> extends AbstractLootEn
         }
     };
 
-    protected AbstractSingleLootEntryContainer(List<LootCondition> conditions, List<LootFunction<T>> functions, int weight, int quality) {
+    protected AbstractSingleLootEntryContainer(List<Condition<LootContext>> conditions, List<LootFunction<T>> functions, int weight, int quality) {
         super(conditions);
         this.weight = weight;
         this.quality = quality;

@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 public class MiniMessageTranslatorImpl implements MiniMessageTranslator {
-    private static final Key NAME = Key.key("craftengine", "main");
+    private static final Key NAME = Key.key(net.momirealms.craftengine.core.util.Key.DEFAULT_NAMESPACE, "main");
     static final MiniMessageTranslatorImpl INSTANCE = new MiniMessageTranslatorImpl();
     final TranslatableComponentRenderer<Locale> renderer = TranslatableComponentRenderer.usingTranslationSource(this);
     private final Set<Translator> sources = Collections.newSetFromMap(new ConcurrentHashMap<>());

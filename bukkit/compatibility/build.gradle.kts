@@ -26,9 +26,6 @@ dependencies {
     compileOnly("pers.neige.neigeitems:NeigeItems:1.21.42")
     // Placeholder
     compileOnly("me.clip:placeholderapi:${rootProject.properties["placeholder_api_version"]}")
-    // WorldEdit
-    compileOnly("com.sk89q.worldedit:worldedit-core:7.2.19")
-    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.2.19")
     // SlimeWorld
     compileOnly("com.infernalsuite.asp:api:4.0.0-SNAPSHOT")
     // ModelEngine
@@ -44,6 +41,10 @@ dependencies {
     compileOnly("com.viaversion:viaversion-api:5.3.2")
     // Skript
     compileOnly("com.github.SkriptLang:Skript:2.11.0")
+    // FAWE
+    compileOnly(platform("com.intellectualsites.bom:bom-newest:1.52"))
+    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core")
+    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit") { isTransitive = false }
 }
 
 java {

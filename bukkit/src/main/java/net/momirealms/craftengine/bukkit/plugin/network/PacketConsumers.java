@@ -1,5 +1,6 @@
 package net.momirealms.craftengine.bukkit.plugin.network;
 
+import com.mojang.datafixers.util.Either;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -33,6 +34,7 @@ import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.plugin.network.ConnectionState;
 import net.momirealms.craftengine.core.plugin.network.NetWorkUser;
 import net.momirealms.craftengine.core.plugin.network.NetworkManager;
+import net.momirealms.craftengine.core.plugin.network.ProtocolVersion;
 import net.momirealms.craftengine.core.util.*;
 import net.momirealms.craftengine.core.world.BlockHitResult;
 import net.momirealms.craftengine.core.world.BlockPos;
@@ -52,6 +54,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
@@ -198,7 +201,6 @@ public class PacketConsumers {
             buf.writeInt(chunkZ);
             if (VersionHelper.isOrAbove1_21_5()) {
                 buf.writeVarInt(heightmapsCount);
-                assert heightmapsMap != null;
                 for (Map.Entry<Integer, long[]> entry : heightmapsMap.entrySet()) {
                     buf.writeVarInt(entry.getKey());
                     buf.writeLongArray(entry.getValue());
@@ -331,8 +333,17 @@ public class PacketConsumers {
             Tag displayName = buf.readNbt(false);
             if (displayName == null) return;
             byte friendlyFlags = buf.readByte();
-            String nameTagVisibility = buf.readUtf(40);
-            String collisionRule = buf.readUtf(40);
+
+            Either<String, Integer> eitherVisibility;
+            Either<String, Integer> eitherCollisionRule;
+
+            if (VersionHelper.isOrAbove1_21_5()) {
+                eitherVisibility = Either.right(buf.readVarInt());
+                eitherCollisionRule = Either.right(buf.readVarInt());
+            } else {
+                eitherVisibility = Either.left(buf.readUtf(40));
+                eitherCollisionRule = Either.left(buf.readUtf(40));
+            }
             int color = buf.readVarInt();
             Tag prefix = buf.readNbt(false);
             if (prefix == null) return;
@@ -368,8 +379,8 @@ public class PacketConsumers {
             }
 
             buf.writeByte(friendlyFlags);
-            buf.writeUtf(nameTagVisibility);
-            buf.writeUtf(collisionRule);
+            eitherVisibility.ifLeft(buf::writeUtf).ifRight(buf::writeVarInt);
+            eitherCollisionRule.ifLeft(buf::writeUtf).ifRight(buf::writeVarInt);
             buf.writeVarInt(color);
 
             if (!tokens2.isEmpty()) {
@@ -1040,7 +1051,7 @@ public class PacketConsumers {
         }
     };
 
-    public static final BiConsumer<NetWorkUser, ByteBufPacketEvent> LEVEL_PARTICLE_1_21_3 = (user, event) -> {
+    public static final BiConsumer<NetWorkUser, ByteBufPacketEvent> LEVEL_PARTICLE_1_21_4 = (user, event) -> {
         try {
             FriendlyByteBuf buf = event.getBuffer();
             boolean overrideLimiter = buf.readBoolean();
@@ -1339,7 +1350,7 @@ public class PacketConsumers {
     // When the hotbar is full, the latest creative mode inventory can only be accessed when the player opens the inventory screen. Currently, it is not worth further handling this issue.
     public static final TriConsumer<NetWorkUser, NMSPacketEvent, Object> SET_CREATIVE_SLOT = (user, event, packet) -> {
         try {
-            if (VersionHelper.isOrAbove1_21_4()) return;
+            if (user.protocolVersion().isVersionNewerThan(ProtocolVersion.V1_21_4)) return;
             if (!user.isOnline()) return;
             BukkitServerPlayer player = (BukkitServerPlayer) user;
             if (VersionHelper.isFolia()) {
@@ -1349,7 +1360,7 @@ public class PacketConsumers {
                     } catch (Exception e) {
                         CraftEngine.instance().logger().warn("Failed to handle ServerboundSetCreativeModeSlotPacket", e);
                     }
-                }, (World) player.level().platformWorld(), (MCUtils.fastFloor(player.x())) >> 4, (MCUtils.fastFloor(player.z())) >> 4);
+                }, (World) player.world().platformWorld(), (MCUtils.fastFloor(player.x())) >> 4, (MCUtils.fastFloor(player.z())) >> 4);
             } else {
                 handleSetCreativeSlotPacketOnMainThread(player, packet);
             }
@@ -1469,7 +1480,7 @@ public class PacketConsumers {
         if (state == null) return;
         Key itemId = state.settings().itemId();
         if (itemId == null) return;
-        pickItem(player, itemId);
+        pickItem(player, itemId, pos, null);
     }
 
     // 1.21.4+
@@ -1508,18 +1519,24 @@ public class PacketConsumers {
     private static void handlePickItemFromEntityOnMainThread(Player player, LoadedFurniture furniture) throws Exception {
         Key itemId = furniture.config().settings().itemId();
         if (itemId == null) return;
-        pickItem(player, itemId);
+        pickItem(player, itemId, null, FastNMS.INSTANCE.method$CraftEntity$getHandle(furniture.baseEntity()));
     }
 
-    private static void pickItem(Player player, Key itemId) throws IllegalAccessException, InvocationTargetException {
+    private static void pickItem(Player player, Key itemId, @Nullable Object blockPos, @Nullable Object entity) throws IllegalAccessException, InvocationTargetException {
         ItemStack itemStack = BukkitCraftEngine.instance().itemManager().buildCustomItemStack(itemId, BukkitCraftEngine.instance().adapt(player));
         if (itemStack == null) {
             CraftEngine.instance().logger().warn("Item: " + itemId + " is not a valid item");
             return;
         }
         assert Reflections.method$ServerGamePacketListenerImpl$tryPickItem != null;
-        Reflections.method$ServerGamePacketListenerImpl$tryPickItem.invoke(
-                Reflections.field$ServerPlayer$connection.get(FastNMS.INSTANCE.method$CraftPlayer$getHandle(player)), FastNMS.INSTANCE.method$CraftItemStack$asNMSCopy(itemStack));
+        if (VersionHelper.isOrAbove1_21_5()) {
+            Reflections.method$ServerGamePacketListenerImpl$tryPickItem.invoke(
+                    Reflections.field$ServerPlayer$connection.get(FastNMS.INSTANCE.method$CraftPlayer$getHandle(player)),
+                    FastNMS.INSTANCE.method$CraftItemStack$asNMSCopy(itemStack), blockPos, entity, true);
+        } else {
+            Reflections.method$ServerGamePacketListenerImpl$tryPickItem.invoke(
+                    Reflections.field$ServerPlayer$connection.get(FastNMS.INSTANCE.method$CraftPlayer$getHandle(player)), FastNMS.INSTANCE.method$CraftItemStack$asNMSCopy(itemStack));
+        }
     }
 
     public static final BiConsumer<NetWorkUser, ByteBufPacketEvent> ADD_ENTITY_BYTEBUFFER = (user, event) -> {

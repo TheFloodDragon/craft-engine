@@ -19,13 +19,13 @@ import net.momirealms.craftengine.core.item.recipe.input.CraftingInput;
 import net.momirealms.craftengine.core.item.recipe.input.SingleItemInput;
 import net.momirealms.craftengine.core.item.recipe.input.SmithingInput;
 import net.momirealms.craftengine.core.plugin.config.Config;
+import net.momirealms.craftengine.core.plugin.context.ContextHolder;
 import net.momirealms.craftengine.core.registry.BuiltInRegistries;
 import net.momirealms.craftengine.core.registry.Holder;
 import net.momirealms.craftengine.core.util.AdventureHelper;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.Pair;
 import net.momirealms.craftengine.core.util.VersionHelper;
-import net.momirealms.craftengine.core.util.context.ContextHolder;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Campfire;
@@ -752,7 +752,7 @@ public class RecipeEventListener implements Listener {
                 return;
             }
 
-            Item<ItemStack> newItem = customItem.buildItem(ItemBuildContext.of(plugin.adapt(player), ContextHolder.EMPTY));
+            Item<ItemStack> newItem = customItem.buildItem(ItemBuildContext.of(plugin.adapt(player)));
             int remainingDurability = totalMaxDamage - totalDamage;
             int newItemDamage = Math.max(0, newItem.maxDamage().get() - remainingDurability);
             newItem.damage(newItemDamage);

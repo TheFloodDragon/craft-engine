@@ -1,5 +1,8 @@
 package net.momirealms.craftengine.core.plugin.gui.category;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.item.ItemBuildContext;
@@ -24,9 +27,11 @@ import java.util.*;
 
 @SuppressWarnings("DuplicatedCode")
 public class ItemBrowserManagerImpl implements ItemBrowserManager {
+    private static final String SHIFT_LEFT = "SHIFT_LEFT";
+    private static final String SHIFT_RIGHT = "SHIFT_RIGHT";
     private static final Set<String> MOVE_TO_OTHER_INV = Set.of("SHIFT_LEFT", "SHIFT_RIGHT");
-    private static final Set<String> LEFT_CLICK = Set.of("LEFT", "SHIFT_LEFT");
-    private static final Set<String> RIGHT_CLICK = Set.of("RIGHT", "SHIFT_RIGHT");
+    private static final Set<String> LEFT_CLICK = Set.of("LEFT", SHIFT_LEFT);
+    private static final Set<String> RIGHT_CLICK = Set.of("RIGHT", SHIFT_RIGHT);
     private static final Set<String> MIDDLE_CLICK = Set.of("MIDDLE");
     private static final Set<String> DOUBLE_CLICK = Set.of("DOUBLE_CLICK");
     private final CraftEngine plugin;
@@ -158,8 +163,8 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                 this.plugin.logger().warn("Can't not find item " + it.icon() + " for category icon");
                 return null;
             }
-            item.customName(AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(it.displayName(), ItemBuildContext.EMPTY.tagResolvers())));
-            item.lore(it.displayLore().stream().map(lore -> AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(lore, ItemBuildContext.EMPTY.tagResolvers()))).toList());
+            item.customNameJson(AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(it.displayName(), ItemBuildContext.EMPTY.tagResolvers())));
+            item.loreJson(it.displayLore().stream().map(lore -> AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(lore, ItemBuildContext.EMPTY.tagResolvers()))).toList());
             item.load();
             return new ItemWithAction(item, (element, click) -> {
                 click.cancel();
@@ -241,12 +246,18 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                 if (subCategory == null) return null;
                 Item<?> item = this.plugin.itemManager().createWrappedItem(subCategory.icon(), player);
                 if (item == null) {
-                    this.plugin.logger().warn("Can't not find item " + subCategory.icon() + " for category icon");
-                    return null;
+                    if (!subCategory.icon().equals(ItemKeys.AIR)) {
+                        this.plugin.logger().warn("Can't find item " + subCategory.icon() + " as icon for sub category " + subCategoryId);
+                        item = this.plugin.itemManager().createWrappedItem(ItemKeys.BARRIER, player);
+                        item.customNameJson(AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(subCategory.displayName(), ItemBuildContext.EMPTY.tagResolvers())));
+                        item.loreJson(subCategory.displayLore().stream().map(lore -> AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(lore, ItemBuildContext.EMPTY.tagResolvers()))).toList());
+                        item.load();
+                    }
+                } else {
+                    item.customNameJson(AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(subCategory.displayName(), ItemBuildContext.EMPTY.tagResolvers())));
+                    item.loreJson(subCategory.displayLore().stream().map(lore -> AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(lore, ItemBuildContext.EMPTY.tagResolvers()))).toList());
+                    item.load();
                 }
-                item.customName(AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(subCategory.displayName(), ItemBuildContext.EMPTY.tagResolvers())));
-                item.lore(subCategory.displayLore().stream().map(lore -> AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(lore, ItemBuildContext.EMPTY.tagResolvers()))).toList());
-                item.load();
                 return new ItemWithAction(item, (element, click) -> {
                     click.cancel();
                     player.playSound(Constants.SOUND_CLICK_BUTTON);
@@ -255,14 +266,39 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
             } else {
                 Key itemId = Key.of(it);
                 Item<?> item = this.plugin.itemManager().createWrappedItem(itemId, player);
-                if (item == null) return null;
+                boolean canGoFurther;
+                if (item == null) {
+                    if (!itemId.equals(ItemKeys.AIR)) {
+                        this.plugin.logger().warn("Can't find item " + itemId + " for category " + categoryId);
+                        item = this.plugin.itemManager().createWrappedItem(ItemKeys.BARRIER, player);
+                        item.customNameJson(AdventureHelper.componentToJson(Component.text(it).decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE).color(NamedTextColor.RED)));
+                    }
+                    canGoFurther = false;
+                } else {
+                    canGoFurther = true;
+                }
                 return new ItemWithAction(item, (e, c) -> {
                     c.cancel();
-                    if (MIDDLE_CLICK.contains(c.type()) && player.isCreativeMode() && player.hasPermission(GET_ITEM_PERMISSION) && c.itemOnCursor() == null) {
-                        Item<?> newItem = this.plugin.itemManager().createWrappedItem(e.item().id(), player);
-                        newItem.count(newItem.maxStackSize());
-                        c.setItemOnCursor(newItem);
+                    Item<?> eItem = e.item();
+                    if (!canGoFurther) {
                         return;
+                    }
+                    if (player.isCreativeMode() && player.hasPermission(GET_ITEM_PERMISSION)) {
+                        if (MIDDLE_CLICK.contains(c.type()) && c.itemOnCursor() == null) {
+                            Item<?> newItem = this.plugin.itemManager().createWrappedItem(eItem.id(), player);
+                            newItem.count(newItem.maxStackSize());
+                            c.setItemOnCursor(newItem);
+                            return;
+                        }
+                        if (SHIFT_LEFT.equals(c.type())) {
+                            player.giveItem(this.plugin.itemManager().createWrappedItem(eItem.id(), player));
+                            return;
+                        } else if (SHIFT_RIGHT.equals(c.type())) {
+                            Item<?> newItem = this.plugin.itemManager().createWrappedItem(eItem.id(), player);
+                            newItem.count(newItem.maxStackSize());
+                            player.giveItem(newItem);
+                            return;
+                        }
                     }
                     if (LEFT_CLICK.contains(c.type())) {
                         List<Recipe<Object>> inRecipes = this.plugin.recipeManager().recipeByResult(itemId);
@@ -281,7 +317,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                     }
                 });
             }
-        }).filter(Objects::nonNull).toList();
+        }).toList();
 
         PagedGui.builder()
                 .addIngredients(itemList)

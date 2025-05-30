@@ -3,6 +3,7 @@ package net.momirealms.craftengine.bukkit.block.behavior;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
+import net.momirealms.craftengine.bukkit.util.LocationUtils;
 import net.momirealms.craftengine.bukkit.util.ParticleUtils;
 import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.bukkit.world.BukkitWorld;
@@ -12,26 +13,29 @@ import net.momirealms.craftengine.core.block.UpdateOption;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
 import net.momirealms.craftengine.core.block.properties.IntegerProperty;
 import net.momirealms.craftengine.core.block.properties.Property;
+import net.momirealms.craftengine.core.entity.player.InteractionResult;
+import net.momirealms.craftengine.core.item.Item;
+import net.momirealms.craftengine.core.item.ItemKeys;
+import net.momirealms.craftengine.core.item.context.UseOnContext;
+import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.context.ContextHolder;
 import net.momirealms.craftengine.core.plugin.context.SimpleContext;
 import net.momirealms.craftengine.core.plugin.context.number.NumberProvider;
 import net.momirealms.craftengine.core.plugin.context.number.NumberProviders;
-import net.momirealms.craftengine.core.plugin.context.parameter.CommonParameters;
+import net.momirealms.craftengine.core.plugin.context.parameter.DirectContextParameters;
 import net.momirealms.craftengine.core.util.RandomUtils;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
-import net.momirealms.craftengine.core.util.Tuple;
 import net.momirealms.craftengine.core.world.Vec3d;
 import net.momirealms.craftengine.core.world.Vec3i;
+import net.momirealms.craftengine.core.world.WorldPosition;
 import net.momirealms.craftengine.shared.block.BlockBehavior;
 import org.bukkit.World;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 
-public class CropBlockBehavior extends BushBlockBehavior {
+public class CropBlockBehavior extends BukkitBlockBehavior {
     public static final Factory FACTORY = new Factory();
     private final IntegerProperty ageProperty;
     private final float growSpeed;
@@ -39,9 +43,8 @@ public class CropBlockBehavior extends BushBlockBehavior {
     private final boolean isBoneMealTarget;
     private final NumberProvider boneMealBonus;
 
-    public CropBlockBehavior(CustomBlock block, List<Object> tagsCanSurviveOn, Set<Object> blocksCansSurviveOn, Set<String> customBlocksCansSurviveOn,
-                             Property<Integer> ageProperty, float growSpeed, int minGrowLight, boolean isBoneMealTarget, NumberProvider boneMealBonus) {
-        super(block, tagsCanSurviveOn, blocksCansSurviveOn, customBlocksCansSurviveOn);
+    public CropBlockBehavior(CustomBlock block, Property<Integer> ageProperty, float growSpeed, int minGrowLight, boolean isBoneMealTarget, NumberProvider boneMealBonus) {
+        super(block);
         this.ageProperty = (IntegerProperty) ageProperty;
         this.growSpeed = growSpeed;
         this.minGrowLight = minGrowLight;
@@ -98,8 +101,10 @@ public class CropBlockBehavior extends BushBlockBehavior {
     }
 
     @Override
-    protected boolean canSurvive(Object thisBlock, Object state, Object world, Object blockPos) throws ReflectiveOperationException {
-        return hasSufficientLight(world, blockPos) && super.canSurvive(thisBlock, state, world, blockPos);
+    public boolean canSurvive(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
+        Object world = args[1];
+        Object pos = args[2];
+        return hasSufficientLight(world, pos);
     }
 
     @Override
@@ -122,6 +127,35 @@ public class CropBlockBehavior extends BushBlockBehavior {
     @Override
     public void performBoneMeal(Object thisBlock, Object[] args) throws Exception {
         this.performBoneMeal(args[0], args[2], args[3]);
+    }
+
+    @Override
+    public InteractionResult useOnBlock(UseOnContext context, ImmutableBlockState state) {
+        Item<?> item = context.getItem();
+        if (item == null || !item.vanillaId().equals(ItemKeys.BONE_MEAL) || context.getPlayer().isAdventureMode())
+            return InteractionResult.PASS;
+        if (isMaxAge(state))
+            return InteractionResult.PASS;
+        boolean sendSwing = false;
+        try {
+            Object visualState = state.vanillaBlockState().handle();
+            Object visualStateBlock = Reflections.method$BlockStateBase$getBlock.invoke(visualState);
+            if (Reflections.clazz$BonemealableBlock.isInstance(visualStateBlock)) {
+                boolean is = FastNMS.INSTANCE.method$BonemealableBlock$isValidBonemealTarget(visualStateBlock, context.getLevel().serverWorld(), LocationUtils.toBlockPos(context.getClickedPos()), visualState);
+                if (!is) {
+                    sendSwing = true;
+                }
+            } else {
+                sendSwing = true;
+            }
+        } catch (Exception e) {
+            CraftEngine.instance().logger().warn("Failed to check visual state bone meal state", e);
+            return InteractionResult.FAIL;
+        }
+        if (sendSwing) {
+            context.getPlayer().swingHand(context.getHand());
+        }
+        return InteractionResult.SUCCESS;
     }
 
     private void performBoneMeal(Object level, Object pos, Object state) throws InvocationTargetException, IllegalAccessException {
@@ -148,8 +182,8 @@ public class CropBlockBehavior extends BushBlockBehavior {
         int i = this.getAge(immutableBlockState) + this.boneMealBonus.getInt(
                 SimpleContext.of(
                         ContextHolder.builder()
-                            .withParameter(CommonParameters.WORLD, new BukkitWorld(world))
-                            .withParameter(CommonParameters.LOCATION, Vec3d.atCenterOf(new Vec3i(x, y, z)))
+                            .withParameter(DirectContextParameters.CUSTOM_BLOCK_STATE, immutableBlockState)
+                            .withParameter(DirectContextParameters.POSITION, new WorldPosition(new BukkitWorld(world), Vec3d.atCenterOf(new Vec3i(x, y, z))))
                             .build()
                 )
         );
@@ -159,7 +193,7 @@ public class CropBlockBehavior extends BushBlockBehavior {
         }
         FastNMS.INSTANCE.method$LevelWriter$setBlock(level, pos, immutableBlockState.with(this.ageProperty, i).customBlockState().handle(), UpdateOption.UPDATE_ALL.flags());
         if (sendParticles) {
-            world.spawnParticle(ParticleUtils.getParticle("HAPPY_VILLAGER"), x + 0.5, y + 0.5, z + 0.5, 15, 0.25, 0.25, 0.25);
+            world.spawnParticle(ParticleUtils.HAPPY_VILLAGER, x + 0.5, y + 0.5, z + 0.5, 15, 0.25, 0.25, 0.25);
         }
     }
 
@@ -168,13 +202,12 @@ public class CropBlockBehavior extends BushBlockBehavior {
         @SuppressWarnings("unchecked")
         @Override
         public BlockBehavior create(CustomBlock block, Map<String, Object> arguments) {
-            Tuple<List<Object>, Set<Object>, Set<String>> tuple = readTagsAndState(arguments, false);
             Property<Integer> ageProperty = (Property<Integer>) ResourceConfigUtils.requireNonNullOrThrow(block.getProperty("age"), "warning.config.block.behavior.crop.missing_age");
             int minGrowLight = ResourceConfigUtils.getAsInt(arguments.getOrDefault("light-requirement", 9), "light-requirement");
             float growSpeed = ResourceConfigUtils.getAsFloat(arguments.getOrDefault("grow-speed", 0.125f), "grow-speed");
             boolean isBoneMealTarget = (boolean) arguments.getOrDefault("is-bone-meal-target", true);
             NumberProvider boneMealAgeBonus = NumberProviders.fromObject(arguments.getOrDefault("bone-meal-age-bonus", 1));
-            return new CropBlockBehavior(block, tuple.left(), tuple.mid(), tuple.right(), ageProperty, growSpeed, minGrowLight, isBoneMealTarget, boneMealAgeBonus);
+            return new CropBlockBehavior(block, ageProperty, growSpeed, minGrowLight, isBoneMealTarget, boneMealAgeBonus);
         }
     }
 }

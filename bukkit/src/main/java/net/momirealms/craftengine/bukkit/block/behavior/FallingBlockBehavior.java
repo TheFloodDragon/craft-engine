@@ -11,10 +11,11 @@ import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.plugin.context.ContextHolder;
-import net.momirealms.craftengine.core.plugin.context.parameter.CommonParameters;
+import net.momirealms.craftengine.core.plugin.context.parameter.DirectContextParameters;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 import net.momirealms.craftengine.core.util.VersionHelper;
 import net.momirealms.craftengine.core.world.Vec3d;
+import net.momirealms.craftengine.core.world.WorldPosition;
 import net.momirealms.craftengine.shared.block.BlockBehavior;
 
 import java.util.Map;
@@ -50,7 +51,7 @@ public class FallingBlockBehavior extends BukkitBlockBehavior {
             blockPos = args[4];
         }
         Reflections.method$LevelAccessor$scheduleTick.invoke(world, blockPos, thisBlock, 2);
-        return super.updateShape(thisBlock, args, superMethod);
+        return args[0];
     }
 
     @Override
@@ -90,28 +91,26 @@ public class FallingBlockBehavior extends BukkitBlockBehavior {
         int stateId = BlockStateUtils.blockStateToId(blockState);
         ImmutableBlockState immutableBlockState = BukkitBlockManager.instance().getImmutableBlockState(stateId);
         if (immutableBlockState == null || immutableBlockState.isEmpty()) return;
-        ContextHolder.Builder builder = ContextHolder.builder();
-        builder.withParameter(CommonParameters.FALLING_BLOCK, true);
-        double x = Reflections.field$Entity$xo.getDouble(fallingBlockEntity);
-        double y = Reflections.field$Entity$yo.getDouble(fallingBlockEntity);
-        double z = Reflections.field$Entity$zo.getDouble(fallingBlockEntity);
-        Vec3d vec3d = new Vec3d(x, y, z);
         net.momirealms.craftengine.core.world.World world = new BukkitWorld(FastNMS.INSTANCE.method$Level$getCraftWorld(level));
-        builder.withParameter(CommonParameters.LOCATION, vec3d);
-        builder.withParameter(CommonParameters.WORLD, world);
+        WorldPosition position = new WorldPosition(world, Reflections.field$Entity$xo.getDouble(fallingBlockEntity), Reflections.field$Entity$yo.getDouble(fallingBlockEntity), Reflections.field$Entity$zo.getDouble(fallingBlockEntity));
+        ContextHolder.Builder builder = ContextHolder.builder()
+                .withParameter(DirectContextParameters.FALLING_BLOCK, true)
+                .withParameter(DirectContextParameters.POSITION, position);
         for (Item<Object> item : immutableBlockState.getDrops(builder, world, null)) {
-            world.dropItemNaturally(vec3d, item);
+            world.dropItemNaturally(position, item);
         }
         Object entityData = Reflections.field$Entity$entityData.get(fallingBlockEntity);
         boolean isSilent = (boolean) Reflections.method$SynchedEntityData$get.invoke(entityData, Reflections.instance$Entity$DATA_SILENT);
         if (!isSilent) {
-            world.playBlockSound(vec3d, immutableBlockState.sounds().destroySound());
+            world.playBlockSound(position, immutableBlockState.sounds().destroySound());
         }
     }
 
     @Override
     public void onLand(Object thisBlock, Object[] args) throws Exception {
         Object fallingBlock = args[4];
+        Object level = args[0];
+        Object pos = args[1];
         Object entityData = Reflections.field$Entity$entityData.get(fallingBlock);
         boolean isSilent = (boolean) Reflections.method$SynchedEntityData$get.invoke(entityData, Reflections.instance$Entity$DATA_SILENT);
         if (!isSilent) {
@@ -119,8 +118,6 @@ public class FallingBlockBehavior extends BukkitBlockBehavior {
             int stateId = BlockStateUtils.blockStateToId(blockState);
             ImmutableBlockState immutableBlockState = BukkitBlockManager.instance().getImmutableBlockState(stateId);
             if (immutableBlockState == null || immutableBlockState.isEmpty()) return;
-            Object level = args[0];
-            Object pos = args[1];
             net.momirealms.craftengine.core.world.World world = new BukkitWorld(FastNMS.INSTANCE.method$Level$getCraftWorld(level));
             world.playBlockSound(Vec3d.atCenterOf(LocationUtils.fromBlockPos(pos)), immutableBlockState.sounds().landSound());
         }

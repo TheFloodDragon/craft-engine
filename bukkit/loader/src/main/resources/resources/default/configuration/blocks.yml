@@ -21,11 +21,9 @@ items#misc:
             - default:hardness/wool
             - default:burn_data/planks
             - default:sound/wood
+            - default:settings/solid_1x1x1
           overrides:
             push-reaction: NORMAL
-            replaceable: false
-            is-redstone-conductor: true
-            is-suffocating: false
             instrument: HARP
             luminance: 15
             map-color: 36
@@ -61,6 +59,15 @@ items#misc:
           type: falling_block
           hurt-amount: 4
           max-hurt: 80
+        events:
+          - on: right_click
+            functions:
+              - type: open_window
+                gui-type: anvil
+              - type: cancel_event
+            conditions:
+              - type: expression
+                expression: "!<arg:player.is_sneaking>"
         settings:
           template:
             - default:pickaxe_power/level_4
@@ -125,9 +132,10 @@ items#misc:
     behavior:
       type: block_item
       block:
-        behavior:
-          type: concrete_powder_block
-          solid-block: default:solid_gunpowder_block
+        behaviors:
+          - type: concrete_powder_block
+            solid-block: default:solid_gunpowder_block
+          - type: falling_block
         loot:
           template: "default:loot_table/basic"
           arguments:
@@ -135,12 +143,10 @@ items#misc:
         settings:
           template:
             - default:sound/sand
+            - default:settings/solid_1x1x1
           overrides:
             hardness: 0.5
             resistance: 0.5
-            replaceable: false
-            is-redstone-conductor: true
-            is-suffocating: true
             instrument: SNARE
             map-color: 45
             item: default:gunpowder_block
@@ -174,12 +180,10 @@ items#misc:
           template:
             - default:sound/sand
             - default:pickaxe_power/level_1
+            - default:settings/solid_1x1x1
           overrides:
             hardness: 1.8
             resistance: 1.8
-            replaceable: false
-            is-redstone-conductor: true
-            is-suffocating: true
             instrument: BASEDRUM
             map-color: 45
             item: default:solid_gunpowder_block
@@ -192,6 +196,75 @@ items#misc:
               parent: "minecraft:block/cube_all"
               textures:
                 "all": "minecraft:block/custom/solid_gunpowder_block"
+  default:copper_coil:
+    material: nether_brick
+    custom-model-data: 3004
+    data:
+      item-name: "<!i><i18n:item.copper_coil>"
+    model:
+      type: "minecraft:model"
+      path: "minecraft:item/custom/copper_coil"
+      generation:
+        parent: "minecraft:block/custom/copper_coil"
+    behavior:
+      type: block_item
+      block:
+        loot:
+          template: "default:loot_table/basic"
+          arguments:
+            item: default:copper_coil
+        settings:
+          template:
+            - default:sound/metal
+            - default:pickaxe_power/level_1
+          overrides:
+            hardness: 3.0
+            resistance: 4.5
+            replaceable: false
+            is-redstone-conductor: true
+            is-suffocating: true
+            instrument: BASEDRUM
+            map-color: 15
+            item: default:copper_coil
+        behavior:
+          type: lamp_block
+        states:
+          properties:
+            lit:
+              type: boolean
+              default: false
+          appearances:
+            off:
+              state: "cactus:0"
+              model:
+                path: "minecraft:block/custom/copper_coil"
+                generation:
+                  parent: "minecraft:block/cactus"
+                  textures:
+                    "particle": "minecraft:block/custom/copper_coil"
+                    "bottom": "minecraft:block/custom/copper_coil"
+                    "top": "minecraft:block/custom/copper_coil"
+                    "side": "minecraft:block/custom/copper_coil_side"
+            on:
+              state: "cactus:1"
+              model:
+                path: "minecraft:block/custom/copper_coil_on"
+                generation:
+                  parent: "minecraft:block/cactus"
+                  textures:
+                    "particle": "minecraft:block/custom/copper_coil_on"
+                    "bottom": "minecraft:block/custom/copper_coil_on"
+                    "top": "minecraft:block/custom/copper_coil_on"
+                    "side": "minecraft:block/custom/copper_coil_on_side"
+          variants:
+            lit=false:
+              appearance: "off"
+              id: 0
+            lit=true:
+              appearance: "on"
+              id: 1
+              settings:
+                luminance: 8
 recipes#misc:
   default:chinese_lantern:
     type: shaped
@@ -235,4 +308,15 @@ recipes#misc:
       A: "minecraft:gunpowder"
     result:
       id: default:gunpowder_block
+      count: 1
+  default:copper_coil:
+    type: shaped
+    pattern:
+      - "AAA"
+      - "A A"
+      - "AAA"
+    ingredients:
+      A: "minecraft:copper_ingot"
+    result:
+      id: default:copper_coil
       count: 1

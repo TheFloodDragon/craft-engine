@@ -3,19 +3,28 @@ package net.momirealms.craftengine.bukkit.world;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.util.EntityUtils;
 import net.momirealms.craftengine.bukkit.util.ItemUtils;
+import net.momirealms.craftengine.bukkit.util.ParticleUtils;
+import net.momirealms.craftengine.bukkit.util.SoundUtils;
+import net.momirealms.craftengine.core.block.BlockStateWrapper;
 import net.momirealms.craftengine.core.item.Item;
+import net.momirealms.craftengine.core.plugin.context.Context;
+import net.momirealms.craftengine.core.sound.SoundSource;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.VersionHelper;
 import net.momirealms.craftengine.core.world.BlockInWorld;
-import net.momirealms.craftengine.core.world.Vec3d;
+import net.momirealms.craftengine.core.world.Position;
 import net.momirealms.craftengine.core.world.World;
 import net.momirealms.craftengine.core.world.WorldHeight;
+import net.momirealms.craftengine.core.world.particle.ParticleData;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.SoundCategory;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.nio.file.Path;
 import java.util.UUID;
@@ -35,11 +44,7 @@ public class BukkitWorld implements World {
 
     @Override
     public Object serverWorld() {
-        try {
-            return FastNMS.INSTANCE.field$CraftWorld$ServerLevel(platformWorld());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to get server world", e);
-        }
+        return FastNMS.INSTANCE.field$CraftWorld$ServerLevel(platformWorld());
     }
 
     @Override
@@ -71,7 +76,7 @@ public class BukkitWorld implements World {
     }
 
     @Override
-    public void dropItemNaturally(Vec3d location, Item<?> item) {
+    public void dropItemNaturally(Position location, Item<?> item) {
         ItemStack itemStack = (ItemStack) item.load();
         if (ItemUtils.isEmpty(itemStack)) return;
         if (VersionHelper.isOrAbove1_21_2()) {
@@ -82,7 +87,7 @@ public class BukkitWorld implements World {
     }
 
     @Override
-    public void dropExp(Vec3d location, int amount) {
+    public void dropExp(Position location, int amount) {
         if (amount <= 0) return;
         EntityUtils.spawnEntity(platformWorld(), new Location(platformWorld(), location.x(), location.y(), location.z()), EntityType.EXPERIENCE_ORB, (e) -> {
             ExperienceOrb orb = (ExperienceOrb) e;
@@ -91,7 +96,32 @@ public class BukkitWorld implements World {
     }
 
     @Override
-    public void playBlockSound(Vec3d location, Key sound, float volume, float pitch) {
+    public void playSound(Position location, Key sound, float volume, float pitch, SoundSource source) {
+        platformWorld().playSound(new Location(null, location.x(), location.y(), location.z()), sound.toString(), SoundUtils.toBukkit(source), volume, pitch);
+    }
+
+    @Override
+    public void playBlockSound(Position location, Key sound, float volume, float pitch) {
         platformWorld().playSound(new Location(null, location.x(), location.y(), location.z()), sound.toString(), SoundCategory.BLOCKS, volume, pitch);
+    }
+
+    @Override
+    public void spawnParticle(Position location, Key particle, int count, double xOffset, double yOffset, double zOffset, double speed, @Nullable ParticleData extraData, @NotNull Context context) {
+        Particle particleType = ParticleUtils.getParticle(particle);
+        if (particleType == null) return;
+        org.bukkit.World platformWorld = platformWorld();
+        platformWorld.spawnParticle(particleType, location.x(), location.y(), location.z(), count, xOffset, yOffset, zOffset, speed, extraData == null ? null : ParticleUtils.toBukkitParticleData(extraData, context, platformWorld, location.x(), location.y(), location.z()));
+    }
+
+    @Override
+    public long time() {
+        return platformWorld().getTime();
+    }
+
+    @Override
+    public void setBlockAt(int x, int y, int z, BlockStateWrapper blockState, int flags) {
+        Object worldServer = serverWorld();
+        Object blockPos = FastNMS.INSTANCE.constructor$BlockPos(x, y, z);
+        FastNMS.INSTANCE.method$LevelWriter$setBlock(worldServer, blockPos, blockState.handle(), flags);
     }
 }

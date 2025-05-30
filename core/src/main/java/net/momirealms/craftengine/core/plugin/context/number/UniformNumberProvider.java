@@ -1,7 +1,6 @@
 package net.momirealms.craftengine.core.plugin.context.number;
 
 import net.momirealms.craftengine.core.plugin.context.Context;
-import net.momirealms.craftengine.core.util.Factory;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.RandomUtils;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
@@ -32,6 +31,11 @@ public class UniformNumberProvider implements NumberProvider {
     }
 
     @Override
+    public double getDouble(Context context) {
+        return RandomUtils.generateRandomDouble(this.min.getDouble(context), this.max.getDouble(context));
+    }
+
+    @Override
     public float getFloat(Context context) {
         return RandomUtils.generateRandomFloat(this.min.getFloat(context), this.max.getFloat(context));
     }
@@ -41,7 +45,7 @@ public class UniformNumberProvider implements NumberProvider {
         return NumberProviders.UNIFORM;
     }
 
-    public static class FactoryImpl implements Factory<NumberProvider> {
+    public static class FactoryImpl implements NumberProviderFactory {
 
         @Override
         public NumberProvider create(Map<String, Object> arguments) {

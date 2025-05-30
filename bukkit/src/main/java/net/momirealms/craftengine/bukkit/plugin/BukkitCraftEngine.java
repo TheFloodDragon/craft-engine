@@ -7,6 +7,7 @@ import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.block.behavior.BukkitBlockBehaviors;
 import net.momirealms.craftengine.bukkit.entity.furniture.BukkitFurnitureManager;
 import net.momirealms.craftengine.bukkit.entity.furniture.hitbox.BukkitHitBoxTypes;
+import net.momirealms.craftengine.bukkit.entity.projectile.BukkitProjectileManager;
 import net.momirealms.craftengine.bukkit.font.BukkitFontManager;
 import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.item.behavior.BukkitItemBehaviors;
@@ -18,17 +19,19 @@ import net.momirealms.craftengine.bukkit.plugin.command.BukkitSenderFactory;
 import net.momirealms.craftengine.bukkit.plugin.gui.BukkitGuiManager;
 import net.momirealms.craftengine.bukkit.plugin.injector.BukkitInjector;
 import net.momirealms.craftengine.bukkit.plugin.network.BukkitNetworkManager;
+import net.momirealms.craftengine.bukkit.plugin.network.PacketConsumers;
 import net.momirealms.craftengine.bukkit.plugin.scheduler.BukkitSchedulerAdapter;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.bukkit.sound.BukkitSoundManager;
 import net.momirealms.craftengine.bukkit.util.EventUtils;
 import net.momirealms.craftengine.bukkit.util.Reflections;
+import net.momirealms.craftengine.bukkit.util.RegistryUtils;
 import net.momirealms.craftengine.bukkit.world.BukkitWorldManager;
 import net.momirealms.craftengine.core.item.ItemManager;
-import net.momirealms.craftengine.core.plugin.CompatibilityManager;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.classpath.ReflectionClassPathAppender;
 import net.momirealms.craftengine.core.plugin.command.sender.SenderFactory;
+import net.momirealms.craftengine.core.plugin.compatibility.CompatibilityManager;
 import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.plugin.dependency.Dependencies;
 import net.momirealms.craftengine.core.plugin.dependency.Dependency;
@@ -36,6 +39,7 @@ import net.momirealms.craftengine.core.plugin.gui.category.ItemBrowserManagerImp
 import net.momirealms.craftengine.core.plugin.logger.JavaPluginLogger;
 import net.momirealms.craftengine.core.plugin.scheduler.SchedulerAdapter;
 import net.momirealms.craftengine.core.plugin.scheduler.SchedulerTask;
+import net.momirealms.craftengine.core.util.CharacterUtils;
 import net.momirealms.craftengine.core.util.ReflectionUtils;
 import net.momirealms.craftengine.core.util.VersionHelper;
 import org.bstats.bukkit.Metrics;
@@ -153,6 +157,7 @@ public class BukkitCraftEngine extends CraftEngine {
         BukkitBlockBehaviors.init();
         BukkitItemBehaviors.init();
         BukkitHitBoxTypes.init();
+        PacketConsumers.initEntities(RegistryUtils.currentEntityTypeRegistrySize());
         super.packManager = new BukkitPackManager(this);
         super.senderFactory = new BukkitSenderFactory(this);
         super.itemManager = new BukkitItemManager(this);
@@ -165,6 +170,7 @@ public class BukkitCraftEngine extends CraftEngine {
         super.vanillaLootManager = new BukkitVanillaLootManager(this);
         super.fontManager = new BukkitFontManager(this);
         super.advancementManager = new BukkitAdvancementManager(this);
+        super.projectileManager = new BukkitProjectileManager(this);
         super.onPluginEnable();
         super.compatibilityManager().onEnable();
     }
@@ -203,7 +209,7 @@ public class BukkitCraftEngine extends CraftEngine {
 
     @Override
     public InputStream resourceStream(String filePath) {
-        return bootstrap.getResource(filePath.replace("\\", "/"));
+        return bootstrap.getResource(CharacterUtils.replaceBackslashWithSlash(filePath));
     }
 
     @Override
@@ -332,7 +338,7 @@ public class BukkitCraftEngine extends CraftEngine {
         if (this.antiGrief == null) {
             this.antiGrief = AntiGriefLib.builder(this.bootstrap)
                     .ignoreOP(true)
-                    .silentLogs(true)
+                    .silentLogs(false)
                     .build();
         }
         return this.antiGrief;

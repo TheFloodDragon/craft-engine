@@ -48,6 +48,18 @@ public class FriendlyByteBuf extends ByteBuf {
         return BlockPos.of(buf.readLong());
     }
 
+    public int readContainerId() {
+        return VersionHelper.isOrAbove1_21_2() ? this.readVarInt() : this.readUnsignedByte();
+    }
+
+    public void writeContainerId(int id) {
+        if (VersionHelper.isOrAbove1_21_2()) {
+            this.writeVarInt(id);
+        } else {
+            this.writeByte(id);
+        }
+    }
+
     public List<String> readStringList() {
         int i = this.readVarInt();
         List<String> list = new ArrayList<>(i);
@@ -456,6 +468,15 @@ public class FriendlyByteBuf extends ByteBuf {
         }
         byte[] byteArray = bitSet.toByteArray();
         this.writeBytes(Arrays.copyOf(byteArray, MCUtils.positiveCeilDiv(size, 8)));
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Enum<T>> T readEnumConstant(Class<T> enumClass) {
+        return (T)((Enum<T>[])enumClass.getEnumConstants())[this.readVarInt()];
+    }
+
+    public FriendlyByteBuf writeEnumConstant(Enum<?> instance) {
+        return this.writeVarInt(instance.ordinal());
     }
 
     @FunctionalInterface

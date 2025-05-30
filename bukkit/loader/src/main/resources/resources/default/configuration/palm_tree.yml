@@ -229,16 +229,17 @@ items:
           template: "default:settings/sapling"
           overrides:
             item: default:palm_sapling
-        behavior:
-          type: sapling_block
-          # This requires you to register a custom tree configuration with data pack
-          # To prevent errors, we use tree feature from vanilla here
-          feature: minecraft:fancy_oak
-          bone-meal-success-chance: 0.45
-          bottom-block-tags:
-            - minecraft:dirt
-            - minecraft:farmland
-            - minecraft:sand
+        behaviors:
+          - type: bush_block
+            bottom-block-tags:
+              - minecraft:dirt
+              - minecraft:farmland
+              - minecraft:sand
+          - type: sapling_block
+            # This requires you to register a custom tree configuration with data pack
+            # To prevent errors, we use tree feature from vanilla here
+            feature: minecraft:fancy_oak
+            bone-meal-success-chance: 0.45
         loot:
           template: "default:loot_table/basic"
           arguments:

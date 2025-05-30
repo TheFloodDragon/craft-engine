@@ -11,8 +11,8 @@ import net.momirealms.craftengine.core.plugin.config.ConfigParser;
 import net.momirealms.craftengine.core.registry.Holder;
 import net.momirealms.craftengine.core.util.Key;
 import org.incendo.cloud.suggestion.Suggestion;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.*;
 
 public interface ItemManager<T> extends Manageable, ModelGenerator {
@@ -27,7 +27,7 @@ public interface ItemManager<T> extends Manageable, ModelGenerator {
 
     Map<Key, ItemModel> modernItemModels1_21_4();
 
-    Map<Key, List<LegacyOverridesModel>> modernItemModels1_21_2();
+    Map<Key, TreeSet<LegacyOverridesModel>> modernItemModels1_21_2();
 
     Collection<Key> vanillaItems();
 
@@ -40,6 +40,8 @@ public interface ItemManager<T> extends Manageable, ModelGenerator {
     Item<T> createWrappedItem(Key id, @Nullable Player player);
 
     Item<T> wrap(T itemStack);
+
+    Item<T> fromByteArray(byte[] bytes);
 
     Collection<Key> items();
 
@@ -57,6 +59,8 @@ public interface ItemManager<T> extends Manageable, ModelGenerator {
 
     Optional<? extends BuildableItem<T>> getVanillaItem(Key key);
 
+    NetworkItemHandler<T> networkItemHandler();
+
     default Optional<? extends BuildableItem<T>> getBuildableItem(Key key) {
         Optional<CustomItem<T>> item = getCustomItem(key);
         if (item.isPresent()) {
@@ -64,6 +68,8 @@ public interface ItemManager<T> extends Manageable, ModelGenerator {
         }
         return getVanillaItem(key);
     }
+
+    boolean addCustomItem(CustomItem<T> customItem);
 
     List<Holder<Key>> tagToItems(Key tag);
 
@@ -78,4 +84,6 @@ public interface ItemManager<T> extends Manageable, ModelGenerator {
     Collection<Suggestion> cachedSuggestions();
 
     Collection<Suggestion> cachedTotemSuggestions();
+
+    boolean isVanillaItem(Key item);
 }

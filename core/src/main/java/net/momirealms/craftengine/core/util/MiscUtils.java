@@ -23,6 +23,17 @@ public class MiscUtils {
         throw new IllegalArgumentException("Expected Map, got: " + (obj == null ? null : obj.getClass().getSimpleName()));
     }
 
+    @SuppressWarnings("unchecked")
+    public static List<Map<String, Object>> getAsMapList(Object obj) {
+        if (obj == null) return List.of();
+        if (obj instanceof List<?> list) {
+            return (List<Map<String, Object>>) list;
+        } else if (obj instanceof Map<?, ?>) {
+            return List.of((Map<String, Object>) obj);
+        }
+        throw new IllegalArgumentException("Expected MapList/Map, got: " + obj.getClass().getSimpleName());
+    }
+
     public static List<String> getAsStringList(Object o) {
         List<String> list = new ArrayList<>();
         if (o instanceof List<?>) {
@@ -41,27 +52,35 @@ public class MiscUtils {
 
     public static Vector3f getAsVector3f(Object o, String option) {
         if (o == null) return new Vector3f();
-        String stringFormat = o.toString();
-        String[] split = stringFormat.split(",");
-        if (split.length == 3) {
-            return new Vector3f(Float.parseFloat(split[0]), Float.parseFloat(split[1]), Float.parseFloat(split[2]));
-        } else if (split.length == 1) {
-            return new Vector3f(Float.parseFloat(split[0]));
+        if (o instanceof List<?> list && list.size() == 3) {
+            return new Vector3f(Float.parseFloat(list.get(0).toString()), Float.parseFloat(list.get(1).toString()), Float.parseFloat(list.get(2).toString()));
         } else {
-            throw new LocalizedResourceConfigException("warning.config.type.vector3f", stringFormat, option);
+            String stringFormat = o.toString();
+            String[] split = stringFormat.split(",");
+            if (split.length == 3) {
+                return new Vector3f(Float.parseFloat(split[0]), Float.parseFloat(split[1]), Float.parseFloat(split[2]));
+            } else if (split.length == 1) {
+                return new Vector3f(Float.parseFloat(split[0]));
+            } else {
+                throw new LocalizedResourceConfigException("warning.config.type.vector3f", stringFormat, option);
+            }
         }
     }
 
     public static Quaternionf getAsQuaternionf(Object o, String option) {
         if (o == null) return new Quaternionf();
-        String stringFormat = o.toString();
-        String[] split = stringFormat.split(",");
-        if (split.length == 4) {
-            return new Quaternionf(Float.parseFloat(split[0]), Float.parseFloat(split[1]), Float.parseFloat(split[2]), Float.parseFloat(split[3]));
-        } else if (split.length == 1) {
-            return QuaternionUtils.toQuaternionf(0, Math.toRadians(Float.parseFloat(split[0])), 0);
+        if (o instanceof List<?> list && list.size() == 4) {
+            return new Quaternionf(Float.parseFloat(list.get(0).toString()), Float.parseFloat(list.get(1).toString()), Float.parseFloat(list.get(2).toString()), Float.parseFloat(list.get(3).toString()));
         } else {
-            throw new LocalizedResourceConfigException("warning.config.type.quaternionf", stringFormat, option);
+            String stringFormat = o.toString();
+            String[] split = stringFormat.split(",");
+            if (split.length == 4) {
+                return new Quaternionf(Float.parseFloat(split[0]), Float.parseFloat(split[1]), Float.parseFloat(split[2]), Float.parseFloat(split[3]));
+            } else if (split.length == 1) {
+                return QuaternionUtils.toQuaternionf(0, Math.toRadians(Float.parseFloat(split[0])), 0);
+            } else {
+                throw new LocalizedResourceConfigException("warning.config.type.quaternionf", stringFormat, option);
+            }
         }
     }
 }

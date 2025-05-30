@@ -34,10 +34,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Config {
@@ -58,6 +55,8 @@ public class Config {
     protected boolean resource_pack$override_uniform_font;
     protected List<ResolutionConditional> resource_pack$duplicated_files_handler;
     protected List<String> resource_pack$merge_external_folders;
+    protected List<String> resource_pack$merge_external_zips;
+    protected Set<String> resource_pack$exclude_file_extensions;
 
     protected boolean resource_pack$protection$crash_tools$method_1;
     protected boolean resource_pack$protection$crash_tools$method_2;
@@ -141,6 +140,7 @@ public class Config {
     protected boolean image$intercept_packets$armor_stand;
     protected boolean image$intercept_packets$player_info;
     protected boolean image$intercept_packets$set_score;
+    protected boolean image$intercept_packets$item;
 
     protected boolean emoji$chat;
     protected boolean emoji$book;
@@ -218,6 +218,8 @@ public class Config {
         resource_pack$supported_version$min = getVersion(config.get("resource-pack.supported-version.min", "1.20").toString());
         resource_pack$supported_version$max = getVersion(config.get("resource-pack.supported-version.max", "LATEST").toString());
         resource_pack$merge_external_folders = config.getStringList("resource-pack.merge-external-folders");
+        resource_pack$merge_external_zips = config.getStringList("resource-pack.merge-external-zip-files");
+        resource_pack$exclude_file_extensions = new HashSet<>(config.getStringList("resource-pack.exclude-file-extensions"));
         resource_pack$delivery$send_on_join = config.getBoolean("resource-pack.delivery.send-on-join", true);
         resource_pack$delivery$resend_on_upload = config.getBoolean("resource-pack.delivery.resend-on-upload", true);
         resource_pack$delivery$kick_if_declined = config.getBoolean("resource-pack.delivery.kick-if-declined", true);
@@ -331,6 +333,7 @@ public class Config {
         image$intercept_packets$armor_stand = config.getBoolean("image.intercept-packets.armor-stand", true);
         image$intercept_packets$player_info = config.getBoolean("image.intercept-packets.player-info", true);
         image$intercept_packets$set_score = config.getBoolean("image.intercept-packets.set-score", true);
+        image$intercept_packets$item = config.getBoolean("image.intercept-packets.item", true);
 
         // emoji
         emoji$chat = config.getBoolean("emoji.chat", true);
@@ -403,9 +406,9 @@ public class Config {
         return instance.furniture$handle_invalid_furniture_on_chunk_load$mapping;
     }
 
-    public static boolean forceUpdateLight() {
-        return instance.light_system$force_update_light;
-    }
+//    public static boolean forceUpdateLight() {
+//        return instance.light_system$force_update_light;
+//    }
 
     public static boolean enableLightSystem() {
         return instance.light_system$enable;
@@ -461,6 +464,14 @@ public class Config {
 
     public static List<String> foldersToMerge() {
         return instance.resource_pack$merge_external_folders;
+    }
+
+    public static List<String> zipsToMerge() {
+        return instance.resource_pack$merge_external_zips;
+    }
+
+    public static Set<String> excludeFileExtensions() {
+        return instance.resource_pack$exclude_file_extensions;
     }
 
     public static boolean kickOnDeclined() {
@@ -665,6 +676,10 @@ public class Config {
 
     public static boolean interceptSetScore() {
         return instance.image$intercept_packets$set_score;
+    }
+
+    public static boolean interceptItem() {
+        return instance.image$intercept_packets$item;
     }
 
     public static boolean predictBreaking() {

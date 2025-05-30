@@ -25,7 +25,7 @@ templates#models#block:
   # arguments:
   #   model: model_path
   #   end_texture: end_texture_path
-  #   end_texture: side_texture_path
+  #   side_texture: side_texture_path
   default:model/cube_column:
     path: "{model}"
     generation:
@@ -583,10 +583,13 @@ templates#settings#break_level:
 templates#settings#blocks:
   default:settings/solid_1x1x1:
     is-suffocating: true
+    replaceable: false
     is-view-blocking: true
+    is-redstone-conductor: true
     can-occlude: true
   default:settings/transparent_1x1x1:
     is-suffocating: false
+    replaceable: false
     is-view-blocking: false
     can-occlude: false
   # sapling
@@ -966,6 +969,18 @@ templates#loot_tables:
           - type: survives_explosion
         entries:
           - type: item
+            item: "{item}"
+
+  # drop the original furniture item or a fallback item
+
+  # template: default:loot_table/furniture
+  # arguments:
+  #   item: the fallback item
+  default:loot_table/furniture:
+    pools:
+      - rolls: 1
+        entries:
+          - type: furniture_item
             item: "{item}"
 
   # drop with silk touch

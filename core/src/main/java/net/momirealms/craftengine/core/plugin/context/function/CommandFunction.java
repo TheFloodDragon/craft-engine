@@ -4,7 +4,7 @@ import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.Platform;
 import net.momirealms.craftengine.core.plugin.context.*;
-import net.momirealms.craftengine.core.plugin.context.parameter.CommonParameters;
+import net.momirealms.craftengine.core.plugin.context.parameter.DirectContextParameters;
 import net.momirealms.craftengine.core.plugin.context.selector.PlayerSelector;
 import net.momirealms.craftengine.core.plugin.context.selector.PlayerSelectors;
 import net.momirealms.craftengine.core.plugin.context.text.TextProvider;
@@ -12,18 +12,17 @@ import net.momirealms.craftengine.core.plugin.context.text.TextProviders;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public class CommandFunction<CTX extends Context> extends AbstractConditionalFunction<CTX> {
     private final List<TextProvider> command;
     private final boolean asPlayer;
     private final PlayerSelector<CTX> selector;
 
-    public CommandFunction(List<Condition<CTX>> predicates, List<TextProvider> command, boolean asPlayer, @Nullable PlayerSelector<CTX> selector) {
+    public CommandFunction(List<Condition<CTX>> predicates, @Nullable PlayerSelector<CTX> selector, List<TextProvider> command, boolean asPlayer) {
         super(predicates);
         this.asPlayer = asPlayer;
         this.command = command;
@@ -33,9 +32,8 @@ public class CommandFunction<CTX extends Context> extends AbstractConditionalFun
     @Override
     public void runInternal(CTX ctx) {
         if (this.asPlayer) {
-            Optional<Player> owner = ctx.getOptionalParameter(CommonParameters.PLAYER);
             if (this.selector == null) {
-                owner.ifPresent(it -> {
+                ctx.getOptionalParameter(DirectContextParameters.PLAYER).ifPresent(it -> {
                     for (TextProvider c : this.command) {
                         it.performCommand(c.get(ctx));
                     }
@@ -72,7 +70,7 @@ public class CommandFunction<CTX extends Context> extends AbstractConditionalFun
             Object command = ResourceConfigUtils.requireNonNullOrThrow(ResourceConfigUtils.get(arguments, "command", "commands"), "warning.config.function.command.missing_command");
             List<TextProvider> commands = MiscUtils.getAsStringList(command).stream().map(TextProviders::fromString).toList();
             boolean asPlayer = (boolean) arguments.getOrDefault("as-player", false);
-            return new CommandFunction<>(getPredicates(arguments), commands, asPlayer, PlayerSelectors.fromObject(arguments.get("target")));
+            return new CommandFunction<>(getPredicates(arguments), PlayerSelectors.fromObject(arguments.get("target"), conditionFactory()), commands, asPlayer);
         }
     }
 }

@@ -151,7 +151,7 @@ public class BukkitFontManager extends AbstractFontManager implements Listener {
         EmojiComponentProcessResult replaceProcessResult = replaceComponentEmoji(itemName, plugin.adapt(player), renameText);
         if (replaceProcessResult.changed()) {
             Item<ItemStack> wrapped = this.plugin.itemManager().wrap(result);
-            wrapped.customName(AdventureHelper.componentToJson(replaceProcessResult.newText()));
+            wrapped.customNameJson(AdventureHelper.componentToJson(replaceProcessResult.newText()));
             event.setResult(wrapped.load());
         }
     }

@@ -1,7 +1,7 @@
 plugins {
     id("java-library")
-    id("com.gradleup.shadow") version "9.0.0-beta11"
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.16"
+    id("com.gradleup.shadow") version "9.0.0-beta13"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.17"
 }
 
 repositories {
@@ -44,7 +44,7 @@ artifacts {
 tasks {
     shadowJar {
         archiveClassifier = ""
-        archiveFileName = "${rootProject.name}-ignite-mod-${rootProject.properties["project_version"]}+mc1.20.5-1.21.4-mojmap.jar"
+        archiveFileName = "${rootProject.name}-ignite-mod-${rootProject.properties["project_version"]}+mc1.21.2-1.21.4-mojmap.jar"
         destinationDirectory.set(file("$rootDir/target"))
     }
 }

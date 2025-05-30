@@ -1,7 +1,9 @@
 package net.momirealms.craftengine.bukkit.util;
 
 import net.momirealms.craftengine.core.block.BlockSounds;
+import net.momirealms.craftengine.core.sound.SoundSource;
 import net.momirealms.craftengine.core.util.Key;
+import org.bukkit.SoundCategory;
 
 public class SoundUtils {
 
@@ -20,5 +22,20 @@ public class SoundUtils {
 
     public static Object getOrRegisterSoundEvent(Key key) throws ReflectiveOperationException {
         return Reflections.method$SoundEvent$createVariableRangeEvent.invoke(null, KeyUtils.toResourceLocation(key));
+    }
+
+    public static SoundCategory toBukkit(SoundSource source) {
+        return switch (source) {
+            case BLOCK -> SoundCategory.BLOCKS;
+            case MUSIC -> SoundCategory.MUSIC;
+            case VOICE -> SoundCategory.VOICE;
+            case MASTER -> SoundCategory.MASTER;
+            case PLAYER -> SoundCategory.PLAYERS;
+            case RECORD -> SoundCategory.RECORDS;
+            case AMBIENT -> SoundCategory.AMBIENT;
+            case HOSTILE -> SoundCategory.HOSTILE;
+            case NEUTRAL -> SoundCategory.NEUTRAL;
+            case WEATHER -> SoundCategory.WEATHER;
+        };
     }
 }

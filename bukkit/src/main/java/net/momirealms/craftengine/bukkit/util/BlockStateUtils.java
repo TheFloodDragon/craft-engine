@@ -33,6 +33,12 @@ public class BlockStateUtils {
         hasInit = true;
     }
 
+    public static BlockStateWrapper toPackedBlockState(BlockData blockData) {
+        Object state = blockDataToBlockState(blockData);
+        int id = blockStateToId(state);
+        return BlockStateWrapper.create(state, id, isVanillaBlock(id));
+    }
+
     public static boolean isCorrectTool(@NotNull ImmutableBlockState state, @Nullable Item<ItemStack> itemInHand) {
         BlockSettings settings = state.settings();
         if (settings.requireCorrectTool()) {
@@ -101,8 +107,11 @@ public class BlockStateUtils {
     }
 
     public static Key getBlockOwnerId(Block block) {
-        BlockData data = block.getBlockData();
-        Object blockState = blockDataToBlockState(data);
+        return getBlockOwnerIdFromData(block.getBlockData());
+    }
+
+    public static Key getBlockOwnerIdFromData(BlockData block) {
+        Object blockState = blockDataToBlockState(block);
         return getBlockOwnerIdFromState(blockState);
     }
 
@@ -131,11 +140,7 @@ public class BlockStateUtils {
     }
 
     public static Object getBlockOwner(Object blockState) {
-        try {
-            return Reflections.field$StateHolder$owner.get(blockState);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        return FastNMS.INSTANCE.method$BlockState$getBlock(blockState);
     }
 
     public static int physicsEventToId(BlockPhysicsEvent event) throws ReflectiveOperationException {
@@ -184,19 +189,27 @@ public class BlockStateUtils {
         Reflections.field$BlockStateBase$isRandomlyTicking.set(state, randomlyTicking);
     }
 
+    public static void setPropagatesSkylightDown(Object state, boolean propagatesSkylightDown) throws ReflectiveOperationException {
+        Reflections.field$BlockStateBase$propagatesSkylightDown.set(state, propagatesSkylightDown);
+    }
+
     public static void setReplaceable(Object state, boolean replaceable) throws ReflectiveOperationException {
         Reflections.field$BlockStateBase$replaceable.set(state, replaceable);
     }
 
-    public static boolean isReplaceable(Object state) throws ReflectiveOperationException {
-        return (boolean) Reflections.field$BlockStateBase$replaceable.get(state);
+    public static boolean isReplaceable(Object state) {
+        try {
+            return (boolean) Reflections.field$BlockStateBase$replaceable.get(state);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to get replaceable property", e);
+        }
     }
 
     public static void setCanOcclude(Object state, boolean canOcclude) throws ReflectiveOperationException {
         Reflections.field$BlockStateBase$canOcclude.set(state, canOcclude);
     }
 
-    public static boolean isOcclude(Object state) throws ReflectiveOperationException {
+    public static boolean isOcclude(Object state) {
         return FastNMS.INSTANCE.method$BlockStateBase$canOcclude(state);
     }
 

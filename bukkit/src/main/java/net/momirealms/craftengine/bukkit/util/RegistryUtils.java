@@ -20,4 +20,13 @@ public class RegistryUtils {
             throw new RuntimeException(e);
         }
     }
+
+    public static int currentEntityTypeRegistrySize() {
+        try {
+            Object idMap = Reflections.method$Registry$asHolderIdMap.invoke(Reflections.instance$BuiltInRegistries$ENTITY_TYPE);
+            return (int) Reflections.method$IdMap$size.invoke(idMap);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

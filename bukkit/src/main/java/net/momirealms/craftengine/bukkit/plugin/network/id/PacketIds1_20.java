@@ -104,4 +104,39 @@ public class PacketIds1_20 implements PacketIds {
     public int clientboundSetScorePacket() {
         return PacketIdFinder.clientboundByClazz(Reflections.clazz$ClientboundSetScorePacket);
     }
+
+    @Override
+    public int clientboundContainerSetContentPacket() {
+        return PacketIdFinder.clientboundByClazz(Reflections.clazz$ClientboundContainerSetContentPacket);
+    }
+
+    @Override
+    public int clientboundContainerSetSlotPacket() {
+        return PacketIdFinder.clientboundByClazz(Reflections.clazz$ClientboundContainerSetSlotPacket);
+    }
+
+    @Override
+    public int clientboundSetCursorItemPacket() {
+        return PacketIdFinder.clientboundByClazz(Reflections.clazz$ClientboundSetCursorItemPacket);
+    }
+
+    @Override
+    public int clientboundSetEquipmentPacket() {
+        return PacketIdFinder.clientboundByClazz(Reflections.clazz$ClientboundSetEquipmentPacket);
+    }
+
+    @Override
+    public int clientboundSetPlayerInventoryPacket() {
+        return PacketIdFinder.clientboundByClazz(Reflections.clazz$ClientboundSetPlayerInventoryPacket);
+    }
+
+    @Override
+    public int serverboundContainerClickPacket() {
+        return PacketIdFinder.serverboundByClazz(Reflections.clazz$ServerboundContainerClickPacket);
+    }
+
+    @Override
+    public int serverboundSetCreativeModeSlotPacket() {
+        return PacketIdFinder.serverboundByClazz(Reflections.clazz$ServerboundSetCreativeModeSlotPacket);
+    }
 }

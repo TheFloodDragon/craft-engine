@@ -25,15 +25,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
-// TODO Inject FallingBlockEntity?
-public class ConcretePowderBlockBehavior extends FallingBlockBehavior {
+public class ConcretePowderBlockBehavior extends BukkitBlockBehavior {
     public static final Factory FACTORY = new Factory();
-    private final Key targetBlock;
+    private final Key targetBlock; // TODO 更宽泛的，使用state，似乎也不是很好的方案？
     private Object defaultBlockState;
     private ImmutableBlockState defaultImmutableBlockState;
 
-    public ConcretePowderBlockBehavior(CustomBlock block, float hurtAmount, int maxHurt, Key targetBlock) {
-        super(block, hurtAmount, maxHurt);
+    public ConcretePowderBlockBehavior(CustomBlock block, Key targetBlock) {
+        super(block);
         this.targetBlock = targetBlock;
     }
 
@@ -79,7 +78,7 @@ public class ConcretePowderBlockBehavior extends FallingBlockBehavior {
                     return super.updateStateForPlacement(context, state);
                 }
             }
-        } catch (ReflectiveOperationException e) {
+        } catch (Exception e) {
             CraftEngine.instance().logger().warn("Failed to update state for placement " + context.getClickedPos(), e);
         }
         return super.updateStateForPlacement(context, state);
@@ -118,7 +117,7 @@ public class ConcretePowderBlockBehavior extends FallingBlockBehavior {
                 }
             }
         }
-        return super.updateShape(thisBlock, args, superMethod);
+        return args[0];
     }
 
     private static boolean shouldSolidify(Object level, Object blockPos, Object blockState) throws ReflectiveOperationException {
@@ -155,10 +154,8 @@ public class ConcretePowderBlockBehavior extends FallingBlockBehavior {
 
         @Override
         public BlockBehavior create(CustomBlock block, Map<String, Object> arguments) {
-            float hurtAmount = ResourceConfigUtils.getAsFloat(arguments.getOrDefault("hurt-amount", -1f), "hurt-amount");
-            int hurtMax = ResourceConfigUtils.getAsInt(arguments.getOrDefault("max-hurt", -1), "max-hurt");
             String solidBlock = ResourceConfigUtils.requireNonEmptyStringOrThrow(arguments.get("solid-block"), "warning.config.block.behavior.concrete.missing_solid");
-            return new ConcretePowderBlockBehavior(block, hurtAmount, hurtMax, Key.of(solidBlock));
+            return new ConcretePowderBlockBehavior(block, Key.of(solidBlock));
         }
     }
 }

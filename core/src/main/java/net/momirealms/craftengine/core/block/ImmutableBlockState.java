@@ -6,7 +6,7 @@ import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.loot.LootTable;
 import net.momirealms.craftengine.core.plugin.context.ContextHolder;
-import net.momirealms.craftengine.core.plugin.context.parameter.CommonParameters;
+import net.momirealms.craftengine.core.plugin.context.parameter.DirectContextParameters;
 import net.momirealms.craftengine.core.registry.Holder;
 import net.momirealms.craftengine.core.world.World;
 import net.momirealms.craftengine.shared.block.BlockBehavior;
@@ -14,16 +14,14 @@ import net.momirealms.sparrow.nbt.CompoundTag;
 import net.momirealms.sparrow.nbt.NBT;
 import net.momirealms.sparrow.nbt.Tag;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 public class ImmutableBlockState extends BlockStateHolder {
     private CompoundTag tag;
-    @Nullable
-    private PackedBlockState customBlockState;
-    @Nullable
-    private PackedBlockState vanillaBlockState;
+    private BlockStateWrapper customBlockState;
+    private BlockStateWrapper vanillaBlockState;
 
     private BlockBehavior behavior;
     private Integer hashCode;
@@ -37,7 +35,7 @@ public class ImmutableBlockState extends BlockStateHolder {
     }
 
     public BlockBehavior behavior() {
-        return behavior;
+        return this.behavior;
     }
 
     public void setBehavior(BlockBehavior behavior) {
@@ -45,7 +43,7 @@ public class ImmutableBlockState extends BlockStateHolder {
     }
 
     public BlockSettings settings() {
-        return settings;
+        return this.settings;
     }
 
     public void setSettings(BlockSettings settings) {
@@ -83,19 +81,19 @@ public class ImmutableBlockState extends BlockStateHolder {
         return settings.pushReaction;
     }
 
-    public PackedBlockState customBlockState() {
-        return customBlockState;
+    public BlockStateWrapper customBlockState() {
+        return this.customBlockState;
     }
 
-    public PackedBlockState vanillaBlockState() {
-        return vanillaBlockState;
+    public BlockStateWrapper vanillaBlockState() {
+        return this.vanillaBlockState;
     }
 
-    public void setCustomBlockState(@Nullable PackedBlockState customBlockState) {
+    public void setCustomBlockState(@NotNull BlockStateWrapper customBlockState) {
         this.customBlockState = customBlockState;
     }
 
-    public void setVanillaBlockState(@Nullable PackedBlockState vanillaBlockState) {
+    public void setVanillaBlockState(@NotNull BlockStateWrapper vanillaBlockState) {
         this.vanillaBlockState = vanillaBlockState;
     }
 
@@ -118,16 +116,16 @@ public class ImmutableBlockState extends BlockStateHolder {
     }
 
     public CompoundTag getNbtToSave() {
-        if (tag == null) {
-            tag = toNbtToSave(propertiesNbt());
+        if (this.tag == null) {
+            this.tag = toNbtToSave(propertiesNbt());
         }
-        return tag;
+        return this.tag;
     }
 
     public CompoundTag toNbtToSave(CompoundTag properties) {
         CompoundTag tag = new CompoundTag();
         tag.put("properties", properties);
-        tag.put("id", NBT.createString(owner.value().id().toString()));
+        tag.put("id", NBT.createString(this.owner.value().id().asString()));
         return tag;
     }
 
@@ -140,16 +138,12 @@ public class ImmutableBlockState extends BlockStateHolder {
         return state.with(property, (T) value);
     }
 
-    public List<Item<Object>> getDrops(@NotNull ContextHolder.Builder builder, @NotNull World world) {
-        return this.getDrops(builder, world, null);
-    }
-
     @SuppressWarnings("unchecked")
     public List<Item<Object>> getDrops(@NotNull ContextHolder.Builder builder, @NotNull World world, @Nullable Player player) {
-        CustomBlock block = owner.value();
+        CustomBlock block = this.owner.value();
         if (block == null) return List.of();
         LootTable<Object> lootTable = (LootTable<Object>) block.lootTable();
         if (lootTable == null) return List.of();
-        return lootTable.getRandomItems(builder.withParameter(CommonParameters.BLOCK_STATE, this).build(), world, player);
+        return lootTable.getRandomItems(builder.withParameter(DirectContextParameters.CUSTOM_BLOCK_STATE, this).build(), world, player);
     }
 }

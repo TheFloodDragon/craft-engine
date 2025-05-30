@@ -1,8 +1,9 @@
 package net.momirealms.craftengine.core.entity.player;
 
 import net.kyori.adventure.text.Component;
-import net.momirealms.craftengine.core.entity.Entity;
+import net.momirealms.craftengine.core.entity.AbstractEntity;
 import net.momirealms.craftengine.core.item.Item;
+import net.momirealms.craftengine.core.plugin.context.CooldownData;
 import net.momirealms.craftengine.core.plugin.network.NetWorkUser;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.world.BlockPos;
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public abstract class Player extends Entity implements NetWorkUser {
+public abstract class Player extends AbstractEntity implements NetWorkUser {
     private static final Key TYPE = Key.of("minecraft:player");
 
     public abstract boolean isSecondaryUseActive();
@@ -36,6 +37,8 @@ public abstract class Player extends Entity implements NetWorkUser {
 
     public abstract void abortMiningBlock();
 
+    public abstract void breakBlock(int x, int y, int z);
+
     public abstract double getCachedInteractionRange();
 
     public abstract void onSwingHand();
@@ -46,17 +49,19 @@ public abstract class Player extends Entity implements NetWorkUser {
 
     public abstract boolean isSneaking();
 
-    public abstract boolean isCreativeMode();
+    public abstract GameMode gameMode();
 
-    public abstract boolean isSpectatorMode();
-
-    public abstract boolean isAdventureMode();
+    public abstract void setGameMode(GameMode gameMode);
 
     public abstract boolean canBreak(BlockPos pos, Object state);
 
     public abstract boolean canPlace(BlockPos pos, Object state);
 
     public abstract void sendActionBar(Component text);
+
+    public abstract void sendMessage(Component text, boolean overlay);
+
+    public abstract void sendTitle(Component title, Component subtitle, int fadeIn, int stay, int fadeOut);
 
     public abstract boolean updateLastSuccessfulInteractionTick(int tick);
 
@@ -73,7 +78,7 @@ public abstract class Player extends Entity implements NetWorkUser {
     public abstract String name();
 
     public void playSound(Key sound) {
-        playSound(sound, 1, 1);
+        playSound(sound, 1f, 1f);
     }
 
     public abstract void playSound(Key sound, float volume, float pitch);
@@ -90,8 +95,42 @@ public abstract class Player extends Entity implements NetWorkUser {
 
     public abstract double luck();
 
+    public abstract boolean isFlying();
+
     @Override
     public Key type() {
         return TYPE;
     }
+
+    public boolean isCreativeMode() {
+        return gameMode() == GameMode.CREATIVE;
+    }
+
+    public boolean isSpectatorMode() {
+        return gameMode() == GameMode.SPECTATOR;
+    }
+
+    public boolean isSurvivalMode() {
+        return gameMode() == GameMode.SURVIVAL;
+    }
+
+    public boolean isAdventureMode() {
+        return gameMode() == GameMode.ADVENTURE;
+    }
+
+    public abstract int foodLevel();
+
+    public abstract void setFoodLevel(int foodLevel);
+
+    public abstract float saturation();
+
+    public abstract void setSaturation(float saturation);
+
+    public abstract void addPotionEffect(Key potionEffectType, int duration, int amplifier, boolean ambient, boolean particles);
+
+    public abstract void removePotionEffect(Key potionEffectType);
+
+    public abstract void clearPotionEffects();
+
+    public abstract CooldownData cooldown();
 }

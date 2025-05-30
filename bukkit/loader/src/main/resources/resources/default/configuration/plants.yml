@@ -102,6 +102,8 @@ blocks:
     behavior:
       type: on_liquid_block
       liquid-type: water
+      positions:
+        - 0,-1,0
     loot:
       template: "default:loot_table/basic"
       arguments:
@@ -121,19 +123,31 @@ blocks:
         push-reaction: DESTROY
         map-color: 15
         is-randomly-ticking: true
-    behavior:
-      type: sugar_cane_block
-      max-height: 4
-      required-adjacent-liquids: lava
-      grow-speed: 0.333
-      bottom-blocks:
-        - minecraft:netherrack
-        - minecraft:soul_sand
-        - minecraft:soul_soil
-        - minecraft:magma_block
-        - minecraft:warped_nylium
-        - minecraft:crimson_nylium
-        - minecraft:basalt
+    behaviors:
+      - type: vertical_crop_block
+        max-height: 4
+        grow-speed: 0.333
+        direction: up
+      - type: bush_block
+        stackable: true
+        delay: 1
+        bottom-blocks:
+          - minecraft:netherrack
+          - minecraft:soul_sand
+          - minecraft:soul_soil
+          - minecraft:magma_block
+          - minecraft:warped_nylium
+          - minecraft:crimson_nylium
+          - minecraft:basalt
+      - type: near_liquid_block
+        liquid-type: lava
+        delay: 1
+        stackable: true
+        positions:
+          - -1,-1,0
+          - 1,-1,0
+          - 0,-1,-1
+          - 0,-1,1
     loot:
       template: "default:loot_table/basic"
       arguments:
@@ -189,20 +203,67 @@ blocks:
         push-reaction: DESTROY
         map-color: 24
         is-randomly-ticking: true
-    behavior:
-      type: crop_block
-      grow-speed: 0.25
-      light-requirement: 9
-      is-bone-meal-target: true
-      bone-meal-age-bonus: 1
-      bottom-blocks:
-        - minecraft:end_stone
+    behaviors:
+      - type: bush_block
+        bottom-blocks:
+          - minecraft:end_stone
+      - type: crop_block
+        grow-speed: 0.25
+        light-requirement: 9
+        is-bone-meal-target: true
+        bone-meal-age-bonus: 1
     loot:
       template: default:loot_table/seed_crop
       arguments:
         crop_item: minecraft:ender_pearl
         crop_seed: default:ender_pearl_flower_seeds
         ripe_age: 2
+    events:
+      - on: break
+        conditions:
+          - type: match_block_property
+            properties:
+              age: 2
+        functions:
+          - type: particle
+            x: "<arg:block.block_x> + 0.5"
+            y: "<arg:block.block_y> + 0.5"
+            z: "<arg:block.block_z> + 0.5"
+            particle: "minecraft:end_rod"
+            count: 15
+            offset-x: 0.05
+            offset-y: 0.05
+            offset-z: 0.05
+            speed: 0.1
+          - type: play_sound
+            sound: minecraft:entity.enderman.teleport
+            x: "<arg:block.block_x> + 0.5"
+            y: "<arg:block.block_y> + 0.5"
+            z: "<arg:block.block_z> + 0.5"
+      - on: right_click
+        conditions:
+          - type: match_block_property
+            properties:
+              age: 2
+          - type: "!is_null"
+            argument: "item_in_hand"
+          - type: "equals"
+            value1: "<arg:item_in_hand.id>"
+            value2: "default:ender_pearl_flower_seeds"
+        functions:
+          - type: break_block
+            x: "<arg:block.block_x>"
+            y: "<arg:block.block_y>"
+            z: "<arg:block.block_z>"
+          - type: place_block
+            x: "<arg:block.block_x>"
+            y: "<arg:block.block_y>"
+            z: "<arg:block.block_z>"
+            block-state: default:ender_pearl_flower[age=0]
+          - type: set_count
+            add: true
+            count: -1
+          - type: swing_hand
     states:
       properties:
         age:

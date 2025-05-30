@@ -11,14 +11,12 @@ public class Dependencies {
             "asm",
             "org.ow2.asm",
             "asm",
-            "asm",
             Collections.emptyList()
     );
 
     public static final Dependency ASM_COMMONS = new Dependency(
             "asm-commons",
             "org.ow2.asm",
-            "asm-commons",
             "asm-commons",
             Collections.emptyList()
     );
@@ -27,7 +25,6 @@ public class Dependencies {
             "jar-relocator",
             "me.lucko",
             "jar-relocator",
-            "jar-relocator",
             Collections.emptyList()
     );
 
@@ -35,14 +32,12 @@ public class Dependencies {
             "geantyref",
             "io{}leangen{}geantyref",
             "geantyref",
-            "geantyref",
             List.of(Relocation.of("geantyref", "io{}leangen{}geantyref"))
     );
 
     public static final Dependency CLOUD_CORE = new Dependency(
             "cloud-core",
             "org{}incendo",
-            "cloud-core",
             "cloud-core",
             List.of(Relocation.of("cloud", "org{}incendo{}cloud"),
                     Relocation.of("geantyref", "io{}leangen{}geantyref"))
@@ -52,7 +47,6 @@ public class Dependencies {
             "cloud-brigadier",
             "org{}incendo",
             "cloud-brigadier",
-            "cloud-brigadier",
             List.of(Relocation.of("cloud", "org{}incendo{}cloud"),
                     Relocation.of("geantyref", "io{}leangen{}geantyref"))
     );
@@ -61,7 +55,6 @@ public class Dependencies {
             "cloud-services",
             "org{}incendo",
             "cloud-services",
-            "cloud-services",
             List.of(Relocation.of("cloud", "org{}incendo{}cloud"),
                     Relocation.of("geantyref", "io{}leangen{}geantyref"))
     );
@@ -69,7 +62,6 @@ public class Dependencies {
     public static final Dependency CLOUD_BUKKIT = new Dependency(
             "cloud-bukkit",
             "org{}incendo",
-            "cloud-bukkit",
             "cloud-bukkit",
             List.of(Relocation.of("cloud", "org{}incendo{}cloud"),
                     Relocation.of("geantyref", "io{}leangen{}geantyref"),
@@ -82,7 +74,6 @@ public class Dependencies {
             "cloud-paper",
             "org{}incendo",
             "cloud-paper",
-            "cloud-paper",
             List.of(Relocation.of("cloud", "org{}incendo{}cloud"),
                     Relocation.of("geantyref", "io{}leangen{}geantyref"),
                     Relocation.of("adventure", "net{}kyori{}adventure"),
@@ -93,7 +84,6 @@ public class Dependencies {
     public static final Dependency CLOUD_MINECRAFT_EXTRAS = new Dependency(
             "cloud-minecraft-extras",
             "org{}incendo",
-            "cloud-minecraft-extras",
             "cloud-minecraft-extras",
             List.of(Relocation.of("cloud", "org{}incendo{}cloud"),
                     Relocation.of("geantyref", "io{}leangen{}geantyref"),
@@ -106,7 +96,6 @@ public class Dependencies {
             "boosted-yaml",
             "dev{}dejvokep",
             "boosted-yaml",
-            "boosted-yaml",
             List.of(Relocation.of("boostedyaml", "dev{}dejvokep{}boostedyaml"))
     );
 
@@ -114,14 +103,12 @@ public class Dependencies {
             "bstats-base",
             "org{}bstats",
             "bstats-base",
-            "bstats-base",
             List.of(Relocation.of("bstats", "org{}bstats"))
     );
 
     public static final Dependency BSTATS_BUKKIT = new Dependency(
             "bstats-bukkit",
             "org{}bstats",
-            "bstats-bukkit",
             "bstats-bukkit",
             List.of(Relocation.of("bstats", "org{}bstats"))
     ) {
@@ -135,14 +122,12 @@ public class Dependencies {
             "gson",
             "com.google.code.gson",
             "gson",
-            "gson",
             Collections.emptyList()
     );
 
     public static final Dependency CAFFEINE = new Dependency(
             "caffeine",
             "com{}github{}ben-manes{}caffeine",
-            "caffeine",
             "caffeine",
             List.of(Relocation.of("caffeine", "com{}github{}benmanes{}caffeine"))
     );
@@ -151,7 +136,6 @@ public class Dependencies {
             "zstd-jni",
             "com.github.luben",
             "zstd-jni",
-            "zstd-jni",
             Collections.emptyList()
     );
 
@@ -159,14 +143,12 @@ public class Dependencies {
             "slf4j-api",
             "org.slf4j",
             "slf4j-api",
-            "slf4j-api",
             Collections.emptyList()
     );
 
     public static final Dependency SLF4J_SIMPLE = new Dependency(
             "slf4j-simple",
             "org.slf4j",
-            "slf4j-simple",
             "slf4j-simple",
             Collections.emptyList()
     ) {
@@ -180,14 +162,12 @@ public class Dependencies {
             "commons-io",
             "commons-io",
             "commons-io",
-            "commons-io",
             List.of(Relocation.of("commons", "org{}apache{}commons"))
     );
 
     public static final Dependency BYTE_BUDDY = new Dependency(
             "byte-buddy",
             "net{}bytebuddy",
-            "byte-buddy",
             "byte-buddy",
             List.of(Relocation.of("bytebuddy", "net{}bytebuddy"))
     );
@@ -196,54 +176,172 @@ public class Dependencies {
             "snake-yaml",
             "org{}yaml",
             "snakeyaml",
-            "snakeyaml",
             List.of(Relocation.of("snakeyaml", "org{}yaml{}snakeyaml"))
     );
+
+    public static final Dependency OPTION = new Dependency(
+            "option",
+            "net{}kyori",
+            "option",
+            List.of(Relocation.of("option", "net{}kyori{}option"),
+                    Relocation.of("examination", "net{}kyori{}examination"),
+                    Relocation.of("adventure", "net{}kyori{}adventure"))
+    );
+
+    public static final Dependency ADVENTURE_API = new Dependency(
+            "adventure-api",
+            "net{}kyori",
+            "adventure-api",
+            List.of(Relocation.of("option", "net{}kyori{}option"),
+                    Relocation.of("examination", "net{}kyori{}examination"),
+                    Relocation.of("adventure", "net{}kyori{}adventure"))
+    );
+
+    public static final Dependency ADVENTURE_NBT = new Dependency(
+            "adventure-nbt",
+            "net{}kyori",
+            "adventure-nbt",
+            List.of(Relocation.of("option", "net{}kyori{}option"),
+                    Relocation.of("examination", "net{}kyori{}examination"),
+                    Relocation.of("adventure", "net{}kyori{}adventure"))
+    ) {
+        @Override
+        public String getVersion() {
+            return ADVENTURE_API.getVersion();
+        }
+    };
+
+    public static final Dependency ADVENTURE_KEY = new Dependency(
+            "adventure-key",
+            "net{}kyori",
+            "adventure-key",
+            List.of(Relocation.of("option", "net{}kyori{}option"),
+                    Relocation.of("examination", "net{}kyori{}examination"),
+                    Relocation.of("adventure", "net{}kyori{}adventure"))
+    ) {
+        @Override
+        public String getVersion() {
+            return ADVENTURE_API.getVersion();
+        }
+    };
+
+    public static final Dependency EXAMINATION_API = new Dependency(
+            "examination-api",
+            "net{}kyori",
+            "examination-api",
+            List.of(Relocation.of("option", "net{}kyori{}option"),
+                    Relocation.of("examination", "net{}kyori{}examination"),
+                    Relocation.of("adventure", "net{}kyori{}adventure"))
+    );
+
+    public static final Dependency EXAMINATION_STRING = new Dependency(
+            "examination-string",
+            "net{}kyori",
+            "examination-string",
+            List.of(Relocation.of("option", "net{}kyori{}option"),
+                    Relocation.of("examination", "net{}kyori{}examination"),
+                    Relocation.of("adventure", "net{}kyori{}adventure"))
+    ) {
+        @Override
+        public String getVersion() {
+            return EXAMINATION_API.getVersion();
+        }
+    };
 
     public static final Dependency MINIMESSAGE = new Dependency(
             "adventure-text-minimessage",
             "net{}kyori",
             "adventure-text-minimessage",
-            "adventure-text-minimessage",
-            List.of(Relocation.of("adventure", "net{}kyori{}adventure"))
-    );
+            List.of(Relocation.of("option", "net{}kyori{}option"),
+                    Relocation.of("examination", "net{}kyori{}examination"),
+                    Relocation.of("adventure", "net{}kyori{}adventure"))
+    ) {
+        @Override
+        public String getVersion() {
+            return ADVENTURE_API.getVersion();
+        }
+    };
+
+    public static final Dependency TEXT_SERIALIZER_COMMONS = new Dependency(
+            "adventure-text-serializer-commons",
+            "net{}kyori",
+            "adventure-text-serializer-commons",
+            List.of(Relocation.of("option", "net{}kyori{}option"),
+                    Relocation.of("examination", "net{}kyori{}examination"),
+                    Relocation.of("adventure", "net{}kyori{}adventure"))
+    ) {
+        @Override
+        public String getVersion() {
+            return ADVENTURE_API.getVersion();
+        }
+    };
 
     public static final Dependency TEXT_SERIALIZER_GSON = new Dependency(
             "adventure-text-serializer-gson",
             "net{}kyori",
             "adventure-text-serializer-gson",
-            "adventure-text-serializer-gson",
-            List.of(Relocation.of("adventure", "net{}kyori{}adventure"))
-    );
+            List.of(Relocation.of("option", "net{}kyori{}option"),
+                    Relocation.of("examination", "net{}kyori{}examination"),
+                    Relocation.of("adventure", "net{}kyori{}adventure"))
+    ) {
+        @Override
+        public String getVersion() {
+            return ADVENTURE_API.getVersion();
+        }
+    };
 
     public static final Dependency TEXT_SERIALIZER_GSON_LEGACY = new Dependency(
             "adventure-text-serializer-json-legacy-impl",
             "net{}kyori",
             "adventure-text-serializer-json-legacy-impl",
-            "adventure-text-serializer-json-legacy-impl",
-            List.of(Relocation.of("adventure", "net{}kyori{}adventure"))
-    );
+            List.of(Relocation.of("option", "net{}kyori{}option"),
+                    Relocation.of("examination", "net{}kyori{}examination"),
+                    Relocation.of("adventure", "net{}kyori{}adventure"))
+    ) {
+        @Override
+        public String getVersion() {
+            return ADVENTURE_API.getVersion();
+        }
+    };
+
+    public static final Dependency TEXT_SERIALIZER_LEGACY = new Dependency(
+            "adventure-text-serializer-legacy",
+            "net{}kyori",
+            "adventure-text-serializer-legacy",
+            List.of(Relocation.of("option", "net{}kyori{}option"),
+                    Relocation.of("examination", "net{}kyori{}examination"),
+                    Relocation.of("adventure", "net{}kyori{}adventure"))
+    ) {
+        @Override
+        public String getVersion() {
+            return ADVENTURE_API.getVersion();
+        }
+    };
 
     public static final Dependency TEXT_SERIALIZER_JSON = new Dependency(
             "adventure-text-serializer-json",
             "net{}kyori",
             "adventure-text-serializer-json",
-            "adventure-text-serializer-json",
-            List.of(Relocation.of("adventure", "net{}kyori{}adventure"))
-    );
+            List.of(Relocation.of("option", "net{}kyori{}option"),
+                    Relocation.of("examination", "net{}kyori{}examination"),
+                    Relocation.of("adventure", "net{}kyori{}adventure"))
+    ) {
+        @Override
+        public String getVersion() {
+            return ADVENTURE_API.getVersion();
+        }
+    };
 
     public static final Dependency AHO_CORASICK = new Dependency(
             "ahocorasick",
             "org{}ahocorasick",
             "ahocorasick",
-            "aho-corasick",
             List.of(Relocation.of("ahocorasick", "org{}ahocorasick"))
     );
 
     public static final Dependency LZ4 = new Dependency(
             "lz4",
             "org{}lz4",
-            "lz4-java",
             "lz4-java",
             List.of(Relocation.of("jpountz", "net{}jpountz"))
     );
@@ -252,14 +350,12 @@ public class Dependencies {
             "evalex",
             "com{}ezylang",
             "EvalEx",
-            "evalex",
             List.of(Relocation.of("evalex", "com{}ezylang{}evalex"))
     );
 
     public static final Dependency NETTY_HTTP = new Dependency(
             "netty-codec-http",
             "io{}netty",
-            "netty-codec-http",
             "netty-codec-http",
             Collections.emptyList()
     );
@@ -268,7 +364,6 @@ public class Dependencies {
             "netty-codec-http2",
             "io{}netty",
             "netty-codec-http2",
-            "netty-codec-http2",
             Collections.emptyList()
     );
 
@@ -276,15 +371,27 @@ public class Dependencies {
             "reactive-streams",
             "org{}reactivestreams",
             "reactive-streams",
-            "reactive-streams",
             List.of(Relocation.of("reactivestreams", "org{}reactivestreams"))
+    );
+
+    public static final Dependency JIMFS = new Dependency(
+            "jimfs",
+            "com{}google{}jimfs",
+            "jimfs",
+            List.of(Relocation.of("jimfs", "com{}google{}common{}jimfs"))
+    );
+
+    public static final Dependency COMMONS_IMAGING = new Dependency(
+            "commons-imaging",
+            "org{}apache{}commons",
+            "commons-imaging",
+            List.of(Relocation.of("commons", "org{}apache{}commons"))
     );
 
     public static final Dependency AMAZON_AWSSDK_S3 = new Dependency(
             "amazon-sdk-s3",
             "software{}amazon{}awssdk",
             "s3",
-            "amazon-s3",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -295,7 +402,6 @@ public class Dependencies {
             "amazon-sdk-netty-nio-client",
             "software{}amazon{}awssdk",
             "netty-nio-client",
-            "amazon-netty-nio-client",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -311,7 +417,6 @@ public class Dependencies {
             "amazon-sdk-core",
             "software{}amazon{}awssdk",
             "sdk-core",
-            "amazon-sdk-core",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -327,7 +432,6 @@ public class Dependencies {
             "amazon-sdk-auth",
             "software{}amazon{}awssdk",
             "auth",
-            "amazon-auth",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -343,7 +447,6 @@ public class Dependencies {
             "amazon-sdk-regions",
             "software{}amazon{}awssdk",
             "regions",
-            "amazon-regions",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -359,7 +462,6 @@ public class Dependencies {
             "amazon-sdk-identity-spi",
             "software{}amazon{}awssdk",
             "identity-spi",
-            "amazon-identity-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -375,7 +477,6 @@ public class Dependencies {
             "amazon-sdk-http-client-spi",
             "software{}amazon{}awssdk",
             "http-client-spi",
-            "amazon-http-client-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -391,7 +492,6 @@ public class Dependencies {
             "amazon-sdk-protocol-core",
             "software{}amazon{}awssdk",
             "protocol-core",
-            "amazon-protocol-core",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -407,7 +507,6 @@ public class Dependencies {
             "amazon-sdk-aws-xml-protocol",
             "software{}amazon{}awssdk",
             "aws-xml-protocol",
-            "amazon-aws-xml-protocol",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -423,7 +522,6 @@ public class Dependencies {
             "amazon-sdk-json-utils",
             "software{}amazon{}awssdk",
             "json-utils",
-            "amazon-json-utils",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -439,7 +537,6 @@ public class Dependencies {
             "amazon-sdk-aws-core",
             "software{}amazon{}awssdk",
             "aws-core",
-            "amazon-aws-core",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -455,7 +552,6 @@ public class Dependencies {
             "amazon-sdk-utils",
             "software{}amazon{}awssdk",
             "utils",
-            "amazon-utils",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -471,7 +567,6 @@ public class Dependencies {
             "amazon-sdk-annotations",
             "software{}amazon{}awssdk",
             "annotations",
-            "amazon-annotations",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -487,7 +582,6 @@ public class Dependencies {
             "amazon-sdk-crt-core",
             "software{}amazon{}awssdk",
             "crt-core",
-            "amazon-crt-core",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -503,7 +597,6 @@ public class Dependencies {
             "amazon-sdk-checksums",
             "software{}amazon{}awssdk",
             "checksums",
-            "amazon-checksums",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -519,7 +612,6 @@ public class Dependencies {
             "amazon-sdk-eventstream",
             "software{}amazon{}eventstream",
             "eventstream",
-            "amazon-eventstream",
             List.of(
                     Relocation.of("eventstream", "software{}amazon{}eventstream"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -530,7 +622,6 @@ public class Dependencies {
             "amazon-sdk-profiles",
             "software{}amazon{}awssdk",
             "profiles",
-            "amazon-profiles",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -546,7 +637,6 @@ public class Dependencies {
             "amazon-sdk-retries",
             "software{}amazon{}awssdk",
             "retries",
-            "amazon-retries",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -562,7 +652,6 @@ public class Dependencies {
             "amazon-sdk-endpoints-spi",
             "software{}amazon{}awssdk",
             "endpoints-spi",
-            "amazon-endpoints-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -578,7 +667,6 @@ public class Dependencies {
             "amazon-sdk-arns",
             "software{}amazon{}awssdk",
             "arns",
-            "amazon-arns",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -594,7 +682,6 @@ public class Dependencies {
             "amazon-sdk-aws-query-protocol",
             "software{}amazon{}awssdk",
             "aws-query-protocol",
-            "amazon-aws-query-protocol",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -610,7 +697,6 @@ public class Dependencies {
             "amazon-sdk-http-auth-aws",
             "software{}amazon{}awssdk",
             "http-auth-aws",
-            "amazon-http-auth-aws",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -626,7 +712,6 @@ public class Dependencies {
             "amazon-sdk-http-auth-spi",
             "software{}amazon{}awssdk",
             "http-auth-spi",
-            "amazon-http-auth-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -642,7 +727,6 @@ public class Dependencies {
             "amazon-sdk-http-auth",
             "software{}amazon{}awssdk",
             "http-auth",
-            "amazon-http-auth",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -658,7 +742,6 @@ public class Dependencies {
             "amazon-sdk-http-auth-aws-eventstream",
             "software{}amazon{}awssdk",
             "http-auth-aws-eventstream",
-            "amazon-http-auth-aws-eventstream",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -674,7 +757,6 @@ public class Dependencies {
             "amazon-sdk-checksums-spi",
             "software{}amazon{}awssdk",
             "checksums-spi",
-            "amazon-checksums-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -690,7 +772,6 @@ public class Dependencies {
             "amazon-sdk-retries-spi",
             "software{}amazon{}awssdk",
             "retries-spi",
-            "amazon-retries-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -706,7 +787,6 @@ public class Dependencies {
             "amazon-sdk-metrics-spi",
             "software{}amazon{}awssdk",
             "metrics-spi",
-            "amazon-metrics-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")
@@ -722,7 +802,6 @@ public class Dependencies {
             "amazon-sdk-third-party-jackson-core",
             "software{}amazon{}awssdk",
             "third-party-jackson-core",
-            "amazon-third-party-jackson-core",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
                     Relocation.of("reactivestreams", "org{}reactivestreams")

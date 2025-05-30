@@ -6,7 +6,6 @@ import com.ezylang.evalex.parser.ParseException;
 import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.core.plugin.context.Context;
 import net.momirealms.craftengine.core.util.AdventureHelper;
-import net.momirealms.craftengine.core.util.Factory;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 
@@ -33,6 +32,18 @@ public class ExpressionNumberProvider implements NumberProvider {
     }
 
     @Override
+    public double getDouble(Context context) {
+        Component resultComponent = AdventureHelper.customMiniMessage().deserialize(this.expr, context.tagResolvers());
+        String resultString = AdventureHelper.plainTextContent(resultComponent);
+        Expression expression = new Expression(resultString);
+        try {
+            return expression.evaluate().getNumberValue().doubleValue();
+        } catch (EvaluationException | ParseException e) {
+            throw new RuntimeException("Invalid expression: " + this.expr + " -> " + resultString + " -> Cannot parse", e);
+        }
+    }
+
+    @Override
     public Key type() {
         return NumberProviders.EXPRESSION;
     }
@@ -41,7 +52,7 @@ public class ExpressionNumberProvider implements NumberProvider {
         return this.expr;
     }
 
-    public static class FactoryImpl implements Factory<NumberProvider> {
+    public static class FactoryImpl implements NumberProviderFactory {
 
         @Override
         public NumberProvider create(Map<String, Object> arguments) {

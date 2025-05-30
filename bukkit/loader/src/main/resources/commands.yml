@@ -175,6 +175,13 @@ debug_is_section_injected:
     - /craftengine debug is-section-injected
     - /ce debug is-section-injected
 
+debug_clear_cooldown:
+  enable: true
+  permission: ce.command.debug.clear_cooldown
+  usage:
+    - /craftengine debug clear-cooldown
+    - /ce debug clear-cooldown
+
 debug_test:
   enable: true
   permission: ce.command.debug.test

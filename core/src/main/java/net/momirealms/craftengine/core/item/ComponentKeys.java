@@ -2,7 +2,9 @@ package net.momirealms.craftengine.core.item;
 
 import net.momirealms.craftengine.core.util.Key;
 
-public class ComponentKeys {
+public final class ComponentKeys {
+    private ComponentKeys() {}
+
     public static final Key CUSTOM_MODEL_DATA = Key.of("minecraft", "custom_model_data");
     public static final Key CUSTOM_NAME = Key.of("minecraft", "custom_name");
     public static final Key ITEM_NAME = Key.of("minecraft", "item_name");
@@ -22,4 +24,6 @@ public class ComponentKeys {
     public static final Key REPAIR_COST = Key.of("minecraft", "repair_cost");
     public static final Key CUSTOM_DATA = Key.of("minecraft", "custom_data");
     public static final Key PROFILE = Key.of("minecraft", "profile");
+    public static final Key DYED_COLOR = Key.of("minecraft", "dyed_color");
+    public static final Key DEATH_PROTECTION = Key.of("minecraft", "death_protection");
 }

@@ -9,6 +9,9 @@ import net.momirealms.craftengine.core.block.*;
 import net.momirealms.craftengine.core.block.properties.Property;
 import net.momirealms.craftengine.core.loot.LootTable;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
+import net.momirealms.craftengine.core.plugin.context.PlayerOptionalContext;
+import net.momirealms.craftengine.core.plugin.context.event.EventTrigger;
+import net.momirealms.craftengine.core.plugin.context.function.Function;
 import net.momirealms.craftengine.core.registry.BuiltInRegistries;
 import net.momirealms.craftengine.core.registry.Holder;
 import net.momirealms.craftengine.core.registry.WritableRegistry;
@@ -18,27 +21,28 @@ import net.momirealms.craftengine.core.util.Tristate;
 import net.momirealms.craftengine.core.util.VersionHelper;
 import net.momirealms.craftengine.shared.ObjectHolder;
 import net.momirealms.craftengine.shared.block.BlockBehavior;
+import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public class BukkitCustomBlock extends CustomBlock {
+public class BukkitCustomBlock extends AbstractCustomBlock {
 
     protected BukkitCustomBlock(
-            Key id,
-            Holder.Reference<CustomBlock> holder,
-            Map<String, Property<?>> properties,
-            Map<String, Integer> appearances,
-            Map<String, VariantState> variantMapper,
-            BlockSettings settings,
-            Map<String, Object> behavior,
+            @NotNull Key id,
+            @NotNull Holder.Reference<CustomBlock> holder,
+            @NotNull Map<String, Property<?>> properties,
+            @NotNull Map<String, Integer> appearances,
+            @NotNull Map<String, VariantState> variantMapper,
+            @NotNull BlockSettings settings,
+            @NotNull Map<EventTrigger, List<Function<PlayerOptionalContext>>> events,
+            @Nullable List<Map<String, Object>> behavior,
             @Nullable LootTable<?> lootTable
     ) {
-        super(id, holder, properties, appearances, variantMapper, settings, behavior, lootTable);
+        super(id, holder, properties, appearances, variantMapper, settings, events, behavior, lootTable);
     }
 
     @SuppressWarnings("unchecked")
@@ -69,7 +73,13 @@ public class BukkitCustomBlock extends CustomBlock {
                 BlockStateUtils.setHardness(mcBlockState, settings.hardness());
                 BlockStateUtils.setPushReaction(mcBlockState, settings.pushReaction());
                 BlockStateUtils.setReplaceable(mcBlockState, settings.replaceable());
-                BlockStateUtils.setCanOcclude(mcBlockState, settings.canOcclude());
+                if (settings.canOcclude() == Tristate.TRUE) {
+                    BlockStateUtils.setCanOcclude(mcBlockState, true);
+                } else if (settings.canOcclude() == Tristate.FALSE) {
+                    BlockStateUtils.setCanOcclude(mcBlockState, false);
+                } else {
+                    BlockStateUtils.setCanOcclude(mcBlockState, BlockStateUtils.isOcclude(state.vanillaBlockState().handle()));
+                }
                 if (settings.isRedstoneConductor() == Tristate.TRUE) {
                     BlockStateUtils.setIsRedstoneConductor(mcBlockState, StatePredicate.alwaysTrue());
                 } else if (settings.isRedstoneConductor() == Tristate.FALSE) {
@@ -97,7 +107,16 @@ public class BukkitCustomBlock extends CustomBlock {
                 Field shapeField = mcBlock.getClass().getField("shapeHolder");
                 @SuppressWarnings("unchecked")
                 ObjectHolder<BukkitBlockShape> shapeHolder = (ObjectHolder<BukkitBlockShape>) shapeField.get(mcBlock);
-                shapeHolder.bindValue(new BukkitBlockShape(state.vanillaBlockState().handle()));
+                shapeHolder.bindValue(new BukkitBlockShape(state.vanillaBlockState().handle(), Optional.ofNullable(state.settings().supportShapeBlockState()).map(it -> {
+                    try {
+                        Object blockState = BlockStateUtils.blockDataToBlockState(Bukkit.createBlockData(it));
+                        if (!BlockStateUtils.isVanillaBlock(blockState)) return null;
+                        return blockState;
+                    } catch (IllegalArgumentException e) {
+                        CraftEngine.instance().logger().warn("Illegal shape block state: " + it, e);
+                        return null;
+                    }
+                }).orElse(null)));
                 // bind behavior
                 Field behaviorField = mcBlock.getClass().getField("behaviorHolder");
                 @SuppressWarnings("unchecked")
@@ -125,6 +144,8 @@ public class BukkitCustomBlock extends CustomBlock {
                 }
                 // set random tick later
                 BlockStateUtils.setIsRandomlyTicking(mcBlockState, settings.isRandomlyTicking());
+                // set propagates skylight
+                BlockStateUtils.setPropagatesSkylightDown(mcBlockState, settings.propagatesSkylightDown());
                 // bind tags
                 Object holder = BukkitCraftEngine.instance().blockManager().getMinecraftBlockHolder(state.customBlockState().registryId());
                 Set<Object> tags = new HashSet<>();
@@ -144,21 +165,71 @@ public class BukkitCustomBlock extends CustomBlock {
     }
 
     public static Builder builder(Key id) {
-        return new Builder(id);
+        return new BuilderImpl(id);
     }
 
-    public static class Builder extends CustomBlock.Builder {
+    public static class BuilderImpl implements Builder {
+        protected final Key id;
+        protected Map<String, Property<?>> properties;
+        protected Map<String, Integer> appearances;
+        protected Map<String, VariantState> variantMapper;
+        protected BlockSettings settings;
+        protected List<Map<String, Object>> behavior;
+        protected LootTable<?> lootTable;
+        protected Map<EventTrigger, List<Function<PlayerOptionalContext>>> events;
 
-        protected Builder(Key id) {
-            super(id);
+        public BuilderImpl(Key id) {
+            this.id = id;
         }
 
         @Override
-        public CustomBlock build() {
+        public Builder events(Map<EventTrigger, List<Function<PlayerOptionalContext>>> events) {
+            this.events = events;
+            return this;
+        }
+
+        @Override
+        public Builder appearances(Map<String, Integer> appearances) {
+            this.appearances = appearances;
+            return this;
+        }
+
+        @Override
+        public Builder behavior(List<Map<String, Object>> behavior) {
+            this.behavior = behavior;
+            return this;
+        }
+
+        @Override
+        public Builder lootTable(LootTable<?> lootTable) {
+            this.lootTable = lootTable;
+            return this;
+        }
+
+        @Override
+        public Builder properties(Map<String, Property<?>> properties) {
+            this.properties = properties;
+            return this;
+        }
+
+        @Override
+        public Builder settings(BlockSettings settings) {
+            this.settings = settings;
+            return this;
+        }
+
+        @Override
+        public Builder variantMapper(Map<String, VariantState> variantMapper) {
+            this.variantMapper = variantMapper;
+            return this;
+        }
+
+        @Override
+        public @NotNull CustomBlock build() {
             // create or get block holder
             Holder.Reference<CustomBlock> holder = BuiltInRegistries.BLOCK.get(id).orElseGet(() ->
                     ((WritableRegistry<CustomBlock>) BuiltInRegistries.BLOCK).registerForHolder(new ResourceKey<>(BuiltInRegistries.BLOCK.key().location(), id)));
-            return new BukkitCustomBlock(id, holder, properties, appearances, variantMapper, settings, behavior, lootTable);
+            return new BukkitCustomBlock(id, holder, properties, appearances, variantMapper, settings, events, behavior, lootTable);
         }
     }
 }

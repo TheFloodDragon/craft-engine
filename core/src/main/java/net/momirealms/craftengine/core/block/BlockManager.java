@@ -7,6 +7,8 @@ import net.momirealms.craftengine.core.plugin.Manageable;
 import net.momirealms.craftengine.core.plugin.config.ConfigParser;
 import net.momirealms.craftengine.core.util.Key;
 import org.incendo.cloud.suggestion.Suggestion;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -26,7 +28,22 @@ public interface BlockManager extends Manageable, ModelGenerator {
 
     Optional<CustomBlock> blockById(Key key);
 
+    void addBlock(Key id, CustomBlock customBlock);
+
     Collection<Suggestion> cachedSuggestions();
 
     Map<Key, Key> soundMapper();
+
+    int availableAppearances(Key blockType);
+
+    Key getBlockOwnerId(BlockStateWrapper state);
+
+    @NotNull
+    ImmutableBlockState getImmutableBlockStateUnsafe(int stateId);
+
+    @Nullable
+    ImmutableBlockState getImmutableBlockState(int stateId);
+    
+    @Nullable
+    BlockStateWrapper createPackedBlockState(String blockState);
 }

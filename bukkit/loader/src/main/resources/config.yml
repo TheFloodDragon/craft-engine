@@ -62,9 +62,10 @@ resource-pack:
   remove-tinted-leaves-particle: true
   merge-external-folders:
     - ModelEngine/resource pack
-    - CustomNameplates/ResourcePack
     - BetterModel/build
-    - BetterHud/build
+  merge-external-zip-files:
+    - CustomNameplates/resourcepack.zip
+  exclude-file-extensions: ["md", "psd", "bbmodel", "db", "ini"]
   delivery:
     # Send the resource pack on joining the server
     send-on-join: true
@@ -83,8 +84,8 @@ resource-pack:
         deny-non-minecraft-request: true
         one-time-token: true
         rate-limit:
-          max-requests: 3
-          reset-interval: 20
+          max-requests: 10
+          reset-interval: 30
     # Upload the resource pack automatically on generation
     # When disabled, you must manually trigger uploads using the /ce upload command
     auto-upload: true
@@ -213,6 +214,7 @@ image:
     entity-name: false
     armor-stand: true   # Legacy Holograms
     text-display: true  # Modern Holograms
+    item: true
   # Defines Unicode characters used for <shift:xxx> positioning
   # - Must match the font defined in resource packs
   # - Do NOT modify unless you understand text rendering mechanics
@@ -341,8 +343,6 @@ performance:
 light-system:
   # Required for custom light-emitting blocks
   enable: true
-  # Turning this option on will reduce lighting system issues to some extent, but will increase server bandwidth consumption.
-  force-update-light: false
 
 chunk-system:
   # With cache system, those frequently load/unload chunks would consume fewer resources on serialization

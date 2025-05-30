@@ -14,13 +14,14 @@ import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
 import net.momirealms.craftengine.core.block.properties.Property;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.plugin.context.ContextHolder;
-import net.momirealms.craftengine.core.plugin.context.parameter.CommonParameters;
+import net.momirealms.craftengine.core.plugin.context.parameter.DirectContextParameters;
 import net.momirealms.craftengine.core.util.Direction;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 import net.momirealms.craftengine.core.util.VersionHelper;
 import net.momirealms.craftengine.core.world.BlockPos;
 import net.momirealms.craftengine.core.world.Vec3d;
+import net.momirealms.craftengine.core.world.WorldPosition;
 import net.momirealms.craftengine.shared.block.BlockBehavior;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -29,6 +30,7 @@ import org.bukkit.event.block.LeavesDecayEvent;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 public class LeavesBlockBehavior extends WaterLoggedBlockBehavior {
@@ -77,10 +79,14 @@ public class LeavesBlockBehavior extends WaterLoggedBlockBehavior {
             neighborState = args[2];
         }
         ImmutableBlockState thisState = BukkitBlockManager.instance().getImmutableBlockState(BlockStateUtils.blockStateToId(blockState));
-        if (thisState != null && thisState.behavior() instanceof LeavesBlockBehavior behavior) {
-            int distance = behavior.getDistanceAt(neighborState) + 1;
-            if (distance != 1 || behavior.getDistance(thisState) != distance) {
-                Reflections.method$LevelAccessor$scheduleTick.invoke(world, blockPos, thisBlock, 1);
+        if (thisState != null) {
+            Optional<LeavesBlockBehavior> optionalBehavior = thisState.behavior().getAs(LeavesBlockBehavior.class);
+            if (optionalBehavior.isPresent()) {
+                LeavesBlockBehavior behavior = optionalBehavior.get();
+                int distance = behavior.getDistanceAt(neighborState) + 1;
+                if (distance != 1 || behavior.getDistance(thisState) != distance) {
+                    Reflections.method$LevelAccessor$scheduleTick.invoke(world, blockPos, thisBlock, 1);
+                }
             }
         }
         return blockState;
@@ -92,13 +98,17 @@ public class LeavesBlockBehavior extends WaterLoggedBlockBehavior {
         Object level = args[1];
         Object blockPos = args[2];
         ImmutableBlockState currentState = BukkitBlockManager.instance().getImmutableBlockState(BlockStateUtils.blockStateToId(blockState));
-        if (currentState != null && !currentState.isEmpty() && currentState.behavior() instanceof LeavesBlockBehavior behavior) {
-            ImmutableBlockState newState = behavior.updateDistance(currentState, level, blockPos);
-            if (newState != currentState) {
-                if (blockState == newState.customBlockState().handle()) {
-                    Reflections.method$BlockStateBase$updateNeighbourShapes.invoke(blockState, level, blockPos, UpdateOption.UPDATE_ALL.flags(), 512);
-                } else {
-                    FastNMS.INSTANCE.method$LevelWriter$setBlock(level, blockPos, newState.customBlockState().handle(), UpdateOption.UPDATE_ALL.flags());
+        if (currentState != null && !currentState.isEmpty()) {
+            Optional<LeavesBlockBehavior> optionalBehavior = currentState.behavior().getAs(LeavesBlockBehavior.class);
+            if (optionalBehavior.isPresent()) {
+                LeavesBlockBehavior behavior = optionalBehavior.get();
+                ImmutableBlockState newState = behavior.updateDistance(currentState, level, blockPos);
+                if (newState != currentState) {
+                    if (blockState == newState.customBlockState().handle()) {
+                        Reflections.method$BlockStateBase$updateNeighbourShapes.invoke(blockState, level, blockPos, UpdateOption.UPDATE_ALL.flags(), 512);
+                    } else {
+                        FastNMS.INSTANCE.method$LevelWriter$setBlock(level, blockPos, newState.customBlockState().handle(), UpdateOption.UPDATE_ALL.flags());
+                    }
                 }
             }
         }
@@ -109,26 +119,31 @@ public class LeavesBlockBehavior extends WaterLoggedBlockBehavior {
         Object level = args[1];
         Object blockPos = args[2];
         ImmutableBlockState immutableBlockState = BukkitBlockManager.instance().getImmutableBlockState(BlockStateUtils.blockStateToId(args[0]));
-        if (immutableBlockState != null && immutableBlockState.behavior() instanceof LeavesBlockBehavior behavior && behavior.isDecaying(immutableBlockState)) {
-            World bukkitWorld = FastNMS.INSTANCE.method$Level$getCraftWorld(level);
-            BlockPos pos = LocationUtils.fromBlockPos(blockPos);
-            // call bukkit event
-            LeavesDecayEvent event = new LeavesDecayEvent(bukkitWorld.getBlockAt(pos.x(), pos.y(), pos.z()));
-            Bukkit.getPluginManager().callEvent(event);
-            if (event.isCancelled()) {
-                return;
-            }
-            FastNMS.INSTANCE.method$Level$removeBlock(level, blockPos, false);
-            if (isWaterLogged(immutableBlockState)) {
-                bukkitWorld.setBlockData(pos.x(), pos.y(), pos.z(), Material.WATER.createBlockData());
-            }
-            Vec3d vec3d = Vec3d.atCenterOf(pos);
-            net.momirealms.craftengine.core.world.World world = new BukkitWorld(bukkitWorld);
-            ContextHolder.Builder builder = ContextHolder.builder()
-                    .withParameter(CommonParameters.LOCATION, vec3d)
-                    .withParameter(CommonParameters.WORLD, world);
-            for (Item<Object> item : immutableBlockState.getDrops(builder, world, null)) {
-                world.dropItemNaturally(vec3d, item);
+        if (immutableBlockState != null) {
+            Optional<LeavesBlockBehavior> optionalBehavior = immutableBlockState.behavior().getAs(LeavesBlockBehavior.class);
+            if (optionalBehavior.isPresent()) {
+                LeavesBlockBehavior behavior = optionalBehavior.get();
+                if (behavior.isDecaying(immutableBlockState)) {
+                    World bukkitWorld = FastNMS.INSTANCE.method$Level$getCraftWorld(level);
+                    BlockPos pos = LocationUtils.fromBlockPos(blockPos);
+                    // call bukkit event
+                    LeavesDecayEvent event = new LeavesDecayEvent(bukkitWorld.getBlockAt(pos.x(), pos.y(), pos.z()));
+                    Bukkit.getPluginManager().callEvent(event);
+                    if (event.isCancelled()) {
+                        return;
+                    }
+                    FastNMS.INSTANCE.method$Level$removeBlock(level, blockPos, false);
+                    if (isWaterLogged(immutableBlockState)) {
+                        bukkitWorld.setBlockData(pos.x(), pos.y(), pos.z(), Material.WATER.createBlockData());
+                    }
+                    net.momirealms.craftengine.core.world.World world = new BukkitWorld(bukkitWorld);
+                    WorldPosition position = new WorldPosition(world, Vec3d.atCenterOf(pos));
+                    ContextHolder.Builder builder = ContextHolder.builder()
+                            .withParameter(DirectContextParameters.POSITION, position);
+                    for (Item<Object> item : immutableBlockState.getDrops(builder, world, null)) {
+                        world.dropItemNaturally(position, item);
+                    }
+                }
             }
         }
     }
@@ -164,8 +179,8 @@ public class LeavesBlockBehavior extends WaterLoggedBlockBehavior {
             return (int) Reflections.method$StateHolder$getValue.invoke(blockState, distanceProperty);
         } else {
             ImmutableBlockState anotherBlockState = BukkitBlockManager.instance().getImmutableBlockStateUnsafe(id);
-            if (!(anotherBlockState.behavior() instanceof LeavesBlockBehavior otherBehavior)) return this.maxDistance;
-            return otherBehavior.getDistance(anotherBlockState);
+            Optional<LeavesBlockBehavior> optionalAnotherBehavior = anotherBlockState.behavior().getAs(LeavesBlockBehavior.class);
+            return optionalAnotherBehavior.map(leavesBlockBehavior -> leavesBlockBehavior.getDistance(anotherBlockState)).orElse(this.maxDistance);
         }
     }
 

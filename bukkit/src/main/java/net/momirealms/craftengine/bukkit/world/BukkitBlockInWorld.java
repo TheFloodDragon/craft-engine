@@ -6,12 +6,13 @@ import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.item.behavior.BlockItemBehavior;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
-import net.momirealms.craftengine.bukkit.util.KeyUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
 import net.momirealms.craftengine.bukkit.util.Reflections;
+import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.item.CustomItem;
 import net.momirealms.craftengine.core.item.Item;
+import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.util.Key;
@@ -40,10 +41,12 @@ public class BukkitBlockInWorld implements BlockInWorld {
             Optional<CustomItem<ItemStack>> customItem = BukkitItemManager.instance().getCustomItem(item.id());
             if (customItem.isPresent()) {
                 CustomItem<ItemStack> custom = customItem.get();
-                if (custom.behaviors() instanceof BlockItemBehavior blockItemBehavior) {
-                    Key blockId = blockItemBehavior.blockId();
-                    if (blockId.equals(clickedBlockId)) {
-                        return false;
+                for (ItemBehavior behavior : custom.behaviors()) {
+                    if (behavior instanceof BlockItemBehavior blockItemBehavior) {
+                        Key blockId = blockItemBehavior.blockId();
+                        if (blockId.equals(clickedBlockId)) {
+                            return false;
+                        }
                     }
                 }
             }
@@ -86,21 +89,17 @@ public class BukkitBlockInWorld implements BlockInWorld {
     }
 
     @Override
-    public String getAsString() {
-        ImmutableBlockState state = CraftEngineBlocks.getCustomBlockState(this.block);
-        if (state != null) {
-            return state.toString();
-        }
-        return this.block.getBlockData().getAsString();
+    public ImmutableBlockState customBlockState() {
+        return CraftEngineBlocks.getCustomBlockState(this.block);
     }
 
     @Override
-    public Key owner() {
+    public CustomBlock customBlock() {
         ImmutableBlockState state = CraftEngineBlocks.getCustomBlockState(this.block);
         if (state != null) {
-            return state.owner().value().id();
+            return state.owner().value();
         }
-        return KeyUtils.namespacedKey2Key(this.block.getType().getKey());
+        return null;
     }
 
     public Block block() {

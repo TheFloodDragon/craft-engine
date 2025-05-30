@@ -11,14 +11,12 @@ public class Dependency {
     private final String id;
     private final String groupId;
     private final String rawArtifactId;
-    private final String customArtifactID;
     private final List<Relocation> relocations;
 
-    public Dependency(String id, String groupId, String rawArtifactId, String customArtifactID, List<Relocation> relocations) {
+    public Dependency(String id, String groupId, String artifactId, List<Relocation> relocations) {
         this.id = id;
         this.groupId = groupId;
-        this.rawArtifactId = rawArtifactId;
-        this.customArtifactID = customArtifactID;
+        this.rawArtifactId = artifactId;
         this.relocations = relocations;
     }
 
@@ -34,12 +32,12 @@ public class Dependency {
         return rawArtifactId;
     }
 
-    public String customArtifactID() {
-        return customArtifactID;
-    }
-
     public List<Relocation> relocations() {
         return relocations;
+    }
+
+    public String toLocalPath() {
+        return rewriteEscaping(groupId).replace(".", "/") + "/" + this.rawArtifactId + "/" + getVersion();
     }
 
     private static final String MAVEN_FORMAT = "%s/%s/%s/%s-%s.jar";
@@ -55,7 +53,7 @@ public class Dependency {
     }
 
     public String fileName(String classifier) {
-        String name = customArtifactID.toLowerCase(Locale.ENGLISH).replace('_', '-');
+        String name = this.rawArtifactId.toLowerCase(Locale.ENGLISH).replace('_', '-');
         String extra = classifier == null || classifier.isEmpty()
                 ? ""
                 : "-" + classifier;
@@ -66,7 +64,7 @@ public class Dependency {
         return PluginProperties.getValue(id);
     }
 
-    private static String rewriteEscaping(String s) {
+    public static String rewriteEscaping(String s) {
         return s.replace("{}", ".");
     }
 

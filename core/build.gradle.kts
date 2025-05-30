@@ -1,5 +1,5 @@
 plugins {
-    id("com.gradleup.shadow") version "9.0.0-beta11"
+    id("com.gradleup.shadow") version "9.0.0-beta13"
     id("maven-publish")
 }
 
@@ -18,9 +18,14 @@ dependencies {
     compileOnly("org.yaml:snakeyaml:${rootProject.properties["snake_yaml_version"]}")
     // NBT
     implementation("net.momirealms:sparrow-nbt:${rootProject.properties["sparrow_nbt_version"]}")
+    implementation("net.momirealms:sparrow-nbt-adventure:${rootProject.properties["sparrow_nbt_version"]}")
+    implementation("net.momirealms:sparrow-nbt-codec:${rootProject.properties["sparrow_nbt_version"]}")
+    implementation("net.momirealms:sparrow-nbt-legacy-codec:${rootProject.properties["sparrow_nbt_version"]}")
+    // Util
     compileOnly("net.momirealms:sparrow-util:${rootProject.properties["sparrow_util_version"]}")
     // Adventure
-    implementation("net.kyori:adventure-api:${rootProject.properties["adventure_bundle_version"]}")
+    // TODO Create an API module
+    compileOnly("net.kyori:adventure-api:${rootProject.properties["adventure_bundle_version"]}")
     compileOnly("net.kyori:adventure-text-minimessage:${rootProject.properties["adventure_bundle_version"]}")
     compileOnly("net.kyori:adventure-text-serializer-gson:${rootProject.properties["adventure_bundle_version"]}") {
         exclude("com.google.code.gson", "gson")
@@ -40,6 +45,7 @@ dependencies {
     compileOnly("org.apache.logging.log4j:log4j-core:${rootProject.properties["log4j_version"]}")
     // Netty
     compileOnly("io.netty:netty-all:${rootProject.properties["netty_version"]}")
+    compileOnly("io.netty:netty-codec-http:${rootProject.properties["netty_version"]}")
     // Cache
     compileOnly("com.github.ben-manes.caffeine:caffeine:${rootProject.properties["caffeine_version"]}")
     // Compression
@@ -51,13 +57,12 @@ dependencies {
     compileOnly("com.mojang:datafixerupper:${rootProject.properties["datafixerupper_version"]}")
     // Aho-Corasick java implementation
     compileOnly("org.ahocorasick:ahocorasick:${rootProject.properties["ahocorasick_version"]}")
-    // Amazon S3
-    compileOnly("software.amazon.awssdk:s3:${rootProject.properties["amazon_awssdk_version"]}") {
-
-    }
-    compileOnly("software.amazon.awssdk:netty-nio-client:${rootProject.properties["amazon_awssdk_version"]}")
     // EvalEx
     compileOnly("com.ezylang:EvalEx:${rootProject.properties["evalex_version"]}")
+    // Jimfs
+    compileOnly("com.google.jimfs:jimfs:${rootProject.properties["jimfs_version"]}")
+    // S3
+    implementation("net.momirealms:craft-engine-s3:0.1")
 }
 
 java {
@@ -90,6 +95,8 @@ tasks {
         relocate("software.amazon.awssdk", "net.momirealms.craftengine.libraries.awssdk") // awssdk
         relocate("software.amazon.eventstream", "net.momirealms.craftengine.libraries.eventstream") // awssdk
         relocate("com.ezylang.evalex", "net.momirealms.craftengine.libraries.evalex")
+        relocate("com.google.common.jimfs", "net.momirealms.craftengine.libraries.jimfs")
+        relocate("org.apache.commons.imaging", "net.momirealms.craftengine.libraries.imaging")
     }
 }
 

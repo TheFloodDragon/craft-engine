@@ -4,7 +4,6 @@ import net.momirealms.craftengine.core.item.ComponentKeys;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.item.ItemBuildContext;
 import net.momirealms.craftengine.core.item.NetworkItemHandler;
-import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.util.AdventureHelper;
 import net.momirealms.craftengine.core.util.VersionHelper;
 import net.momirealms.sparrow.nbt.CompoundTag;
@@ -16,7 +15,7 @@ public class LoreModifier<I> implements ItemDataModifier<I> {
     private final List<String> argument;
 
     public LoreModifier(List<String> argument) {
-        this.argument = Config.nonItalic() ? argument.stream().map(it -> "<!i>" + it).toList() : argument;
+        this.argument = argument;
     }
 
     @Override
@@ -26,8 +25,7 @@ public class LoreModifier<I> implements ItemDataModifier<I> {
 
     @Override
     public void apply(Item<I> item, ItemBuildContext context) {
-        item.loreComponent(this.argument.stream().map(it -> AdventureHelper.miniMessage().deserialize(
-                it, context.tagResolvers())).toList());
+        item.loreComponent(this.argument.stream().map(it -> AdventureHelper.miniMessage().deserialize(it, context.tagResolvers())).toList());
     }
 
     @Override

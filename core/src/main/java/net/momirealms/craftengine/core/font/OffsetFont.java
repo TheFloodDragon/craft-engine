@@ -3,13 +3,17 @@ package net.momirealms.craftengine.core.font;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import dev.dejvokep.boostedyaml.block.implementation.Section;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.core.util.CharacterUtils;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 public class OffsetFont {
     private final String font;
+    private final Key fontKey;
 
     private final String NEG_16;
     private final String NEG_24;
@@ -37,6 +41,7 @@ public class OffsetFont {
 
     public OffsetFont(Section section) {
         font = section.getString("font", "minecraft:default");
+        fontKey = Key.key(font);
 
         NEG_16 = convertIfUnicode(section.getString("-16", ""));
         NEG_24 = convertIfUnicode(section.getString("-24", ""));
@@ -59,16 +64,14 @@ public class OffsetFont {
         }
     }
 
+    public Component createOffset(int offset) {
+        if (offset == 0) return Component.empty();
+        return Component.text(Objects.requireNonNull(this.fastLookup.get(offset, k -> k > 0 ? createPos(k) : createNeg(-k)))).font(this.fontKey);
+    }
+
     public String createOffset(int offset, BiFunction<String, String, String> tagDecorator) {
         if (offset == 0) return "";
-        String raw = fastLookup.get(offset, k -> {
-            if (k > 0) {
-                return createPos(k);
-            } else {
-                return createNeg(-k);
-            }
-        });
-        return tagDecorator.apply(raw, font);
+        return tagDecorator.apply(this.fastLookup.get(offset, k -> k > 0 ? createPos(k) : createNeg(-k)), this.font);
     }
 
     @SuppressWarnings("DuplicatedCode")

@@ -22,18 +22,13 @@ import net.momirealms.craftengine.core.plugin.logger.filter.DisconnectLogFilter;
 import net.momirealms.craftengine.core.util.AdventureHelper;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
-import net.momirealms.craftengine.core.util.ReflectionUtils;
 import net.momirealms.craftengine.core.world.InjectionTarget;
 import net.momirealms.craftengine.core.world.chunk.storage.CompressionMethod;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,6 +38,8 @@ public class Config {
     private final Path configFilePath;
     private final String configVersion;
     private YamlDocument config;
+    private long lastModified;
+    private long size;
 
     protected boolean firstTime = true;
     protected boolean debug;
@@ -90,7 +87,8 @@ public class Config {
     protected Path resource_pack$delivery$file_to_upload;
     protected Component resource_pack$send$prompt;
 
-    protected int performance$max_block_chain_update_limit;
+    protected int performance$max_note_block_chain_update_limit;
+    protected int performance$max_tripwire_chain_update_limit;
     protected int performance$max_emojis_per_parse;
 
     protected boolean light_system$force_update_light;
@@ -155,48 +153,63 @@ public class Config {
     }
 
     public void load() {
-        if (Files.exists(this.configFilePath)) {
-            this.config = this.loadYamlData(this.configFilePath.toFile());
-            String configVersion = config.getString("config-version");
-            if (configVersion.equals(this.configVersion)) {
-                loadSettings();
-                return;
-            }
+        // 文件不存在，则保存
+        if (!Files.exists(this.configFilePath)) {
+            this.plugin.saveResource("config.yml");
         }
-        this.updateConfigVersion();
-        loadSettings();
+        try {
+            BasicFileAttributes attributes = Files.readAttributes(this.configFilePath, BasicFileAttributes.class);
+            long lastModified = attributes.lastModifiedTime().toMillis();
+            long size = attributes.size();
+            if (lastModified != this.lastModified || size != this.size || this.config == null) {
+                byte[] configFileBytes = Files.readAllBytes(this.configFilePath);
+                try (InputStream inputStream = new ByteArrayInputStream(configFileBytes)) {
+                    this.config = YamlDocument.create(inputStream);
+                    String configVersion = this.config.getString("config-version");
+                    if (!configVersion.equals(this.configVersion)) {
+                        this.updateConfigVersion(configFileBytes);
+                    }
+                }
+                // 加载配置文件
+                this.loadSettings();
+                this.lastModified = lastModified;
+                this.size = size;
+            }
+        } catch (IOException e) {
+            this.plugin.logger().severe("Failed to load config.yml", e);
+        }
     }
 
-    private void updateConfigVersion() {
-        this.config = this.loadYamlConfig(
-                "config.yml",
-                GeneralSettings.builder()
-                        .setRouteSeparator('.')
-                        .setUseDefaults(false)
-                        .build(),
-                LoaderSettings
-                        .builder()
-                        .setAutoUpdate(true)
-                        .build(),
-                DumperSettings.builder()
-                        .setEscapeUnprintable(false)
-                        .setScalarFormatter((tag, value, role, def) -> {
-                            if (role == NodeRole.KEY) {
-                                return ScalarStyle.PLAIN;
-                            } else {
-                                return tag == Tag.STR ? ScalarStyle.DOUBLE_QUOTED : ScalarStyle.PLAIN;
-                            }
-                        })
-                        .build(),
-                UpdaterSettings
-                        .builder()
-                        .setVersioning(new BasicVersioning("config-version"))
-                        .build()
-        );
+    private void updateConfigVersion(byte[] bytes) throws IOException {
+        try (InputStream inputStream = new ByteArrayInputStream(bytes)) {
+            this.config = YamlDocument.create(inputStream, this.plugin.resourceStream("config.yml"), GeneralSettings.builder()
+                            .setRouteSeparator('.')
+                            .setUseDefaults(false)
+                            .build(),
+                    LoaderSettings
+                            .builder()
+                            .setAutoUpdate(true)
+                            .build(),
+                    DumperSettings.builder()
+                            .setEscapeUnprintable(false)
+                            .setScalarFormatter((tag, value, role, def) -> {
+                                if (role == NodeRole.KEY) {
+                                    return ScalarStyle.PLAIN;
+                                } else {
+                                    return tag == Tag.STR ? ScalarStyle.DOUBLE_QUOTED : ScalarStyle.PLAIN;
+                                }
+                            })
+                            .build(),
+                    UpdaterSettings
+                            .builder()
+                            .setVersioning(new BasicVersioning("config-version"))
+                            .addIgnoredRoute(PluginProperties.getValue("config"), "resource-pack.delivery.hosting", '.')
+                            .build());
+        }
         try {
-            config.save(new File(plugin.dataFolderFile(), "config.yml"));
+            this.config.save(new File(plugin.dataFolderFile(), "config.yml"));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            this.plugin.logger().warn("Could not save config.yml", e);
         }
     }
 
@@ -264,7 +277,8 @@ public class Config {
         item$non_italic_tag = config.getBoolean("item.non-italic-tag", false);
 
         // performance
-        performance$max_block_chain_update_limit = config.getInt("performance.max-block-chain-update-limit", 64);
+        performance$max_note_block_chain_update_limit = config.getInt("performance.max-note-block-chain-update-limit", 64);
+        performance$max_tripwire_chain_update_limit = config.getInt("performance.max-tripwire-chain-update-limit", 128);
         performance$max_emojis_per_parse = config.getInt("performance.max-emojis-per-parse", 32);
 
         // light
@@ -341,17 +355,6 @@ public class Config {
         emoji$book = config.getBoolean("emoji.book", true);
         emoji$sign = config.getBoolean("emoji.sign", true);
 
-        Class<?> modClazz = ReflectionUtils.getClazz(CraftEngine.MOD_CLASS);
-        if (modClazz != null) {
-            Method setMaxChainMethod = ReflectionUtils.getStaticMethod(modClazz, void.class, new String[] {"setMaxChainUpdate"}, int.class);
-            try {
-                assert setMaxChainMethod != null;
-                setMaxChainMethod.invoke(null, performance$max_block_chain_update_limit);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                plugin.logger().warn("Failed to set max chain update", e);
-            }
-        }
-
         firstTime = false;
     }
 
@@ -390,8 +393,8 @@ public class Config {
         return instance.resource_pack$override_uniform_font;
     }
 
-    public static int maxChainUpdate() {
-        return instance.performance$max_block_chain_update_limit;
+    public static int maxNoteBlockChainUpdate() {
+        return instance.performance$max_note_block_chain_update_limit;
     }
 
     public static int maxEmojisPerParse() {
@@ -727,11 +730,11 @@ public class Config {
     }
 
     public YamlDocument loadOrCreateYamlData(String fileName) {
-        File file = new File(this.plugin.dataFolderFile(), fileName);
-        if (!file.exists()) {
+        Path path = this.plugin.dataFolderPath().resolve(fileName);
+        if (!Files.exists(path)) {
             this.plugin.saveResource(fileName);
         }
-        return this.loadYamlData(file);
+        return this.loadYamlData(path);
     }
 
     public YamlDocument loadYamlConfig(String filePath, GeneralSettings generalSettings, LoaderSettings loaderSettings, DumperSettings dumperSettings, UpdaterSettings updaterSettings) {
@@ -743,8 +746,8 @@ public class Config {
         }
     }
 
-    public YamlDocument loadYamlData(File file) {
-        try (InputStream inputStream = new FileInputStream(file)) {
+    public YamlDocument loadYamlData(Path file) {
+        try (InputStream inputStream = Files.newInputStream(file)) {
             return YamlDocument.create(inputStream);
         } catch (IOException e) {
             this.plugin.logger().severe("Failed to load config " + file, e);

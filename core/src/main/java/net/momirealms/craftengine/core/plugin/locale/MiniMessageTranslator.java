@@ -21,9 +21,5 @@ public interface MiniMessageTranslator extends Translator, Examinable {
         return renderer().render(component, locale);
     }
 
-    @NotNull Iterable<? extends Translator> sources();
-
-    boolean addSource(final @NotNull Translator source);
-
-    boolean removeSource(final @NotNull Translator source);
+    boolean setSource(final @NotNull Translator source);
 }

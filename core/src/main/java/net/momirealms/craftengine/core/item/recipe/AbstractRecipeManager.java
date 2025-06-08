@@ -27,7 +27,8 @@ public abstract class AbstractRecipeManager<T> implements RecipeManager<T> {
     protected final Map<Key, List<Recipe<T>>> byIngredient = new HashMap<>();
     protected final Set<Key> dataPackRecipes = new HashSet<>();
     protected final Set<Key> customRecipes = new HashSet<>();
-    private final RecipeParser recipeParser;
+    protected final RecipeParser recipeParser;
+    protected boolean isReloading;
 
     public AbstractRecipeManager() {
         this.recipeReader = initVanillaRecipeReader();
@@ -72,37 +73,44 @@ public abstract class AbstractRecipeManager<T> implements RecipeManager<T> {
 
     @Override
     public boolean isDataPackRecipe(Key key) {
+        if (this.isReloading) return false;
         return this.dataPackRecipes.contains(key);
     }
 
     @Override
     public boolean isCustomRecipe(Key key) {
+        if (this.isReloading) return false;
         return this.byId.containsKey(key);
     }
 
     @Override
     public Optional<Recipe<T>> recipeById(Key key) {
+        if (this.isReloading) return Optional.empty();
         return Optional.ofNullable(this.byId.get(key));
     }
 
     @Override
     public List<Recipe<T>> recipesByType(Key type) {
+        if (this.isReloading) return List.of();
         return this.byType.getOrDefault(type, List.of());
     }
 
     @Override
     public List<Recipe<T>> recipeByResult(Key result) {
+        if (this.isReloading) return List.of();
         return this.byResult.getOrDefault(result, List.of());
     }
 
     @Override
     public List<Recipe<T>> recipeByIngredient(Key ingredient) {
+        if (this.isReloading) return List.of();
         return this.byIngredient.getOrDefault(ingredient, List.of());
     }
 
     @Nullable
     @Override
     public Recipe<T> recipeByInput(Key type, RecipeInput input) {
+        if (this.isReloading) return null;
         List<Recipe<T>> recipes = this.byType.get(type);
         if (recipes == null) return null;
         for (Recipe<T> recipe : recipes) {
@@ -116,8 +124,9 @@ public abstract class AbstractRecipeManager<T> implements RecipeManager<T> {
     @Nullable
     @Override
     public Recipe<T> recipeByInput(Key type, RecipeInput input, Key lastRecipe) {
+        if (this.isReloading) return null;
         if (lastRecipe != null) {
-            Recipe<T> last = byId.get(lastRecipe);
+            Recipe<T> last = this.byId.get(lastRecipe);
             if (last != null && last.matches(input)) {
                 return last;
             }

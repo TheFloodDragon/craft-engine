@@ -59,6 +59,8 @@ public class ImageExpansion extends PlaceholderExpansion {
         int codepoint;
         if (param.length == 4) {
             codepoint = image.codepointAt(Integer.parseInt(param[2]), Integer.parseInt(param[3]));
+        } else if (param.length == 3) {
+            codepoint = image.codepointAt(Integer.parseInt(param[2]), 0);
         } else if (param.length == 2) {
             codepoint = image.codepointAt(0,0);
         } else {

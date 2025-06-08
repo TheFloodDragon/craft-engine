@@ -15,6 +15,7 @@ public class TemplateArguments {
     public static final Key MAP = Key.of("craftengine:map");
     public static final Key LIST = Key.of("craftengine:list");
     public static final Key NULL = Key.of("craftengine:null");
+    public static final Key EXPRESSION = Key.of("craftengine:expression");
     public static final Key OBJECT = Key.of("craftengine:object"); // No Factory, internal use
 
     public static void register(Key key, TemplateArgumentFactory factory) {
@@ -29,6 +30,7 @@ public class TemplateArguments {
         register(MAP, MapTemplateArgument.FACTORY);
         register(LIST, ListTemplateArgument.FACTORY);
         register(NULL, NullTemplateArgument.FACTORY);
+        register(EXPRESSION, ExpressionTemplateArgument.FACTORY);
     }
 
     public static TemplateArgument fromMap(Map<String, Object> map) {

@@ -3,6 +3,7 @@ package net.momirealms.craftengine.core.item;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.item.behavior.ItemBehaviors;
 import net.momirealms.craftengine.core.item.modifier.*;
+import net.momirealms.craftengine.core.item.setting.EquipmentData;
 import net.momirealms.craftengine.core.pack.LoadingSequence;
 import net.momirealms.craftengine.core.pack.Pack;
 import net.momirealms.craftengine.core.pack.ResourceLocation;
@@ -16,6 +17,8 @@ import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.plugin.config.ConfigParser;
 import net.momirealms.craftengine.core.plugin.context.event.EventFunctions;
+import net.momirealms.craftengine.core.plugin.context.text.TextProvider;
+import net.momirealms.craftengine.core.plugin.context.text.TextProviders;
 import net.momirealms.craftengine.core.plugin.locale.LocalizedResourceConfigException;
 import net.momirealms.craftengine.core.plugin.locale.TranslationManager;
 import net.momirealms.craftengine.core.registry.BuiltInRegistries;
@@ -437,17 +440,25 @@ public abstract class AbstractItemManager<I> extends AbstractModelGenerator impl
         }, "external");
         registerDataFunction((obj) -> {
             String name = obj.toString();
-            return new CustomNameModifier<>(name);
+            return new CustomNameModifier<>(Config.nonItalic() ? "<!i>" + name : name);
         }, "custom-name");
         registerDataFunction((obj) -> {
             String name = obj.toString();
-            return new ItemNameModifier<>(name);
+            return new ItemNameModifier<>(Config.nonItalic() ? "<!i>" + name : name);
         }, "item-name", "display-name");
-
         registerDataFunction((obj) -> {
-            List<String> name = MiscUtils.getAsStringList(obj);
-            return new LoreModifier<>(name);
+            List<String> lore = MiscUtils.getAsStringList(obj).stream().map(it -> "<!i>" + it).toList();
+            return new LoreModifier<>(lore);
         }, "lore", "display-lore", "description");
+        registerDataFunction((obj) -> {
+            Map<String, List<String>> dynamicLore = new LinkedHashMap<>();
+            if (obj instanceof Map<?, ?> map) {
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    dynamicLore.put(entry.getKey().toString(), MiscUtils.getAsStringList(entry.getValue()));
+                }
+            }
+            return new DynamicLoreModifier<>(dynamicLore);
+        }, "dynamic-lore");
         registerDataFunction((obj) -> {
             Map<String, Object> data = MiscUtils.castToMap(obj, false);
             return new TagsModifier<>(data);
@@ -481,6 +492,12 @@ public abstract class AbstractItemManager<I> extends AbstractModelGenerator impl
                 List<String> data = MiscUtils.getAsStringList(obj);
                 return new RemoveComponentModifier<>(data);
             }, "remove-components", "remove-component");
+            registerDataFunction((obj) -> {
+               Map<String, Object> data = MiscUtils.castToMap(obj, false);
+                int nutrition = ResourceConfigUtils.getAsInt(data.get("nutrition"), "nutrition");
+                float saturation = ResourceConfigUtils.getAsFloat(data.get("saturation"), "saturation");
+                return new FoodModifier<>(nutrition, saturation, (boolean) data.getOrDefault("can-always-eat", false));
+            }, "food");
         }
         if (VersionHelper.isOrAbove1_21()) {
             registerDataFunction((obj) -> {
@@ -500,6 +517,14 @@ public abstract class AbstractItemManager<I> extends AbstractModelGenerator impl
                 return new EquippableModifier<>(EquipmentData.fromMap(data));
             }, "equippable");
         }
+        registerDataFunction((obj) -> {
+            Map<String, Object> data = MiscUtils.castToMap(obj, false);
+            Map<String, TextProvider> arguments = new HashMap<>();
+            for (Map.Entry<String, Object> entry : data.entrySet()) {
+                arguments.put(entry.getKey(), TextProviders.fromString(entry.getValue().toString()));
+            }
+            return new ArgumentModifier<>(arguments);
+        }, "args", "argument", "arguments");
     }
 
     protected void processModelRecursively(

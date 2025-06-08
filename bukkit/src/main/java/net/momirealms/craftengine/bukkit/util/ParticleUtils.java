@@ -1,6 +1,8 @@
 package net.momirealms.craftengine.bukkit.util;
 
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MBuiltInRegistries;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.context.Context;
 import net.momirealms.craftengine.core.util.Key;
@@ -37,7 +39,7 @@ public final class ParticleUtils {
     public static Particle getParticle(Key particle) {
         return CACHE.computeIfAbsent(particle, k -> {
             try {
-                Object nmsParticle = Reflections.method$Registry$get.invoke(Reflections.instance$BuiltInRegistries$PARTICLE_TYPE, KeyUtils.toResourceLocation(particle));
+                Object nmsParticle = CoreReflections.method$Registry$get.invoke(MBuiltInRegistries.PARTICLE_TYPE, KeyUtils.toResourceLocation(particle));
                 if (nmsParticle == null) return null;
                 return FastNMS.INSTANCE.method$CraftParticle$toBukkit(nmsParticle);
             } catch (ReflectiveOperationException e) {

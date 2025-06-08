@@ -19,9 +19,9 @@ public class SelfIncreaseIntTemplateArgument implements TemplateArgument {
     }
 
     @Override
-    public String get() {
-        String value = String.valueOf(current);
-        if (current < max) current += 1;
+    public String get(Map<String, TemplateArgument> arguments) {
+        String value = String.valueOf(this.current);
+        if (this.current < this.max) this.current += 1;
         return value;
     }
 
@@ -31,15 +31,15 @@ public class SelfIncreaseIntTemplateArgument implements TemplateArgument {
     }
 
     public int current() {
-        return current;
+        return this.current;
     }
 
     public int min() {
-        return min;
+        return this.min;
     }
 
     public int max() {
-        return max;
+        return this.max;
     }
 
     public static class Factory implements TemplateArgumentFactory {

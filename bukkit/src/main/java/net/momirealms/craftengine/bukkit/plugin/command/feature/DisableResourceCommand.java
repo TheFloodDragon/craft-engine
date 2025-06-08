@@ -53,7 +53,7 @@ public class DisableResourceCommand extends BukkitCommandFeature<CommandSender> 
                             return;
                         }
                     }
-                    YamlDocument document = plugin().config().loadYamlData(packMetaPath.toFile());
+                    YamlDocument document = plugin().config().loadYamlData(packMetaPath);
                     document.set("enable", false);
                     try {
                         document.save(packMetaPath.toFile());

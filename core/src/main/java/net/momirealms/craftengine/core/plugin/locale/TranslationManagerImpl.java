@@ -9,26 +9,28 @@ import net.momirealms.craftengine.core.plugin.Plugin;
 import net.momirealms.craftengine.core.plugin.PluginProperties;
 import net.momirealms.craftengine.core.plugin.config.ConfigParser;
 import net.momirealms.craftengine.core.plugin.config.StringKeyConstructor;
+import net.momirealms.craftengine.core.plugin.config.TranslationConfigConstructor;
 import net.momirealms.craftengine.core.plugin.text.minimessage.IndexedArgumentTag;
 import net.momirealms.craftengine.core.util.AdventureHelper;
-import net.momirealms.craftengine.core.util.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.representer.Representer;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class TranslationManagerImpl implements TranslationManager {
     private static final Locale DEFAULT_LOCALE = Locale.ENGLISH;
@@ -38,13 +40,14 @@ public class TranslationManagerImpl implements TranslationManager {
     private final Path translationsDirectory;
     private final String langVersion;
     private final String[] supportedLanguages;
-    private final Map<String, Object> translationFallback = new LinkedHashMap<>();
+    private final Map<String, String> translationFallback = new LinkedHashMap<>();
     private Locale forcedLocale = null;
     private Locale selectedLocale = DEFAULT_LOCALE;
     private MiniMessageTranslationRegistry registry;
     private final Map<String, I18NData> clientLangData = new HashMap<>();
     private final LangParser langParser;
     private final I18NParser i18nParser;
+    private Map<String, CachedTranslation> cachedTranslations = Map.of();
 
     public TranslationManagerImpl(Plugin plugin) {
         instance = this;
@@ -54,7 +57,7 @@ public class TranslationManagerImpl implements TranslationManager {
         this.supportedLanguages = PluginProperties.getValue("supported-languages").split(",");
         this.langParser = new LangParser();
         this.i18nParser = new I18NParser();
-        Yaml yaml = new Yaml(new StringKeyConstructor(new LoaderOptions()));
+        Yaml yaml = new Yaml(new TranslationConfigConstructor(new LoaderOptions()));
         try (InputStream is = plugin.resourceStream("translations/en.yml")) {
             this.translationFallback.putAll(yaml.load(is));
         } catch (IOException e) {
@@ -81,12 +84,7 @@ public class TranslationManagerImpl implements TranslationManager {
     public void reload() {
         // clear old data
         this.clientLangData.clear();
-
-        // remove any previous registry
-        if (this.registry != null) {
-            MiniMessageTranslator.translator().removeSource(this.registry);
-            this.installed.clear();
-        }
+        this.installed.clear();
 
         // save resources
         for (String lang : this.supportedLanguages) {
@@ -95,8 +93,10 @@ public class TranslationManagerImpl implements TranslationManager {
 
         this.registry = MiniMessageTranslationRegistry.create(Key.key(net.momirealms.craftengine.core.util.Key.DEFAULT_NAMESPACE, "main"), AdventureHelper.miniMessage());
         this.registry.defaultLocale(DEFAULT_LOCALE);
-        this.loadFromFileSystem(this.translationsDirectory, false);
-        MiniMessageTranslator.translator().addSource(this.registry);
+
+        this.loadFromFileSystem(this.translationsDirectory);
+        this.loadFromCache();
+        MiniMessageTranslator.translator().setSource(this.registry);
         this.setSelectedLocale();
     }
 
@@ -138,89 +138,65 @@ public class TranslationManagerImpl implements TranslationManager {
         return MiniMessageTranslator.render(component, locale);
     }
 
-    public void loadFromFileSystem(Path directory, boolean suppressDuplicatesError) {
-        List<Path> translationFiles;
-        try (Stream<Path> stream = Files.list(directory)) {
-            translationFiles = stream.filter(TranslationManagerImpl::isTranslationFile).collect(Collectors.toList());
-        } catch (IOException e) {
-            translationFiles = Collections.emptyList();
-        }
-
-        if (translationFiles.isEmpty()) {
-            return;
-        }
-
-        Map<Locale, Map<String, String>> loaded = new HashMap<>();
-        for (Path translationFile : translationFiles) {
-            try {
-                Pair<Locale, Map<String, String>> result = loadTranslationFile(translationFile);
-                loaded.put(result.left(), result.right());
-            } catch (Exception e) {
-                if (!suppressDuplicatesError || !isAdventureDuplicatesException(e)) {
-                    this.plugin.logger().warn("Error loading locale file: " + translationFile.getFileName(), e);
-                }
+    private void loadFromCache() {
+        for (Map.Entry<String, CachedTranslation> entry : this.cachedTranslations.entrySet()) {
+            Locale locale = TranslationManager.parseLocale(entry.getKey());
+            if (locale == null) {
+                this.plugin.logger().warn("Unknown locale '" + entry.getKey() + "' - unable to register.");
+                continue;
             }
-        }
-
-        // try registering the locale without a country code - if we don't already have a registration for that
-        loaded.forEach((locale, bundle) -> {
+            Map<String, String> translations = entry.getValue().translations();
+            this.registry.registerAll(locale, translations);
+            this.installed.add(locale);
             Locale localeWithoutCountry = Locale.of(locale.getLanguage());
             if (!locale.equals(localeWithoutCountry) && !localeWithoutCountry.equals(DEFAULT_LOCALE) && this.installed.add(localeWithoutCountry)) {
                 try {
-                    this.registry.registerAll(localeWithoutCountry, bundle);
+                    this.registry.registerAll(localeWithoutCountry, translations);
                 } catch (IllegalArgumentException e) {
                     // ignore
                 }
             }
-        });
-    }
-
-    public static boolean isTranslationFile(Path path) {
-        return path.getFileName().toString().endsWith(".yml");
-    }
-
-    private static boolean isAdventureDuplicatesException(Exception e) {
-        return e instanceof IllegalArgumentException && (e.getMessage().startsWith("Invalid key") || e.getMessage().startsWith("Translation already exists"));
-    }
-
-    @SuppressWarnings("unchecked")
-    private Pair<Locale, Map<String, String>> loadTranslationFile(Path translationFile) {
-        String fileName = translationFile.getFileName().toString();
-        String localeString = fileName.substring(0, fileName.length() - ".yml".length());
-        Locale locale = TranslationManager.parseLocale(localeString);
-        if (locale == null) {
-            throw new IllegalStateException("Unknown locale '" + localeString + "' - unable to register.");
         }
+    }
 
-        Map<String, String> bundle = new HashMap<>();
-        Yaml yaml = new Yaml(new StringKeyConstructor(new LoaderOptions()));
-        try (InputStreamReader inputStream = new InputStreamReader(new FileInputStream(translationFile.toFile()), StandardCharsets.UTF_8)) {
-            Map<String, Object> map = yaml.load(inputStream);
-            String langVersion = map.getOrDefault("lang-version", "").toString();
-            if (!langVersion.equals(this.langVersion)) {
-                map = updateLangFile(map, translationFile);
-            }
-
-            for (Map.Entry<String, Object> entry : map.entrySet()) {
-                if (entry.getValue() instanceof String str) {
-                    bundle.put(entry.getKey(), str);
-                } else if (entry.getValue() instanceof List<?> list) {
-                    List<String> strList = (List<String>) list;
-                    StringJoiner stringJoiner = new StringJoiner("<reset><newline>");
-                    for (String str : strList) {
-                        stringJoiner.add(str);
+    public void loadFromFileSystem(Path directory) {
+        Map<String, CachedTranslation> previousTranslations = this.cachedTranslations;
+        this.cachedTranslations = new HashMap<>();
+        try {
+            Files.walkFileTree(directory, new SimpleFileVisitor<>() {
+                @Override
+                public @NotNull FileVisitResult visitFile(@NotNull Path path, @NotNull BasicFileAttributes attrs) {
+                    String fileName = path.getFileName().toString();
+                    if (Files.isRegularFile(path) && fileName.endsWith(".yml")) {
+                        String localeName = fileName.substring(0, fileName.length() - ".yml".length());
+                        CachedTranslation cachedFile = previousTranslations.get(localeName);
+                        long lastModifiedTime = attrs.lastModifiedTime().toMillis();
+                        long size = attrs.size();
+                        if (cachedFile != null && cachedFile.lastModified() == lastModifiedTime && cachedFile.size() == size) {
+                            TranslationManagerImpl.this.cachedTranslations.put(localeName, cachedFile);
+                        } else {
+                            try (InputStreamReader inputStream = new InputStreamReader(Files.newInputStream(path), StandardCharsets.UTF_8)) {
+                                Yaml yaml = new Yaml(new TranslationConfigConstructor(new LoaderOptions()));
+                                Map<String, String> data = yaml.load(inputStream);
+                                if (data == null) return FileVisitResult.CONTINUE;
+                                String langVersion = data.getOrDefault("lang-version", "");
+                                if (!langVersion.equals(TranslationManagerImpl.this.langVersion)) {
+                                    data = updateLangFile(data, path);
+                                }
+                                cachedFile = new CachedTranslation(data, lastModifiedTime, size);
+                                TranslationManagerImpl.this.cachedTranslations.put(localeName, cachedFile);
+                            } catch (IOException e) {
+                                TranslationManagerImpl.this.plugin.logger().severe("Error while reading translation file: " + path, e);
+                                return FileVisitResult.CONTINUE;
+                            }
+                        }
                     }
-                    bundle.put(entry.getKey(), stringJoiner.toString());
+                    return FileVisitResult.CONTINUE;
                 }
-            }
-
-            this.registry.registerAll(locale, bundle);
-            this.installed.add(locale);
+            });
         } catch (IOException e) {
-            this.plugin.logger().warn(translationFile, "Error loading translation file", e);
+            this.plugin.logger().warn("Failed to load translation file from folder", e);
         }
-
-        return Pair.of(locale, bundle);
     }
 
     @Override
@@ -230,7 +206,7 @@ public class TranslationManagerImpl implements TranslationManager {
         this.plugin.senderFactory().console().sendMessage(AdventureHelper.miniMessage().deserialize(translation, new IndexedArgumentTag(Arrays.stream(args).map(Component::text).toList())));
     }
 
-    private Map<String, Object> updateLangFile(Map<String, Object> previous, Path translationFile) throws IOException {
+    private Map<String, String> updateLangFile(Map<String, String> previous, Path translationFile) throws IOException {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         options.setPrettyFlow(true);
@@ -238,11 +214,12 @@ public class TranslationManagerImpl implements TranslationManager {
         options.setSplitLines(false);
         options.setDefaultScalarStyle(DumperOptions.ScalarStyle.DOUBLE_QUOTED);
         Yaml yaml = new Yaml(new StringKeyConstructor(new LoaderOptions()), new Representer(options), options);
-        LinkedHashMap<String, Object> newFileContents = new LinkedHashMap<>();
-        try (InputStream is = plugin.resourceStream("translations/" + translationFile.getFileName())) {
-            Map<String, Object> newMap = yaml.load(is);
+        LinkedHashMap<String, String> newFileContents = new LinkedHashMap<>();
+        try (InputStream is = this.plugin.resourceStream("translations/" + translationFile.getFileName())) {
+            Map<String, String> newMap = yaml.load(is);
             newFileContents.putAll(this.translationFallback);
             newFileContents.putAll(newMap);
+            // 思考是否值得特殊处理list类型的dump？似乎并没有这个必要。用户很少会使用list类型，且dump后只改变YAML结构而不影响游戏内效果。
             newFileContents.putAll(previous);
             newFileContents.put("lang-version", this.langVersion);
             String yamlString = yaml.dump(newFileContents);
@@ -331,5 +308,8 @@ public class TranslationManagerImpl implements TranslationManager {
                     ));
             TranslationManagerImpl.this.addClientTranslation(langId, sectionData);
         }
+    }
+
+    private record CachedTranslation(Map<String, String> translations, long lastModified, long size) {
     }
 }

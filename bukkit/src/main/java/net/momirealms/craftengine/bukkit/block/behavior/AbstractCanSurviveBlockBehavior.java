@@ -2,9 +2,10 @@ package net.momirealms.craftengine.bukkit.block.behavior;
 
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MBlocks;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
-import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.bukkit.world.BukkitWorld;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
@@ -64,7 +65,7 @@ public abstract class AbstractCanSurviveBlockBehavior extends BukkitBlockBehavio
     public void onPlace(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
         Object world = args[1];
         Object blockPos = args[2];
-        Reflections.method$LevelAccessor$scheduleTick.invoke(world, blockPos, thisBlock, 2);
+        CoreReflections.method$LevelAccessor$scheduleTick.invoke(world, blockPos, thisBlock, 2);
     }
 
     @Override
@@ -85,7 +86,7 @@ public abstract class AbstractCanSurviveBlockBehavior extends BukkitBlockBehavio
             return state;
         }
         if (this.delay != 0) {
-            Reflections.method$LevelAccessor$scheduleTick.invoke(level, blockPos, thisBlock, this.delay);
+            CoreReflections.method$LevelAccessor$scheduleTick.invoke(level, blockPos, thisBlock, this.delay);
             return state;
         }
         if (!canSurvive(thisBlock, new Object[] {state, level, blockPos}, () -> true)) {
@@ -99,7 +100,7 @@ public abstract class AbstractCanSurviveBlockBehavior extends BukkitBlockBehavio
             }
             world.playBlockSound(position, previousState.sounds().breakSound());
             FastNMS.INSTANCE.method$Level$levelEvent(level, WorldEvents.BLOCK_BREAK_EFFECT, blockPos, stateId);
-            return Reflections.method$Block$defaultBlockState.invoke(Reflections.instance$Blocks$AIR);
+            return CoreReflections.method$Block$defaultBlockState.invoke(MBlocks.AIR);
         }
         return state;
     }

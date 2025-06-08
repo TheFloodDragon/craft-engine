@@ -2,12 +2,12 @@ package net.momirealms.craftengine.bukkit.item.factory;
 
 import com.google.gson.JsonElement;
 import com.saicone.rtag.item.ItemTagStream;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.util.ItemTags;
-import net.momirealms.craftengine.bukkit.util.Reflections;
-import net.momirealms.craftengine.core.item.EquipmentData;
 import net.momirealms.craftengine.core.item.ItemFactory;
 import net.momirealms.craftengine.core.item.ItemWrapper;
 import net.momirealms.craftengine.core.item.JukeboxPlayable;
+import net.momirealms.craftengine.core.item.setting.EquipmentData;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.sparrow.nbt.Tag;
@@ -83,7 +83,7 @@ public abstract class BukkitItemFactory<W extends ItemWrapper<ItemStack>> extend
         Object literalObject = item.getLiteralObject();
         Object tag = ItemTags.getOrCreate(itemTag);
         try {
-            return (boolean) Reflections.method$ItemStack$isTag.invoke(literalObject, tag);
+            return (boolean) CoreReflections.method$ItemStack$isTag.invoke(literalObject, tag);
         } catch (ReflectiveOperationException e) {
             return false;
         }

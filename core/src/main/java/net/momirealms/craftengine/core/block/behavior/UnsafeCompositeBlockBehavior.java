@@ -1,11 +1,11 @@
 package net.momirealms.craftengine.core.block.behavior;
 
+import net.momirealms.craftengine.core.block.BlockBehavior;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.entity.player.InteractionResult;
 import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
 import net.momirealms.craftengine.core.item.context.UseOnContext;
-import net.momirealms.craftengine.shared.block.BlockBehavior;
 
 import java.util.List;
 import java.util.Optional;

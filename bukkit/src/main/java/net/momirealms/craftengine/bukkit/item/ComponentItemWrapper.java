@@ -5,7 +5,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
-import net.momirealms.craftengine.bukkit.util.Reflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MRegistryOps;
 import net.momirealms.craftengine.core.item.ItemWrapper;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.sparrow.nbt.Tag;
@@ -39,7 +40,7 @@ public class ComponentItemWrapper implements ItemWrapper<ItemStack> {
     public void setComponent(Object type, final Object value) {
         if (value instanceof JsonElement jsonElement) {
             setJsonComponent(type, jsonElement);
-        } else if (Reflections.clazz$Tag.isInstance(value)) {
+        } else if (CoreReflections.clazz$Tag.isInstance(value)) {
             setNBTComponent(type, value);
         } else if (value instanceof Tag tag) {
             setSparrowNBTComponent(type, tag);
@@ -53,19 +54,19 @@ public class ComponentItemWrapper implements ItemWrapper<ItemStack> {
     }
 
     public <T> Optional<T> getJavaComponent(Object type) {
-        return getComponentInternal(type, Reflections.instance$JAVA_OPS);
+        return getComponentInternal(type, MRegistryOps.JAVA);
     }
 
     public Optional<JsonElement> getJsonComponent(Object type) {
-        return getComponentInternal(type, Reflections.instance$JSON_OPS);
+        return getComponentInternal(type, MRegistryOps.JSON);
     }
 
     public Optional<Object> getNBTComponent(Object type) {
-        return getComponentInternal(type, Reflections.instance$NBT_OPS);
+        return getComponentInternal(type, MRegistryOps.NBT);
     }
 
     public Optional<Tag> getSparrowNBTComponent(Object type) {
-        return getComponentInternal(type, Reflections.instance$SPARROW_NBT_OPS);
+        return getComponentInternal(type, MRegistryOps.SPARROW_NBT);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -91,19 +92,19 @@ public class ComponentItemWrapper implements ItemWrapper<ItemStack> {
     }
 
     public void setJavaComponent(Object type, Object value) {
-        setComponentInternal(type, Reflections.instance$JAVA_OPS, value);
+        setComponentInternal(type, MRegistryOps.JAVA, value);
     }
 
     public void setJsonComponent(Object type, JsonElement value) {
-        setComponentInternal(type, Reflections.instance$JSON_OPS, value);
+        setComponentInternal(type, MRegistryOps.JSON, value);
     }
 
     public void setNBTComponent(Object type, Object value) {
-       setComponentInternal(type, Reflections.instance$NBT_OPS, value);
+       setComponentInternal(type, MRegistryOps.NBT, value);
     }
 
     public void setSparrowNBTComponent(Object type, Tag value) {
-        setComponentInternal(type, Reflections.instance$SPARROW_NBT_OPS, value);
+        setComponentInternal(type, MRegistryOps.SPARROW_NBT, value);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -123,8 +124,7 @@ public class ComponentItemWrapper implements ItemWrapper<ItemStack> {
     }
 
     private Object ensureDataComponentType(Object type) {
-        assert Reflections.clazz$DataComponentType != null;
-        if (!Reflections.clazz$DataComponentType.isInstance(type)) {
+        if (!CoreReflections.clazz$DataComponentType.isInstance(type)) {
             Key key = Key.of(type.toString());
             return FastNMS.INSTANCE.getComponentType(key.namespace(), key.value());
         }

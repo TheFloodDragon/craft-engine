@@ -11,17 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.text.MessageFormat;
-import java.util.Collections;
 import java.util.Locale;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 public class MiniMessageTranslatorImpl implements MiniMessageTranslator {
     private static final Key NAME = Key.key(net.momirealms.craftengine.core.util.Key.DEFAULT_NAMESPACE, "main");
     static final MiniMessageTranslatorImpl INSTANCE = new MiniMessageTranslatorImpl();
-    final TranslatableComponentRenderer<Locale> renderer = TranslatableComponentRenderer.usingTranslationSource(this);
-    private final Set<Translator> sources = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    protected final TranslatableComponentRenderer<Locale> renderer = TranslatableComponentRenderer.usingTranslationSource(this);
+    private Translator source;
 
     @Override
     public @NotNull Key name() {
@@ -30,7 +27,7 @@ public class MiniMessageTranslatorImpl implements MiniMessageTranslator {
 
     @Override
     public @NotNull TriState hasAnyTranslations() {
-        if (!this.sources.isEmpty()) {
+        if (this.source != null) {
             return TriState.TRUE;
         }
         return TriState.FALSE;
@@ -44,33 +41,20 @@ public class MiniMessageTranslatorImpl implements MiniMessageTranslator {
 
     @Override
     public @Nullable Component translate(@NotNull TranslatableComponent component, @NotNull Locale locale) {
-        for (final Translator source : this.sources) {
-            final Component translation = source.translate(component, locale);
-            if (translation != null) {
-                return translation;
-            }
+        if (this.source != null) {
+            return this.source.translate(component, locale);
         }
         return null;
     }
 
     @Override
-    public @NotNull Iterable<? extends Translator> sources() {
-        return Collections.unmodifiableSet(this.sources);
-    }
-
-    @Override
-    public boolean addSource(final @NotNull Translator source) {
-        if (source == this) throw new IllegalArgumentException("MiniMessageTranslationSource");
-        return this.sources.add(source);
-    }
-
-    @Override
-    public boolean removeSource(final @NotNull Translator source) {
-        return this.sources.remove(source);
+    public boolean setSource(@NotNull Translator source) {
+        this.source = source;
+        return true;
     }
 
     @Override
     public @NotNull Stream<? extends ExaminableProperty> examinableProperties() {
-        return Stream.of(ExaminableProperty.of("sources", this.sources));
+        return Stream.of(ExaminableProperty.of("source", this.source));
     }
 }

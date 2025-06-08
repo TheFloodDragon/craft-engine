@@ -2,23 +2,25 @@ package net.momirealms.craftengine.bukkit.block.behavior;
 
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MBlocks;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MFluids;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
-import net.momirealms.craftengine.bukkit.util.Reflections;
+import net.momirealms.craftengine.core.block.BlockBehavior;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
 import net.momirealms.craftengine.core.util.MiscUtils;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 import net.momirealms.craftengine.core.world.BlockPos;
-import net.momirealms.craftengine.shared.block.BlockBehavior;
 
 import java.util.List;
 import java.util.Map;
 
 public class NearLiquidBlockBehavior extends AbstractCanSurviveBlockBehavior {
-    private static final List<Object> WATER = List.of(Reflections.instance$Fluids$WATER, Reflections.instance$Fluids$FLOWING_WATER);
-    private static final List<Object> LAVA = List.of(Reflections.instance$Fluids$LAVA, Reflections.instance$Fluids$FLOWING_LAVA);
+    private static final List<Object> WATER = List.of(MFluids.instance$Fluids$WATER, MFluids.instance$Fluids$FLOWING_WATER);
+    private static final List<Object> LAVA = List.of(MFluids.instance$Fluids$LAVA, MFluids.instance$Fluids$FLOWING_LAVA);
     public static final Factory FACTORY = new Factory();
     private final boolean onWater;
     private final boolean onLava;
@@ -88,15 +90,15 @@ public class NearLiquidBlockBehavior extends AbstractCanSurviveBlockBehavior {
     }
 
     protected boolean mayPlaceOn(Object belowState, Object world, Object belowPos) throws ReflectiveOperationException {
-        Object fluidState = Reflections.method$Level$getFluidState.invoke(world, belowPos);
-        Object fluidStateAbove = Reflections.method$Level$getFluidState.invoke(world, LocationUtils.above(belowPos));
-        if (Reflections.method$FluidState$getType.invoke(fluidStateAbove) != Reflections.instance$Fluids$EMPTY) {
+        Object fluidState = CoreReflections.method$Level$getFluidState.invoke(world, belowPos);
+        Object fluidStateAbove = CoreReflections.method$Level$getFluidState.invoke(world, LocationUtils.above(belowPos));
+        if (CoreReflections.method$FluidState$getType.invoke(fluidStateAbove) != MFluids.instance$Fluids$EMPTY) {
             return false;
         }
-        if (this.onWater && (WATER.contains(Reflections.method$FluidState$getType.invoke(fluidState)) || FastNMS.INSTANCE.method$BlockState$getBlock(belowState) == Reflections.instance$Blocks$ICE)) {
+        if (this.onWater && (WATER.contains(CoreReflections.method$FluidState$getType.invoke(fluidState)) || FastNMS.INSTANCE.method$BlockState$getBlock(belowState) == MBlocks.ICE)) {
             return true;
         }
-        if (this.onLava && LAVA.contains(Reflections.method$FluidState$getType.invoke(fluidState))) {
+        if (this.onLava && LAVA.contains(CoreReflections.method$FluidState$getType.invoke(fluidState))) {
             return true;
         }
         return false;

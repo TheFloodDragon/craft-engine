@@ -1,9 +1,13 @@
 package net.momirealms.craftengine.bukkit.block;
 
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MBlocks;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MFluids;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MRegistries;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.KeyUtils;
-import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.bukkit.util.SoundUtils;
 import net.momirealms.craftengine.core.block.*;
 import net.momirealms.craftengine.core.block.properties.Property;
@@ -15,12 +19,7 @@ import net.momirealms.craftengine.core.plugin.context.function.Function;
 import net.momirealms.craftengine.core.registry.BuiltInRegistries;
 import net.momirealms.craftengine.core.registry.Holder;
 import net.momirealms.craftengine.core.registry.WritableRegistry;
-import net.momirealms.craftengine.core.util.Key;
-import net.momirealms.craftengine.core.util.ResourceKey;
-import net.momirealms.craftengine.core.util.Tristate;
-import net.momirealms.craftengine.core.util.VersionHelper;
-import net.momirealms.craftengine.shared.ObjectHolder;
-import net.momirealms.craftengine.shared.block.BlockBehavior;
+import net.momirealms.craftengine.core.util.*;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -30,6 +29,8 @@ import java.lang.reflect.Field;
 import java.util.*;
 
 public class BukkitCustomBlock extends AbstractCustomBlock {
+    private static final Object ALWAYS_FALSE = FastNMS.INSTANCE.method$StatePredicate$always(false);
+    private static final Object ALWAYS_TRUE = FastNMS.INSTANCE.method$StatePredicate$always(true);
 
     protected BukkitCustomBlock(
             @NotNull Key id,
@@ -81,24 +82,24 @@ public class BukkitCustomBlock extends AbstractCustomBlock {
                     BlockStateUtils.setCanOcclude(mcBlockState, BlockStateUtils.isOcclude(state.vanillaBlockState().handle()));
                 }
                 if (settings.isRedstoneConductor() == Tristate.TRUE) {
-                    BlockStateUtils.setIsRedstoneConductor(mcBlockState, StatePredicate.alwaysTrue());
+                    BlockStateUtils.setIsRedstoneConductor(mcBlockState, ALWAYS_TRUE);
                 } else if (settings.isRedstoneConductor() == Tristate.FALSE) {
-                    BlockStateUtils.setIsRedstoneConductor(mcBlockState, StatePredicate.alwaysFalse());
+                    BlockStateUtils.setIsRedstoneConductor(mcBlockState, ALWAYS_FALSE);
                 }
                 if (settings.isSuffocating() == Tristate.TRUE) {
-                    BlockStateUtils.setIsSuffocating(mcBlockState, StatePredicate.alwaysTrue());
+                    BlockStateUtils.setIsSuffocating(mcBlockState, ALWAYS_TRUE);
                 } else if (settings.isSuffocating() == Tristate.FALSE) {
-                    BlockStateUtils.setIsSuffocating(mcBlockState, StatePredicate.alwaysFalse());
+                    BlockStateUtils.setIsSuffocating(mcBlockState, ALWAYS_FALSE);
                 }
                 if (settings.isViewBlocking() == Tristate.TRUE) {
-                    BlockStateUtils.setIsViewBlocking(mcBlockState, StatePredicate.alwaysTrue());
+                    BlockStateUtils.setIsViewBlocking(mcBlockState, ALWAYS_TRUE);
                 } else if (settings.isViewBlocking() == Tristate.FALSE) {
-                    BlockStateUtils.setIsViewBlocking(mcBlockState, StatePredicate.alwaysFalse());
+                    BlockStateUtils.setIsViewBlocking(mcBlockState, ALWAYS_FALSE);
                 } else {
                     if (settings.isSuffocating() == Tristate.TRUE) {
-                        BlockStateUtils.setIsViewBlocking(mcBlockState, StatePredicate.alwaysTrue());
+                        BlockStateUtils.setIsViewBlocking(mcBlockState, ALWAYS_TRUE);
                     } else if (settings.isSuffocating() == Tristate.FALSE) {
-                        BlockStateUtils.setIsViewBlocking(mcBlockState, StatePredicate.alwaysFalse());
+                        BlockStateUtils.setIsViewBlocking(mcBlockState, ALWAYS_FALSE);
                     }
                 }
                 // set parent block properties
@@ -123,24 +124,23 @@ public class BukkitCustomBlock extends AbstractCustomBlock {
                 ObjectHolder<BlockBehavior> behaviorHolder = (ObjectHolder<BlockBehavior>) behaviorField.get(mcBlock);
                 behaviorHolder.bindValue(super.behavior);
                 // set block side properties
-                Reflections.field$BlockBehaviour$explosionResistance.set(mcBlock, settings.resistance());
-                Reflections.field$BlockBehaviour$soundType.set(mcBlock, SoundUtils.toSoundType(settings.sounds()));
+                CoreReflections.field$BlockBehaviour$explosionResistance.set(mcBlock, settings.resistance());
+                CoreReflections.field$BlockBehaviour$soundType.set(mcBlock, SoundUtils.toSoundType(settings.sounds()));
                 // init cache
-                Reflections.method$BlockStateBase$initCache.invoke(mcBlockState);
+                CoreReflections.method$BlockStateBase$initCache.invoke(mcBlockState);
                 // set block light
-                if (settings.blockLight() != -1) {
-                    if (VersionHelper.isOrAbove1_21_2()) {
-                        Reflections.field$BlockStateBase$lightBlock.set(mcBlockState, settings.blockLight());
-                    } else {
-                        Object cache = Reflections.field$BlockStateBase$cache.get(mcBlockState);
-                        Reflections.field$BlockStateBase$Cache$lightBlock.set(cache, settings.blockLight());
-                    }
+                int blockLight = settings.blockLight() != -1 ? settings.blockLight() : CoreReflections.field$BlockStateBase$lightBlock.getInt(state.vanillaBlockState().handle());
+                if (VersionHelper.isOrAbove1_21_2()) {
+                    CoreReflections.field$BlockStateBase$lightBlock.set(mcBlockState, blockLight);
+                } else {
+                    Object cache = CoreReflections.field$BlockStateBase$cache.get(mcBlockState);
+                    CoreReflections.field$BlockStateBase$Cache$lightBlock.set(cache, blockLight);
                 }
                 // set fluid later
                 if (settings.fluidState()) {
-                    Reflections.field$BlockStateBase$fluidState.set(mcBlockState, Reflections.method$FlowingFluid$getSource.invoke(Reflections.instance$Fluids$WATER, false));
+                    CoreReflections.field$BlockStateBase$fluidState.set(mcBlockState, CoreReflections.method$FlowingFluid$getSource.invoke(MFluids.instance$Fluids$WATER, false));
                 } else {
-                    Reflections.field$BlockStateBase$fluidState.set(mcBlockState, Reflections.instance$Fluid$EMPTY$defaultState);
+                    CoreReflections.field$BlockStateBase$fluidState.set(mcBlockState, MFluids.instance$Fluids$EMPTY$defaultState);
                 }
                 // set random tick later
                 BlockStateUtils.setIsRandomlyTicking(mcBlockState, settings.isRandomlyTicking());
@@ -150,14 +150,14 @@ public class BukkitCustomBlock extends AbstractCustomBlock {
                 Object holder = BukkitCraftEngine.instance().blockManager().getMinecraftBlockHolder(state.customBlockState().registryId());
                 Set<Object> tags = new HashSet<>();
                 for (Key tag : settings.tags()) {
-                    tags.add(Reflections.method$TagKey$create.invoke(null, Reflections.instance$Registries$BLOCK, KeyUtils.toResourceLocation(tag)));
+                    tags.add(CoreReflections.method$TagKey$create.invoke(null, MRegistries.BLOCK, KeyUtils.toResourceLocation(tag)));
                 }
-                Reflections.field$Holder$Reference$tags.set(holder, tags);
+                CoreReflections.field$Holder$Reference$tags.set(holder, tags);
                 // set burning properties
                 if (settings.burnable()) {
-                    Reflections.method$FireBlock$setFlammable.invoke(Reflections.instance$Blocks$FIRE, mcBlock, settings.burnChance(), settings.fireSpreadChance());
+                    CoreReflections.method$FireBlock$setFlammable.invoke(MBlocks.FIRE, mcBlock, settings.burnChance(), settings.fireSpreadChance());
                 }
-                Reflections.field$BlockStateBase$requiresCorrectToolForDrops.set(mcBlockState, settings.requireCorrectTool());
+                CoreReflections.field$BlockStateBase$requiresCorrectToolForDrops.set(mcBlockState, settings.requireCorrectTool());
             }
         } catch (Exception e) {
             CraftEngine.instance().logger().warn("Failed to init block settings", e);

@@ -7,7 +7,7 @@ repositories {
     maven("https://repo.rapture.pw/repository/maven-releases/")  // slime world
     maven("https://repo.infernalsuite.com/repository/maven-snapshots/")  // slime world
     maven("https://repo.momirealms.net/releases/")
-    maven("https://mvn.lumine.io/repository/maven-public/") // model engine
+    maven("https://mvn.lumine.io/repository/maven-public/") // model engine mythic mobs
     maven("https://nexus.phoenixdevt.fr/repository/maven-public/") // mmoitems
     maven("https://repo.viaversion.com") // via
     maven("https://repo.skriptlang.org/releases/") // skript
@@ -47,6 +47,8 @@ dependencies {
     compileOnly(platform("com.intellectualsites.bom:bom-newest:1.52"))
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core")
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit") { isTransitive = false }
+    // MythicMobs
+    compileOnly("io.lumine:Mythic-Dist:5.9.0")
 }
 
 java {

@@ -11,19 +11,16 @@ public class CharacterUtils {
     private CharacterUtils() {}
 
     public static char[] decodeUnicodeToChars(String unicodeString) {
-        String processedString = unicodeString.replace("\\u", "");
-        int length = processedString.length() / 4;
-        char[] chars = new char[length];
-        for (int i = 0; i < length; i++) {
-            String hex = processedString.substring(i * 4, i * 4 + 4);
+        int count = unicodeString.length() / 6;
+        if (unicodeString.length() % 6 != 0) {
+            throw new LocalizedResourceConfigException("warning.config.image.invalid_unicode_string_length");
+        }
+        char[] chars = new char[count];
+        for (int i = 0, j = 0; j < count; i += 6, j++) {
+            String hex = unicodeString.substring(i + 2, i + 6);
             try {
                 int codePoint = Integer.parseInt(hex, 16);
-                if (Character.isSupplementaryCodePoint(codePoint)) {
-                    chars[i] = Character.highSurrogate(codePoint);
-                    chars[++i] = Character.lowSurrogate(codePoint);
-                } else {
-                    chars[i] = (char) codePoint;
-                }
+                chars[j] = (char) codePoint;
             } catch (NumberFormatException e) {
                 throw new LocalizedResourceConfigException("warning.config.image.invalid_hex_value", e, hex);
             }

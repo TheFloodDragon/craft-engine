@@ -13,7 +13,6 @@ repositories {
 
 dependencies {
     compileOnly(project(":core"))
-    compileOnly(project(":shared"))
     compileOnly(project(":bukkit:legacy"))
     // Anti Grief
     compileOnly("net.momirealms:antigrieflib:${rootProject.properties["anti_grief_version"]}")
@@ -40,6 +39,7 @@ dependencies {
     compileOnly("io.netty:netty-all:${rootProject.properties["netty_version"]}")
     // ByteBuddy
     compileOnly("net.bytebuddy:byte-buddy:${rootProject.properties["byte_buddy_version"]}")
+    compileOnly("net.bytebuddy:byte-buddy-agent:${rootProject.properties["byte_buddy_version"]}")
     // Command
     compileOnly("org.incendo:cloud-core:${rootProject.properties["cloud_core_version"]}")
     compileOnly("org.incendo:cloud-minecraft-extras:${rootProject.properties["cloud_minecraft_extras_version"]}")
@@ -92,7 +92,6 @@ tasks {
         relocate("com.saicone.rtag", "net.momirealms.craftengine.libraries.tag")
         relocate("org.incendo", "net.momirealms.craftengine.libraries")
         relocate("dev.dejvokep", "net.momirealms.craftengine.libraries")
-        relocate("org.apache.commons.io", "net.momirealms.craftengine.libraries.commons.io")
         relocate("org.bstats", "net.momirealms.craftengine.libraries.bstats")
         relocate("com.github.benmanes.caffeine", "net.momirealms.craftengine.libraries.caffeine")
         relocate("net.bytebuddy", "net.momirealms.craftengine.libraries.bytebuddy")
@@ -100,7 +99,7 @@ tasks {
         relocate("org.ahocorasick", "net.momirealms.craftengine.libraries.ahocorasick")
         relocate("com.ezylang.evalex", "net.momirealms.craftengine.libraries.evalex")
         relocate("com.google.common.jimfs", "net.momirealms.craftengine.libraries.jimfs")
-        relocate("org.apache.commons.imaging", "net.momirealms.craftengine.libraries.imaging")
+        relocate("org.apache.commons", "net.momirealms.craftengine.libraries.commons")
     }
 }
 

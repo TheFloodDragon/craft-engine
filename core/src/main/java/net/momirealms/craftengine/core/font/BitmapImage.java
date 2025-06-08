@@ -26,9 +26,9 @@ public class BitmapImage implements Supplier<JsonObject> {
         this.codepointGrid = codepointGrid;
     }
 
-    public String miniMessage(int row, int col) {
+    public String miniMessageAt(int row, int col) {
         int codepoint = codepointGrid[row][col];
-        return FormatUtils.miniMessageFont(new String(Character.toChars(codepoint)), font.toString());
+        return FormatUtils.miniMessageFont(new String(Character.toChars(codepoint)), this.font.toString());
     }
 
     public int height() {

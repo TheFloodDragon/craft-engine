@@ -17,4 +17,8 @@ public class BlockRegistryMirror {
     public static int size() {
         return customBlockStates.length;
     }
+
+    public static BlockStateWrapper stoneState() {
+        return stoneState;
+    }
 }

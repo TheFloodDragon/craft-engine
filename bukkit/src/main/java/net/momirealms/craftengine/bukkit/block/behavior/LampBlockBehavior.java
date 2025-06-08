@@ -2,16 +2,16 @@ package net.momirealms.craftengine.bukkit.block.behavior;
 
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
-import net.momirealms.craftengine.bukkit.util.Reflections;
+import net.momirealms.craftengine.core.block.BlockBehavior;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
 import net.momirealms.craftengine.core.block.properties.Property;
 import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
-import net.momirealms.craftengine.shared.block.BlockBehavior;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -62,7 +62,7 @@ public class LampBlockBehavior extends BukkitBlockBehavior {
         boolean lit = state.get(this.litProperty);
         if (lit != FastNMS.INSTANCE.method$SignalGetter$hasNeighborSignal(world, blockPos)) {
             if (lit) {
-                Reflections.method$LevelAccessor$scheduleTick.invoke(world, blockPos, thisBlock, 4);
+                CoreReflections.method$LevelAccessor$scheduleTick.invoke(world, blockPos, thisBlock, 4);
             } else {
                 // TODO Call Event
                 FastNMS.INSTANCE.method$LevelWriter$setBlock(world, blockPos, state.cycle(this.litProperty).customBlockState().handle(), 2);

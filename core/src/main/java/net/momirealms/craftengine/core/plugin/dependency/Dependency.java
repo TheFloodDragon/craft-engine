@@ -3,21 +3,37 @@ package net.momirealms.craftengine.core.plugin.dependency;
 import net.momirealms.craftengine.core.plugin.PluginProperties;
 import net.momirealms.craftengine.core.plugin.dependency.relocation.Relocation;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 public class Dependency {
     private final String id;
     private final String groupId;
     private final String rawArtifactId;
     private final List<Relocation> relocations;
+    private final Predicate<Path> verifier;
 
     public Dependency(String id, String groupId, String artifactId, List<Relocation> relocations) {
         this.id = id;
         this.groupId = groupId;
         this.rawArtifactId = artifactId;
         this.relocations = relocations;
+        this.verifier = (p) -> true;
+    }
+
+    public Dependency(String id, String groupId, String artifactId, List<Relocation> relocations, Predicate<Path> verifier) {
+        this.id = id;
+        this.groupId = groupId;
+        this.rawArtifactId = artifactId;
+        this.relocations = relocations;
+        this.verifier = verifier;
+    }
+
+    public boolean verify(Path remapped) {
+        return this.verifier.test(remapped);
     }
 
     public String id() {

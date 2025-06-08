@@ -2,9 +2,10 @@ package net.momirealms.craftengine.bukkit.plugin.gui;
 
 import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.NetworkReflections;
 import net.momirealms.craftengine.bukkit.util.ComponentUtils;
 import net.momirealms.craftengine.bukkit.util.LegacyInventoryUtils;
-import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.gui.*;
 import net.momirealms.craftengine.core.util.ReflectionUtils;
@@ -29,7 +30,7 @@ public class BukkitGuiManager implements GuiManager, Listener {
 
     @Override
     public void delayedInit() {
-        Bukkit.getPluginManager().registerEvents(this, plugin.bootstrap());
+        Bukkit.getPluginManager().registerEvents(this, plugin.javaPlugin());
     }
 
     @Override
@@ -68,10 +69,10 @@ public class BukkitGuiManager implements GuiManager, Listener {
     public void updateInventoryTitle(net.momirealms.craftengine.core.entity.player.Player player, Component component) {
         Object nmsPlayer = player.serverPlayer();
         try {
-            Object containerMenu = Reflections.field$Player$containerMenu.get(nmsPlayer);
-            int containerId = Reflections.field$AbstractContainerMenu$containerId.getInt(containerMenu);
-            Object menuType = Reflections.field$AbstractContainerMenu$menuType.get(containerMenu);
-            Object packet = Reflections.constructor$ClientboundOpenScreenPacket.newInstance(containerId, menuType, ComponentUtils.adventureToMinecraft(component));
+            Object containerMenu = CoreReflections.field$Player$containerMenu.get(nmsPlayer);
+            int containerId = CoreReflections.field$AbstractContainerMenu$containerId.getInt(containerMenu);
+            Object menuType = CoreReflections.field$AbstractContainerMenu$menuType.get(containerMenu);
+            Object packet = NetworkReflections.constructor$ClientboundOpenScreenPacket.newInstance(containerId, menuType, ComponentUtils.adventureToMinecraft(component));
             player.sendPacket(packet, false);
         } catch (Exception e) {
             CraftEngine.instance().logger().warn("Failed to update inventory title", e);

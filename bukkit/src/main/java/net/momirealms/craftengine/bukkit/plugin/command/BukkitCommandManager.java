@@ -22,7 +22,7 @@ public class BukkitCommandManager extends AbstractCommandManager<CommandSender> 
 
     public BukkitCommandManager(BukkitCraftEngine plugin) {
         super(plugin, new LegacyPaperCommandManager<>(
-                plugin.bootstrap(),
+                plugin.javaPlugin(),
                 ExecutionCoordinator.simpleCoordinator(),
                 SenderMapper.identity()
         ));

@@ -4,6 +4,7 @@ import net.momirealms.craftengine.core.util.Key;
 
 public class BlockKeys {
     public static final Key NOTE_BLOCK = Key.of("minecraft:note_block");
+    public static final Key TRIPWIRE = Key.of("minecraft:tripwire");
     public static final Key CRAFTING_TABLE = Key.of("minecraft:crafting_table");
     public static final Key STONECUTTER = Key.of("minecraft:stonecutter");
     public static final Key BELL = Key.of("minecraft:bell");
@@ -212,4 +213,6 @@ public class BlockKeys {
     public static final Key CRIMSON_WALL_HANGING_SIGN = Key.of("minecraft:crimson_wall_hanging_sign");
     public static final Key WARPED_WALL_HANGING_SIGN = Key.of("minecraft:warped_wall_hanging_sign");
     public static final Key BAMBOO_WALL_HANGING_SIGN = Key.of("minecraft:bamboo_wall_hanging_sign");
+
+    public static final Key CACTUS = Key.of("minecraft:cactus");
 }

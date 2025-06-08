@@ -2,11 +2,12 @@ package net.momirealms.craftengine.bukkit.block.behavior;
 
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
 import net.momirealms.craftengine.bukkit.util.ParticleUtils;
-import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.bukkit.world.BukkitWorld;
+import net.momirealms.craftengine.core.block.BlockBehavior;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.UpdateOption;
@@ -28,7 +29,6 @@ import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 import net.momirealms.craftengine.core.world.Vec3d;
 import net.momirealms.craftengine.core.world.Vec3i;
 import net.momirealms.craftengine.core.world.WorldPosition;
-import net.momirealms.craftengine.shared.block.BlockBehavior;
 import org.bukkit.World;
 
 import java.lang.reflect.InvocationTargetException;
@@ -77,7 +77,7 @@ public class CropBlockBehavior extends BukkitBlockBehavior {
     }
 
     private static int getRawBrightness(Object level, Object pos) throws InvocationTargetException, IllegalAccessException {
-        return (int) Reflections.method$BlockAndTintGetter$getRawBrightness.invoke(level, pos, 0);
+        return (int) CoreReflections.method$BlockAndTintGetter$getRawBrightness.invoke(level, pos, 0);
     }
 
     private boolean hasSufficientLight(Object level, Object pos) throws InvocationTargetException, IllegalAccessException {
@@ -139,8 +139,8 @@ public class CropBlockBehavior extends BukkitBlockBehavior {
         boolean sendSwing = false;
         try {
             Object visualState = state.vanillaBlockState().handle();
-            Object visualStateBlock = Reflections.method$BlockStateBase$getBlock.invoke(visualState);
-            if (Reflections.clazz$BonemealableBlock.isInstance(visualStateBlock)) {
+            Object visualStateBlock = CoreReflections.method$BlockStateBase$getBlock.invoke(visualState);
+            if (CoreReflections.clazz$BonemealableBlock.isInstance(visualStateBlock)) {
                 boolean is = FastNMS.INSTANCE.method$BonemealableBlock$isValidBonemealTarget(visualStateBlock, context.getLevel().serverWorld(), LocationUtils.toBlockPos(context.getClickedPos()), visualState);
                 if (!is) {
                     sendSwing = true;
@@ -165,8 +165,8 @@ public class CropBlockBehavior extends BukkitBlockBehavior {
         }
         boolean sendParticles = false;
         Object visualState = immutableBlockState.vanillaBlockState().handle();
-        Object visualStateBlock = Reflections.method$BlockStateBase$getBlock.invoke(visualState);
-        if (Reflections.clazz$BonemealableBlock.isInstance(visualStateBlock)) {
+        Object visualStateBlock = CoreReflections.method$BlockStateBase$getBlock.invoke(visualState);
+        if (CoreReflections.clazz$BonemealableBlock.isInstance(visualStateBlock)) {
             boolean is = FastNMS.INSTANCE.method$BonemealableBlock$isValidBonemealTarget(visualStateBlock, level, pos, visualState);
             if (!is) {
                 sendParticles = true;

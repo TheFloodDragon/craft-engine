@@ -5,7 +5,7 @@ import net.momirealms.craftengine.bukkit.api.CraftEngineFurniture;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
+import java.util.Optional;
 
 public class ExprEntityFurnitureID extends SimplePropertyExpression<Object, String> {
 
@@ -15,8 +15,11 @@ public class ExprEntityFurnitureID extends SimplePropertyExpression<Object, Stri
 
     @Override
     public @Nullable String convert(Object object) {
-        if (object instanceof Entity entity && CraftEngineFurniture.isFurniture(entity))
-            return Objects.requireNonNull(CraftEngineFurniture.getLoadedFurnitureByBaseEntity(entity)).id().toString();
+        if (object instanceof Entity entity && CraftEngineFurniture.isFurniture(entity)) {
+            return Optional.ofNullable(CraftEngineFurniture.getLoadedFurnitureByBaseEntity(entity))
+                    .map(it -> it.id().toString())
+                    .orElse(null);
+        }
         return null;
     }
 

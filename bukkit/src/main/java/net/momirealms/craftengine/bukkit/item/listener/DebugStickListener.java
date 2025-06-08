@@ -6,10 +6,10 @@ import net.momirealms.craftengine.bukkit.api.CraftEngineBlocks;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.item.LegacyItemWrapper;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.NetworkReflections;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.ComponentUtils;
-import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.UpdateOption;
@@ -69,7 +69,7 @@ public class DebugStickListener implements Listener {
             String blockId = block.id().toString();
             try {
                 if (properties.isEmpty()) {
-                    Object systemChatPacket = Reflections.constructor$ClientboundSystemChatPacket.newInstance(
+                    Object systemChatPacket = NetworkReflections.constructor$ClientboundSystemChatPacket.newInstance(
                             ComponentUtils.adventureToMinecraft(Component.translatable("item.minecraft.debug_stick.empty").arguments(Component.text(blockId))), true);
                     player.sendPacket(systemChatPacket, false);
                 } else {
@@ -86,7 +86,7 @@ public class DebugStickListener implements Listener {
                         if (update) {
                             ImmutableBlockState nextState = cycleState(clickedCustomBlock, currentProperty, player.isSecondaryUseActive());
                             CraftEngineBlocks.place(clickedBlock.getLocation(), nextState, new UpdateOption.Builder().updateClients().updateKnownShape().build(), false);
-                            Object systemChatPacket = Reflections.constructor$ClientboundSystemChatPacket.newInstance(
+                            Object systemChatPacket = NetworkReflections.constructor$ClientboundSystemChatPacket.newInstance(
                                     ComponentUtils.adventureToMinecraft(Component.translatable("item.minecraft.debug_stick.update")
                                             .arguments(
                                                     Component.text(currentProperty.name()),
@@ -98,7 +98,7 @@ public class DebugStickListener implements Listener {
                             data.put(blockId, currentProperty.name());
                             wrapped.setTag(data, "craftengine:debug_stick_state");
                             wrapped.load();
-                            Object systemChatPacket = Reflections.constructor$ClientboundSystemChatPacket.newInstance(
+                            Object systemChatPacket = NetworkReflections.constructor$ClientboundSystemChatPacket.newInstance(
                                     ComponentUtils.adventureToMinecraft(Component.translatable("item.minecraft.debug_stick.select")
                                             .arguments(
                                                     Component.text(currentProperty.name()),

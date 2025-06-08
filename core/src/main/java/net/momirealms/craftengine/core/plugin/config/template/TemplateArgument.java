@@ -2,9 +2,11 @@ package net.momirealms.craftengine.core.plugin.config.template;
 
 import net.momirealms.craftengine.core.util.Key;
 
-import java.util.function.Supplier;
+import java.util.Map;
 
-public interface TemplateArgument extends Supplier<Object> {
+public interface TemplateArgument {
 
     Key type();
+
+    Object get(Map<String, TemplateArgument> arguments);
 }

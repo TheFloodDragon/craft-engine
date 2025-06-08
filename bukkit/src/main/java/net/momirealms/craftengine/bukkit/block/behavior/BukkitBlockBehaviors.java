@@ -1,8 +1,8 @@
 package net.momirealms.craftengine.bukkit.block.behavior;
 
+import net.momirealms.craftengine.core.block.EmptyBlockBehavior;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviors;
 import net.momirealms.craftengine.core.util.Key;
-import net.momirealms.craftengine.shared.block.EmptyBlockBehavior;
 
 public class BukkitBlockBehaviors extends BlockBehaviors {
     public static final Key BUSH_BLOCK = Key.from("craftengine:bush_block");

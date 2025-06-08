@@ -1,9 +1,13 @@
 package net.momirealms.craftengine.core.plugin.dependency;
 
+import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.dependency.relocation.Relocation;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 public class Dependencies {
 
@@ -158,11 +162,34 @@ public class Dependencies {
         }
     };
 
+    public static final Dependency COMMONS_LANG3 = new Dependency(
+            "commons-lang3",
+            "org{}apache{}commons",
+            "commons-lang3",
+            List.of(Relocation.of("commons", "org{}apache{}commons"))
+    );
+
     public static final Dependency COMMONS_IO = new Dependency(
             "commons-io",
             "commons-io",
             "commons-io",
             List.of(Relocation.of("commons", "org{}apache{}commons"))
+    );
+
+    public static final Dependency COMMONS_IMAGING = new Dependency(
+            "commons-imaging",
+            "org{}apache{}commons",
+            "commons-imaging",
+            List.of(Relocation.of("commons", "org{}apache{}commons")),
+            (p) -> {
+                try (JarFile jarFile = new JarFile(p.toFile())) {
+                    ZipEntry entry = jarFile.getEntry("net/momirealms/craftengine/libraries/commons/imaging/Imaging.class");
+                    return entry != null;
+                } catch (IOException e) {
+                    CraftEngine.instance().logger().warn("Error reading jar file", e);
+                    return false;
+                }
+            }
     );
 
     public static final Dependency BYTE_BUDDY = new Dependency(
@@ -171,6 +198,18 @@ public class Dependencies {
             "byte-buddy",
             List.of(Relocation.of("bytebuddy", "net{}bytebuddy"))
     );
+
+    public static final Dependency BYTE_BUDDY_AGENT = new Dependency(
+            "byte-buddy-agent",
+            "net{}bytebuddy",
+            "byte-buddy-agent",
+            List.of(Relocation.of("bytebuddy", "net{}bytebuddy"))
+    ) {
+        @Override
+        public String getVersion() {
+            return BYTE_BUDDY.getVersion();
+        }
+    };
 
     public static final Dependency SNAKE_YAML = new Dependency(
             "snake-yaml",
@@ -381,12 +420,6 @@ public class Dependencies {
             List.of(Relocation.of("jimfs", "com{}google{}common{}jimfs"))
     );
 
-    public static final Dependency COMMONS_IMAGING = new Dependency(
-            "commons-imaging",
-            "org{}apache{}commons",
-            "commons-imaging",
-            List.of(Relocation.of("commons", "org{}apache{}commons"))
-    );
 
     public static final Dependency AMAZON_AWSSDK_S3 = new Dependency(
             "amazon-sdk-s3",

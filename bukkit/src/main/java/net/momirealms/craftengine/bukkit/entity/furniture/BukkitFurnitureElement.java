@@ -3,7 +3,8 @@ package net.momirealms.craftengine.bukkit.entity.furniture;
 import net.momirealms.craftengine.bukkit.entity.data.ItemDisplayEntityData;
 import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
-import net.momirealms.craftengine.bukkit.util.Reflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MEntityTypes;
 import net.momirealms.craftengine.core.entity.Billboard;
 import net.momirealms.craftengine.core.entity.ItemDisplayContext;
 import net.momirealms.craftengine.core.entity.furniture.AbstractFurnitureElement;
@@ -48,7 +49,7 @@ public class BukkitFurnitureElement extends AbstractFurnitureElement {
         Vector3f offset = conjugated.transform(new Vector3f(position()));
         packets.accept(FastNMS.INSTANCE.constructor$ClientboundAddEntityPacket(
                 entityId, UUID.randomUUID(), position.x() + offset.x, position.y() + offset.y, position.z() - offset.z, 0, position.xRot(),
-                Reflections.instance$EntityType$ITEM_DISPLAY, 0, Reflections.instance$Vec3$Zero, 0
+                MEntityTypes.ITEM_DISPLAY, 0, CoreReflections.instance$Vec3$Zero, 0
         ));
         packets.accept(FastNMS.INSTANCE.constructor$ClientboundSetEntityDataPacket(entityId, getCachedValues(dyedColor)));
     }

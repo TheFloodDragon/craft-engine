@@ -1,7 +1,7 @@
 package net.momirealms.craftengine.bukkit.block;
 
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
-import net.momirealms.craftengine.shared.block.BlockShape;
+import net.momirealms.craftengine.core.block.BlockShape;
 import org.jetbrains.annotations.Nullable;
 
 public class BukkitBlockShape implements BlockShape {

@@ -7,13 +7,12 @@ import ch.njol.skript.lang.SkriptParser;
 import ch.njol.skript.lang.util.SimpleExpression;
 import ch.njol.util.Kleenean;
 import net.momirealms.craftengine.bukkit.api.CraftEngineItems;
+import net.momirealms.craftengine.core.item.CustomItem;
 import net.momirealms.craftengine.core.item.ItemBuildContext;
 import net.momirealms.craftengine.core.util.Key;
 import org.bukkit.event.Event;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
 
 public class ExprCustomItem extends SimpleExpression<ItemStack> {
 
@@ -36,7 +35,8 @@ public class ExprCustomItem extends SimpleExpression<ItemStack> {
         String itemId = this.itemId.getSingle(e);
         if (itemId == null)
             return null;
-        return new ItemStack[] {Objects.requireNonNull(CraftEngineItems.byId(Key.of(itemId))).buildItemStack(ItemBuildContext.EMPTY)};
+        CustomItem<ItemStack> customItem = CraftEngineItems.byId(Key.of(itemId));
+        return customItem == null ? null : new ItemStack[] {customItem.buildItemStack(ItemBuildContext.EMPTY)};
     }
 
     @Override

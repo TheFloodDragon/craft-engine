@@ -2,11 +2,12 @@ package net.momirealms.craftengine.bukkit.block.behavior;
 
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.BlockTags;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
-import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.bukkit.world.BukkitWorld;
+import net.momirealms.craftengine.core.block.BlockBehavior;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.UpdateOption;
@@ -22,7 +23,6 @@ import net.momirealms.craftengine.core.util.VersionHelper;
 import net.momirealms.craftengine.core.world.BlockPos;
 import net.momirealms.craftengine.core.world.Vec3d;
 import net.momirealms.craftengine.core.world.WorldPosition;
-import net.momirealms.craftengine.shared.block.BlockBehavior;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -85,7 +85,7 @@ public class LeavesBlockBehavior extends WaterLoggedBlockBehavior {
                 LeavesBlockBehavior behavior = optionalBehavior.get();
                 int distance = behavior.getDistanceAt(neighborState) + 1;
                 if (distance != 1 || behavior.getDistance(thisState) != distance) {
-                    Reflections.method$LevelAccessor$scheduleTick.invoke(world, blockPos, thisBlock, 1);
+                    CoreReflections.method$LevelAccessor$scheduleTick.invoke(world, blockPos, thisBlock, 1);
                 }
             }
         }
@@ -105,7 +105,7 @@ public class LeavesBlockBehavior extends WaterLoggedBlockBehavior {
                 ImmutableBlockState newState = behavior.updateDistance(currentState, level, blockPos);
                 if (newState != currentState) {
                     if (blockState == newState.customBlockState().handle()) {
-                        Reflections.method$BlockStateBase$updateNeighbourShapes.invoke(blockState, level, blockPos, UpdateOption.UPDATE_ALL.flags(), 512);
+                        CoreReflections.method$BlockStateBase$updateNeighbourShapes.invoke(blockState, level, blockPos, UpdateOption.UPDATE_ALL.flags(), 512);
                     } else {
                         FastNMS.INSTANCE.method$LevelWriter$setBlock(level, blockPos, newState.customBlockState().handle(), UpdateOption.UPDATE_ALL.flags());
                     }
@@ -154,11 +154,11 @@ public class LeavesBlockBehavior extends WaterLoggedBlockBehavior {
 
     private ImmutableBlockState updateDistance(ImmutableBlockState state, Object world, Object blockPos) throws ReflectiveOperationException {
         int i = this.maxDistance;
-        Object mutablePos = Reflections.constructor$MutableBlockPos.newInstance();
+        Object mutablePos = CoreReflections.constructor$MutableBlockPos.newInstance();
         int j = Direction.values().length;
         for (int k = 0; k < j; ++k) {
-            Object direction = Reflections.instance$Directions[k];
-            Reflections.method$MutableBlockPos$setWithOffset.invoke(mutablePos, blockPos, direction);
+            Object direction = CoreReflections.instance$Directions[k];
+            CoreReflections.method$MutableBlockPos$setWithOffset.invoke(mutablePos, blockPos, direction);
             Object blockState = FastNMS.INSTANCE.method$BlockGetter$getBlockState(world, mutablePos);
             i = Math.min(i, getDistanceAt(blockState) + 1);
             if (i == 1) {
@@ -169,14 +169,14 @@ public class LeavesBlockBehavior extends WaterLoggedBlockBehavior {
     }
 
     private int getDistanceAt(Object blockState) throws ReflectiveOperationException {
-        boolean isLog = (boolean) Reflections.method$BlockStateBase$hasTag.invoke(blockState, LOG_TAG);
+        boolean isLog = (boolean) CoreReflections.method$BlockStateBase$hasTag.invoke(blockState, LOG_TAG);
         if (isLog) return 0;
         int id = BlockStateUtils.blockStateToId(blockState);
         if (BlockStateUtils.isVanillaBlock(id)) {
-            Object distanceProperty = Reflections.field$LeavesBlock$DISTANCE.get(null);
-            boolean hasDistanceProperty = (boolean) Reflections.method$StateHolder$hasProperty.invoke(blockState, distanceProperty);
+            Object distanceProperty = CoreReflections.field$LeavesBlock$DISTANCE.get(null);
+            boolean hasDistanceProperty = (boolean) CoreReflections.method$StateHolder$hasProperty.invoke(blockState, distanceProperty);
             if (!hasDistanceProperty) return this.maxDistance;
-            return (int) Reflections.method$StateHolder$getValue.invoke(blockState, distanceProperty);
+            return (int) CoreReflections.method$StateHolder$getValue.invoke(blockState, distanceProperty);
         } else {
             ImmutableBlockState anotherBlockState = BukkitBlockManager.instance().getImmutableBlockStateUnsafe(id);
             Optional<LeavesBlockBehavior> optionalAnotherBehavior = anotherBlockState.behavior().getAs(LeavesBlockBehavior.class);

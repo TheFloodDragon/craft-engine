@@ -14,7 +14,7 @@ public class MapTemplateArgument implements TemplateArgument {
     }
 
     @Override
-    public Map<String, Object> get() {
+    public Map<String, Object> get(Map<String, TemplateArgument> arguments) {
         return value;
     }
 

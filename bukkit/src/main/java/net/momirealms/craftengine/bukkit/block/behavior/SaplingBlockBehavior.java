@@ -3,7 +3,13 @@ package net.momirealms.craftengine.bukkit.block.behavior;
 import net.momirealms.craftengine.bukkit.api.CraftEngineBlocks;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
-import net.momirealms.craftengine.bukkit.util.*;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MRegistries;
+import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
+import net.momirealms.craftengine.bukkit.util.FeatureUtils;
+import net.momirealms.craftengine.bukkit.util.LocationUtils;
+import net.momirealms.craftengine.bukkit.util.ParticleUtils;
+import net.momirealms.craftengine.core.block.BlockBehavior;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.UpdateOption;
@@ -17,7 +23,6 @@ import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.RandomUtils;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
-import net.momirealms.craftengine.shared.block.BlockBehavior;
 import org.bukkit.Location;
 import org.bukkit.World;
 
@@ -50,7 +55,7 @@ public class SaplingBlockBehavior extends BukkitBlockBehavior {
         Object blockPos = args[2];
         Object blockState = args[0];
         Object aboveBlockPos = LocationUtils.above(blockPos);
-        if ((int) Reflections.method$LevelReader$getMaxLocalRawBrightness.invoke(world, aboveBlockPos) >= 9 && RandomUtils.generateRandomFloat(0, 1) < growSpeed) {
+        if ((int) CoreReflections.method$LevelReader$getMaxLocalRawBrightness.invoke(world, aboveBlockPos) >= 9 && RandomUtils.generateRandomFloat(0, 1) < growSpeed) {
             increaseStage(world, blockPos, blockState, args[3]);
         }
     }
@@ -72,22 +77,22 @@ public class SaplingBlockBehavior extends BukkitBlockBehavior {
     }
 
     private void generateTree(Object world, Object blockPos, Object blockState, Object randomSource) throws Exception {
-        Object registry = Reflections.method$RegistryAccess$registryOrThrow.invoke(Reflections.instance$registryAccess, Reflections.instance$Registries$CONFIGURED_FEATURE);
+        Object registry = CoreReflections.method$RegistryAccess$registryOrThrow.invoke(FastNMS.INSTANCE.registryAccess(), MRegistries.CONFIGURED_FEATURE);
         if (registry == null) return;
         @SuppressWarnings("unchecked")
-        Optional<Object> holder = (Optional<Object>) Reflections.method$Registry$getHolder1.invoke(registry, FeatureUtils.createFeatureKey(treeFeature()));
+        Optional<Object> holder = (Optional<Object>) CoreReflections.method$Registry$getHolder1.invoke(registry, FeatureUtils.createFeatureKey(treeFeature()));
         if (holder.isEmpty()) {
             CraftEngine.instance().logger().warn("Configured feature not found: " + treeFeature());
             return;
         }
-        Object chunkGenerator = Reflections.method$ServerChunkCache$getGenerator.invoke(FastNMS.INSTANCE.method$ServerLevel$getChunkSource(world));
-        Object configuredFeature = Reflections.method$Holder$value.invoke(holder.get());
-        Object fluidState = Reflections.method$Level$getFluidState.invoke(world, blockPos);
-        Object legacyState = Reflections.method$FluidState$createLegacyBlock.invoke(fluidState);
+        Object chunkGenerator = CoreReflections.method$ServerChunkCache$getGenerator.invoke(FastNMS.INSTANCE.method$ServerLevel$getChunkSource(world));
+        Object configuredFeature = CoreReflections.method$Holder$value.invoke(holder.get());
+        Object fluidState = CoreReflections.method$Level$getFluidState.invoke(world, blockPos);
+        Object legacyState = CoreReflections.method$FluidState$createLegacyBlock.invoke(fluidState);
         FastNMS.INSTANCE.method$LevelWriter$setBlock(world, blockPos, legacyState, UpdateOption.UPDATE_NONE.flags());
-        if ((boolean) Reflections.method$ConfiguredFeature$place.invoke(configuredFeature, world, chunkGenerator, randomSource, blockPos)) {
+        if ((boolean) CoreReflections.method$ConfiguredFeature$place.invoke(configuredFeature, world, chunkGenerator, randomSource, blockPos)) {
             if (FastNMS.INSTANCE.method$BlockGetter$getBlockState(world, blockPos) == legacyState) {
-                Reflections.method$ServerLevel$sendBlockUpdated.invoke(world, blockPos, blockState, legacyState, 2);
+                CoreReflections.method$ServerLevel$sendBlockUpdated.invoke(world, blockPos, blockState, legacyState, 2);
             }
         } else {
             // failed to place, rollback changes
@@ -107,8 +112,8 @@ public class SaplingBlockBehavior extends BukkitBlockBehavior {
         }
         boolean sendParticles = false;
         Object visualState = immutableBlockState.vanillaBlockState().handle();
-        Object visualStateBlock = Reflections.method$BlockStateBase$getBlock.invoke(visualState);
-        if (Reflections.clazz$BonemealableBlock.isInstance(visualStateBlock)) {
+        Object visualStateBlock = CoreReflections.method$BlockStateBase$getBlock.invoke(visualState);
+        if (CoreReflections.clazz$BonemealableBlock.isInstance(visualStateBlock)) {
             boolean is = FastNMS.INSTANCE.method$BonemealableBlock$isValidBonemealTarget(visualStateBlock, level, blockPos, visualState);
             if (!is) {
                 sendParticles = true;
@@ -145,8 +150,8 @@ public class SaplingBlockBehavior extends BukkitBlockBehavior {
         boolean sendSwing = false;
         try {
             Object visualState = state.vanillaBlockState().handle();
-            Object visualStateBlock = Reflections.method$BlockStateBase$getBlock.invoke(visualState);
-            if (Reflections.clazz$BonemealableBlock.isInstance(visualStateBlock)) {
+            Object visualStateBlock = CoreReflections.method$BlockStateBase$getBlock.invoke(visualState);
+            if (CoreReflections.clazz$BonemealableBlock.isInstance(visualStateBlock)) {
                 boolean is = FastNMS.INSTANCE.method$BonemealableBlock$isValidBonemealTarget(visualStateBlock, context.getLevel().serverWorld(), LocationUtils.toBlockPos(context.getClickedPos()), visualState);
                 if (!is) {
                     sendSwing = true;

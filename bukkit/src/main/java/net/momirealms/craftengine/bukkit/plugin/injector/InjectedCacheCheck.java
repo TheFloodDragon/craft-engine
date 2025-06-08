@@ -8,6 +8,10 @@ public interface InjectedCacheCheck {
 
     void recipeType(Object recipeType);
 
+    Key customRecipeType();
+
+    void customRecipeType(Key customRecipeType);
+
     Object lastRecipe();
 
     void lastRecipe(Object lastRecipe);

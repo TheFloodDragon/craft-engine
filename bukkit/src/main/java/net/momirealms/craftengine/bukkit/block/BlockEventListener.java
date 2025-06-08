@@ -4,6 +4,8 @@ import io.papermc.paper.event.block.BlockBreakBlockEvent;
 import net.momirealms.craftengine.bukkit.api.event.CustomBlockBreakEvent;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MBlocks;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.bukkit.util.*;
 import net.momirealms.craftengine.bukkit.world.BukkitBlockInWorld;
@@ -26,7 +28,6 @@ import net.momirealms.craftengine.core.world.Vec3d;
 import net.momirealms.craftengine.core.world.WorldPosition;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -60,7 +61,7 @@ public class BlockEventListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Object packet = this.manager.cachedUpdateTagsPacket;
         if (packet != null) {
-            this.plugin.networkManager().sendPacket(event.getPlayer(), packet);
+            this.plugin.adapt(event.getPlayer()).sendPacket(packet, false);
         }
     }
 
@@ -86,13 +87,13 @@ public class BlockEventListener implements Listener {
         if (Config.enableSoundSystem()) {
             Block block = event.getBlock();
             Object blockState = BlockStateUtils.blockDataToBlockState(block.getBlockData());
-            if (blockState != Reflections.instance$Blocks$AIR$defaultState) {
+            if (blockState != MBlocks.AIR$defaultState) {
                 Object ownerBlock = BlockStateUtils.getBlockOwner(blockState);
                 if (this.manager.isBlockSoundRemoved(ownerBlock)) {
                     if (player.getInventory().getItemInMainHand().getType() != Material.DEBUG_STICK) {
                         try {
-                            Object soundType = Reflections.field$BlockBehaviour$soundType.get(ownerBlock);
-                            Object placeSound = Reflections.field$SoundType$placeSound.get(soundType);
+                            Object soundType = CoreReflections.field$BlockBehaviour$soundType.get(ownerBlock);
+                            Object placeSound = CoreReflections.field$SoundType$placeSound.get(soundType);
                             player.playSound(block.getLocation(), FastNMS.INSTANCE.field$SoundEvent$location(placeSound).toString(), SoundCategory.BLOCKS, 1f, 0.8f);
                         } catch (ReflectiveOperationException e) {
                             this.plugin.logger().warn("Failed to get sound type", e);
@@ -108,8 +109,8 @@ public class BlockEventListener implements Listener {
                 Block block = event.getBlock();
                 Object blockState = BlockStateUtils.blockDataToBlockState(block.getBlockData());
                 Object ownerBlock = BlockStateUtils.getBlockOwner(blockState);
-                Object soundType = Reflections.field$BlockBehaviour$soundType.get(ownerBlock);
-                Object placeSound = Reflections.field$SoundType$placeSound.get(soundType);
+                Object soundType = CoreReflections.field$BlockBehaviour$soundType.get(ownerBlock);
+                Object placeSound = CoreReflections.field$SoundType$placeSound.get(soundType);
                 player.playSound(block.getLocation(), FastNMS.INSTANCE.field$SoundEvent$location(placeSound).toString(), SoundCategory.BLOCKS, 1f, 0.8f);
             } catch (ReflectiveOperationException e) {
                 this.plugin.logger().warn("Failed to get sound type", e);
@@ -235,8 +236,8 @@ public class BlockEventListener implements Listener {
                 Object ownerBlock = BlockStateUtils.getBlockOwner(blockState);
                 if (this.manager.isBlockSoundRemoved(ownerBlock)) {
                     try {
-                        Object soundType = Reflections.field$BlockBehaviour$soundType.get(ownerBlock);
-                        Object breakSound = Reflections.field$SoundType$breakSound.get(soundType);
+                        Object soundType = CoreReflections.field$BlockBehaviour$soundType.get(ownerBlock);
+                        Object breakSound = CoreReflections.field$SoundType$breakSound.get(soundType);
                         block.getWorld().playSound(block.getLocation(), FastNMS.INSTANCE.field$SoundEvent$location(breakSound).toString(), SoundCategory.BLOCKS, 1f, 0.8f);
                     } catch (ReflectiveOperationException e) {
                         this.plugin.logger().warn("Failed to get sound type", e);
@@ -315,8 +316,8 @@ public class BlockEventListener implements Listener {
             Object ownerBlock = BlockStateUtils.getBlockOwner(blockState);
             if (manager.isBlockSoundRemoved(ownerBlock)) {
                 try {
-                    Object soundType = Reflections.field$BlockBehaviour$soundType.get(ownerBlock);
-                    Object stepSound = Reflections.field$SoundType$stepSound.get(soundType);
+                    Object soundType = CoreReflections.field$BlockBehaviour$soundType.get(ownerBlock);
+                    Object stepSound = CoreReflections.field$SoundType$stepSound.get(soundType);
                     player.playSound(player.getLocation(), FastNMS.INSTANCE.field$SoundEvent$location(stepSound).toString(), SoundCategory.BLOCKS, 0.15f, 1f);
                 } catch (ReflectiveOperationException e) {
                     plugin.logger().warn("Failed to get sound type", e);
@@ -369,19 +370,18 @@ public class BlockEventListener implements Listener {
         // for vanilla blocks
         if (event.getChangedType() == Material.NOTE_BLOCK) {
             Block block = event.getBlock();
-            World world = block.getWorld();
-            Location location = block.getLocation();
             Block sourceBlock = event.getSourceBlock();
-            BlockFace direction = sourceBlock.getFace(block);
-            if (direction == BlockFace.UP || direction == BlockFace.DOWN) {
+            if (block.getX() == sourceBlock.getX() && block.getX() == sourceBlock.getZ()) {
+                World world = block.getWorld();
+                Location location = block.getLocation();
                 Object serverLevel = FastNMS.INSTANCE.field$CraftWorld$ServerLevel(world);
                 Object chunkSource = FastNMS.INSTANCE.method$ServerLevel$getChunkSource(serverLevel);
                 Object blockPos = LocationUtils.toBlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
                 FastNMS.INSTANCE.method$ServerChunkCache$blockChanged(chunkSource, blockPos);
-                if (direction == BlockFace.UP) {
-                    NoteBlockChainUpdateUtils.noteBlockChainUpdate(serverLevel, chunkSource, Reflections.instance$Direction$UP, blockPos, 0);
+                if (block.getY() > sourceBlock.getY()) {
+                    NoteBlockChainUpdateUtils.noteBlockChainUpdate(serverLevel, chunkSource, CoreReflections.instance$Direction$UP, blockPos, Config.maxNoteBlockChainUpdate());
                 } else {
-                    NoteBlockChainUpdateUtils.noteBlockChainUpdate(serverLevel, chunkSource, Reflections.instance$Direction$DOWN, blockPos, 0);
+                    NoteBlockChainUpdateUtils.noteBlockChainUpdate(serverLevel, chunkSource, CoreReflections.instance$Direction$DOWN, blockPos, Config.maxNoteBlockChainUpdate());
                 }
             }
         }

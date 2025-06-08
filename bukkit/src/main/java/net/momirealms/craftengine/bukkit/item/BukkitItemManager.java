@@ -9,9 +9,11 @@ import net.momirealms.craftengine.bukkit.item.listener.DebugStickListener;
 import net.momirealms.craftengine.bukkit.item.listener.ItemEventListener;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MBuiltInRegistries;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MRegistries;
 import net.momirealms.craftengine.bukkit.util.ItemUtils;
 import net.momirealms.craftengine.bukkit.util.KeyUtils;
-import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.*;
 import net.momirealms.craftengine.core.item.modifier.IdModifier;
@@ -65,9 +67,9 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
 
     @Override
     public void delayedInit() {
-        Bukkit.getPluginManager().registerEvents(this.itemEventListener, this.plugin.bootstrap());
-        Bukkit.getPluginManager().registerEvents(this.debugStickListener, this.plugin.bootstrap());
-        Bukkit.getPluginManager().registerEvents(this.armorEventListener, this.plugin.bootstrap());
+        Bukkit.getPluginManager().registerEvents(this.itemEventListener, this.plugin.javaPlugin());
+        Bukkit.getPluginManager().registerEvents(this.debugStickListener, this.plugin.javaPlugin());
+        Bukkit.getPluginManager().registerEvents(this.armorEventListener, this.plugin.javaPlugin());
     }
 
     @Override
@@ -79,11 +81,11 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
         return instance;
     }
 
-    public Optional<ItemStack> s2c(ItemStack itemStack, ItemBuildContext context) {
+    public Optional<ItemStack> s2c(ItemStack itemStack, Player player) {
         try {
             Item<ItemStack> wrapped = wrap(itemStack);
             if (wrapped == null) return Optional.empty();
-            return this.networkItemHandler.s2c(wrapped, context).map(Item::load);
+            return this.networkItemHandler.s2c(wrapped, player).map(Item::load);
         } catch (Throwable e) {
             if (Config.debug()) {
                 this.plugin.logger().warn("Failed to handle s2c items.", e);
@@ -92,11 +94,11 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
         }
     }
 
-    public Optional<ItemStack> c2s(ItemStack itemStack, ItemBuildContext context) {
+    public Optional<ItemStack> c2s(ItemStack itemStack) {
         try {
             Item<ItemStack> wrapped = wrap(itemStack);
             if (wrapped == null) return Optional.empty();
-            return this.networkItemHandler.c2s(wrapped, context).map(Item::load);
+            return this.networkItemHandler.c2s(wrapped).map(Item::load);
         } catch (Throwable e) {
             if (Config.debug()) {
                 this.plugin.logger().warn("Failed to handle c2s items.", e);
@@ -212,10 +214,10 @@ public class BukkitItemManager extends AbstractItemManager<ItemStack> {
                             .orElseGet(() -> ((WritableRegistry<Key>) BuiltInRegistries.OPTIMIZED_ITEM_ID)
                                     .register(new ResourceKey<>(BuiltInRegistries.OPTIMIZED_ITEM_ID.key().location(), id), id));
                     Object resourceLocation = KeyUtils.toResourceLocation(id.namespace(), id.value());
-                    Object mcHolder = ((Optional<Object>) Reflections.method$Registry$getHolder1.invoke(Reflections.instance$BuiltInRegistries$ITEM, Reflections.method$ResourceKey$create.invoke(null, Reflections.instance$Registries$ITEM, resourceLocation))).get();
-                    Set<Object> tags = (Set<Object>) Reflections.field$Holder$Reference$tags.get(mcHolder);
+                    Object mcHolder = ((Optional<Object>) CoreReflections.method$Registry$getHolder1.invoke(MBuiltInRegistries.ITEM, CoreReflections.method$ResourceKey$create.invoke(null, MRegistries.ITEM, resourceLocation))).get();
+                    Set<Object> tags = (Set<Object>) CoreReflections.field$Holder$Reference$tags.get(mcHolder);
                     for (Object tag : tags) {
-                        Key tagId = Key.of(Reflections.field$TagKey$location.get(tag).toString());
+                        Key tagId = Key.of(CoreReflections.field$TagKey$location.get(tag).toString());
                         VANILLA_ITEM_TAGS.computeIfAbsent(tagId, (key) -> new ArrayList<>()).add(holder);
                     }
                 }

@@ -2,7 +2,7 @@ package net.momirealms.craftengine.bukkit.plugin.network.id;
 
 import com.google.gson.JsonElement;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
-import net.momirealms.craftengine.bukkit.util.Reflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.util.VersionHelper;
 
@@ -19,8 +19,8 @@ public class PacketIdFinder {
     static {
         try {
             if (VersionHelper.isOrAbove1_21()) {
-                Object packetReport = Reflections.constructor$PacketReport.newInstance((Object) null);
-                JsonElement jsonElement = (JsonElement) Reflections.method$PacketReport$serializePackets.invoke(packetReport);
+                Object packetReport = CoreReflections.constructor$PacketReport.newInstance((Object) null);
+                JsonElement jsonElement = (JsonElement) CoreReflections.method$PacketReport$serializePackets.invoke(packetReport);
                 var play = jsonElement.getAsJsonObject().get("play");
                 for (var entry : play.getAsJsonObject().entrySet()) {
                     Map<String, Integer> ids = new HashMap<>();

@@ -3,7 +3,12 @@ package net.momirealms.craftengine.core.item;
 import net.momirealms.craftengine.core.entity.ItemDisplayContext;
 import net.momirealms.craftengine.core.entity.projectile.ProjectileMeta;
 import net.momirealms.craftengine.core.item.modifier.EquippableModifier;
+import net.momirealms.craftengine.core.item.modifier.FoodModifier;
 import net.momirealms.craftengine.core.item.modifier.ItemDataModifier;
+import net.momirealms.craftengine.core.item.setting.AnvilRepairItem;
+import net.momirealms.craftengine.core.item.setting.EquipmentData;
+import net.momirealms.craftengine.core.item.setting.FoodData;
+import net.momirealms.craftengine.core.item.setting.Helmet;
 import net.momirealms.craftengine.core.pack.misc.EquipmentGeneration;
 import net.momirealms.craftengine.core.plugin.locale.LocalizedResourceConfigException;
 import net.momirealms.craftengine.core.sound.SoundData;
@@ -30,13 +35,18 @@ public class ItemSettings {
     ProjectileMeta projectileMeta;
     boolean dyeable = true;
     Helmet helmet = null;
+    FoodData foodData = null;
 
     private ItemSettings() {}
 
     public <I> List<ItemDataModifier<I>> modifiers() {
         ArrayList<ItemDataModifier<I>> modifiers = new ArrayList<>();
-        if (VersionHelper.isOrAbove1_21_2() && this.equipment != null && this.equipment.modernData() != null) modifiers.add(new EquippableModifier<>(this.equipment.modernData()));
-        // TODO 1.20 leather armor
+        if (VersionHelper.isOrAbove1_21_2() && this.equipment != null && this.equipment.modernData() != null) {
+            modifiers.add(new EquippableModifier<>(this.equipment.modernData()));
+        }
+        if (VersionHelper.isOrAbove1_20_5() && this.foodData != null) {
+            modifiers.add(new FoodModifier<>(this.foodData.nutrition(), this.foodData.saturation(), false));
+        }
         return modifiers;
     }
 
@@ -60,6 +70,8 @@ public class ItemSettings {
         newSettings.canPlaceRelatedVanillaBlock = settings.canPlaceRelatedVanillaBlock;
         newSettings.projectileMeta = settings.projectileMeta;
         newSettings.dyeable = settings.dyeable;
+        newSettings.helmet = settings.helmet;
+        newSettings.foodData = settings.foodData;
         return newSettings;
     }
 
@@ -108,6 +120,11 @@ public class ItemSettings {
     }
 
     @Nullable
+    public FoodData foodData() {
+        return foodData;
+    }
+
+    @Nullable
     public Helmet helmet() {
         return helmet;
     }
@@ -149,6 +166,11 @@ public class ItemSettings {
 
     public ItemSettings tags(Set<Key> tags) {
         this.tags = tags;
+        return this;
+    }
+
+    public ItemSettings foodData(FoodData foodData) {
+        this.foodData = foodData;
         return this;
     }
 
@@ -248,6 +270,14 @@ public class ItemSettings {
             registerFactory("dyeable", (value -> {
                 boolean bool = (boolean) value;
                 return settings -> settings.dyeable(bool);
+            }));
+            registerFactory("food", (value -> {
+                Map<String, Object> args = MiscUtils.castToMap(value, false);
+                FoodData data = new FoodData(
+                        ResourceConfigUtils.getAsInt(args.get("nutrition"), "nutrition"),
+                        ResourceConfigUtils.getAsFloat(args.get("saturation"), "saturation")
+                );
+                return settings -> settings.foodData(data);
             }));
         }
 

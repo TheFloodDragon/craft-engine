@@ -21,11 +21,15 @@ import net.momirealms.craftengine.bukkit.item.behavior.FurnitureItemBehavior;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.pack.BukkitPackManager;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
-import net.momirealms.craftengine.bukkit.plugin.injector.BukkitInjector;
+import net.momirealms.craftengine.bukkit.plugin.injector.ProtectedFieldVisitor;
 import net.momirealms.craftengine.bukkit.plugin.network.handler.*;
 import net.momirealms.craftengine.bukkit.plugin.network.payload.DiscardedPayload;
 import net.momirealms.craftengine.bukkit.plugin.network.payload.NetWorkDataTypes;
 import net.momirealms.craftengine.bukkit.plugin.network.payload.Payload;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MBuiltInRegistries;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MEntityTypes;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.NetworkReflections;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.bukkit.util.*;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
@@ -34,7 +38,6 @@ import net.momirealms.craftengine.core.font.FontManager;
 import net.momirealms.craftengine.core.font.IllegalCharacterProcessResult;
 import net.momirealms.craftengine.core.item.CustomItem;
 import net.momirealms.craftengine.core.item.Item;
-import net.momirealms.craftengine.core.item.ItemBuildContext;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.item.context.UseOnContext;
 import net.momirealms.craftengine.core.pack.host.ResourcePackDownloadData;
@@ -82,7 +85,7 @@ public class PacketConsumers {
     public static void initEntities(int registrySize) {
         ADD_ENTITY_HANDLERS = new BukkitNetworkManager.Handlers[registrySize];
         Arrays.fill(ADD_ENTITY_HANDLERS, BukkitNetworkManager.Handlers.DO_NOTHING);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$FALLING_BLOCK$registryId] = (user, event) -> {
+        ADD_ENTITY_HANDLERS[MEntityTypes.FALLING_BLOCK$registryId] = (user, event) -> {
             FriendlyByteBuf buf = event.getBuffer();
             int id = buf.readVarInt();
             UUID uuid = buf.readUUID();
@@ -118,25 +121,83 @@ public class PacketConsumers {
                 buf.writeShort(za);
             }
         };
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$BLOCK_DISPLAY$registryId] = simpleAddEntityHandler(BlockDisplayPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$TEXT_DISPLAY$registryId] = simpleAddEntityHandler(TextDisplayPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$ARMOR_STAND$registryId] = simpleAddEntityHandler(ArmorStandPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$ITEM_DISPLAY$registryId] = simpleAddEntityHandler(ItemDisplayPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$FIREBALL$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$EYE_OF_ENDER$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$FIREWORK_ROCKET$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$ITEM$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$ITEM_FRAME$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$GLOW_ITEM_FRAME$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$SMALL_FIREBALL$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$EGG$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$ENDER_PEARL$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$EXPERIENCE_BOTTLE$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$SNOWBALL$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
-        ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$POTION$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
+
+        ADD_ENTITY_HANDLERS[MEntityTypes.BLOCK_DISPLAY$registryId] = simpleAddEntityHandler(BlockDisplayPacketHandler.INSTANCE);
+        ADD_ENTITY_HANDLERS[MEntityTypes.TEXT_DISPLAY$registryId] = simpleAddEntityHandler(TextDisplayPacketHandler.INSTANCE);
+        ADD_ENTITY_HANDLERS[MEntityTypes.ARMOR_STAND$registryId] = simpleAddEntityHandler(ArmorStandPacketHandler.INSTANCE);
+        ADD_ENTITY_HANDLERS[MEntityTypes.ITEM_DISPLAY$registryId] = simpleAddEntityHandler(ItemDisplayPacketHandler.INSTANCE);
+        ADD_ENTITY_HANDLERS[MEntityTypes.ITEM$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
+        ADD_ENTITY_HANDLERS[MEntityTypes.ITEM_FRAME$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
+        ADD_ENTITY_HANDLERS[MEntityTypes.GLOW_ITEM_FRAME$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
+        ADD_ENTITY_HANDLERS[MEntityTypes.FIREBALL$registryId] = createOptionalCustomProjectileEntityHandler();
+        ADD_ENTITY_HANDLERS[MEntityTypes.EYE_OF_ENDER$registryId] = createOptionalCustomProjectileEntityHandler();
+        ADD_ENTITY_HANDLERS[MEntityTypes.FIREWORK_ROCKET$registryId] = createOptionalCustomProjectileEntityHandler();
+        ADD_ENTITY_HANDLERS[MEntityTypes.SMALL_FIREBALL$registryId] = createOptionalCustomProjectileEntityHandler();
+        ADD_ENTITY_HANDLERS[MEntityTypes.EGG$registryId] = createOptionalCustomProjectileEntityHandler();
+        ADD_ENTITY_HANDLERS[MEntityTypes.ENDER_PEARL$registryId] = createOptionalCustomProjectileEntityHandler();
+        ADD_ENTITY_HANDLERS[MEntityTypes.EXPERIENCE_BOTTLE$registryId] = createOptionalCustomProjectileEntityHandler();
+        ADD_ENTITY_HANDLERS[MEntityTypes.SNOWBALL$registryId] = createOptionalCustomProjectileEntityHandler();
+        ADD_ENTITY_HANDLERS[MEntityTypes.POTION$registryId] = createOptionalCustomProjectileEntityHandler();
+        ADD_ENTITY_HANDLERS[MEntityTypes.TRIDENT$registryId] = createOptionalCustomProjectileEntityHandler();
         if (VersionHelper.isOrAbove1_20_5()) {
-            ADD_ENTITY_HANDLERS[Reflections.instance$EntityType$OMINOUS_ITEM_SPAWNER$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
+            ADD_ENTITY_HANDLERS[MEntityTypes.OMINOUS_ITEM_SPAWNER$registryId] = simpleAddEntityHandler(CommonItemPacketHandler.INSTANCE);
         }
+
+        ADD_ENTITY_HANDLERS[MEntityTypes.ITEM_DISPLAY$registryId] = (user, event) -> {
+            FriendlyByteBuf buf = event.getBuffer();
+            int id = buf.readVarInt();
+            BukkitFurniture furniture = BukkitFurnitureManager.instance().loadedFurnitureByRealEntityId(id);
+            if (furniture != null) {
+                user.entityPacketHandlers().put(id, new FurniturePacketHandler(furniture.fakeEntityIds()));
+                user.sendPacket(furniture.spawnPacket((Player) user.platformPlayer()), false);
+                if (Config.hideBaseEntity() && !furniture.hasExternalModel()) {
+                    event.setCancelled(true);
+                }
+            }
+        };
+        ADD_ENTITY_HANDLERS[MEntityTypes.INTERACTION$registryId] = (user, event) -> {
+            if (BukkitFurnitureManager.NMS_COLLISION_ENTITY_TYPE != MEntityTypes.INTERACTION) return;
+            FriendlyByteBuf buf = event.getBuffer();
+            int id = buf.readVarInt();
+            // Cancel collider entity packet
+            BukkitFurniture furniture = BukkitFurnitureManager.instance().loadedFurnitureByRealEntityId(id);
+            if (furniture != null) {
+                event.setCancelled(true);
+                user.entityPacketHandlers().put(id, FurnitureCollisionPacketHandler.INSTANCE);
+            }
+        };
+        ADD_ENTITY_HANDLERS[MEntityTypes.OAK_BOAT$registryId] = (user, event) -> {
+            if (BukkitFurnitureManager.NMS_COLLISION_ENTITY_TYPE != MEntityTypes.OAK_BOAT) return;
+            FriendlyByteBuf buf = event.getBuffer();
+            int id = buf.readVarInt();
+            // Cancel collider entity packet
+            BukkitFurniture furniture = BukkitFurnitureManager.instance().loadedFurnitureByRealEntityId(id);
+            if (furniture != null) {
+                event.setCancelled(true);
+                user.entityPacketHandlers().put(id, FurnitureCollisionPacketHandler.INSTANCE);
+            }
+        };
+    }
+
+    private static BukkitNetworkManager.Handlers simpleAddEntityHandler(EntityPacketHandler handler) {
+        return (user, event) -> {
+            FriendlyByteBuf buf = event.getBuffer();
+            user.entityPacketHandlers().put(buf.readVarInt(), handler);
+        };
+    }
+
+    private static BukkitNetworkManager.Handlers createOptionalCustomProjectileEntityHandler() {
+        return (user, event) -> {
+            FriendlyByteBuf buf = event.getBuffer();
+            int id = buf.readVarInt();
+            BukkitProjectileManager.instance().projectileByEntityId(id).ifPresentOrElse(customProjectile -> {
+                ProjectilePacketHandler handler = new ProjectilePacketHandler(customProjectile, id);
+                handler.convertAddCustomProjectilePacket(buf, event);
+                user.entityPacketHandlers().put(id, handler);
+            }, () -> {
+                user.entityPacketHandlers().put(id, CommonItemPacketHandler.INSTANCE);
+            });
+        };
     }
 
     public static void initBlocks(Map<Integer, Integer> map, int registrySize) {
@@ -350,7 +411,7 @@ public class PacketConsumers {
     public static final BiConsumer<NetWorkUser, ByteBufPacketEvent> BLOCK_UPDATE = (user, event) -> {
         try {
             FriendlyByteBuf buf = event.getBuffer();
-            BlockPos pos = buf.readBlockPos(buf);
+            BlockPos pos = buf.readBlockPos();
             int before = buf.readVarInt();
             if (user.clientModEnabled() && !BlockStateUtils.isVanillaBlock(before)) {
                 return;
@@ -374,7 +435,7 @@ public class PacketConsumers {
             FriendlyByteBuf buf = event.getBuffer();
             int eventId = buf.readInt();
             if (eventId != WorldEvents.BLOCK_BREAK_EFFECT) return;
-            BlockPos blockPos = buf.readBlockPos(buf);
+            BlockPos blockPos = buf.readBlockPos();
             int state = buf.readInt();
             boolean global = buf.readBoolean();
             int newState = remap(state);
@@ -447,7 +508,7 @@ public class PacketConsumers {
             EnumSet<? extends Enum<?>> enums = FastNMS.INSTANCE.field$ClientboundPlayerInfoUpdatePacket$actions(packet);
             outer: {
                 for (Object entry : enums) {
-                    if (entry == Reflections.instance$ClientboundPlayerInfoUpdatePacket$Action$UPDATE_DISPLAY_NAME) {
+                    if (entry == NetworkReflections.instance$ClientboundPlayerInfoUpdatePacket$Action$UPDATE_DISPLAY_NAME) {
                         break outer;
                     }
                 }
@@ -930,7 +991,7 @@ public class PacketConsumers {
             int count = buf.readInt();
             Object option = FastNMS.INSTANCE.method$ParticleTypes$STREAM_CODEC$decode(buf);
             if (option == null) return;
-            if (!Reflections.clazz$BlockParticleOption.isInstance(option)) return;
+            if (!CoreReflections.clazz$BlockParticleOption.isInstance(option)) return;
             Object blockState = FastNMS.INSTANCE.field$BlockParticleOption$blockState(option);
             int id = BlockStateUtils.blockStateToId(blockState);
             int remapped = remap(id);
@@ -970,7 +1031,7 @@ public class PacketConsumers {
             int count = buf.readInt();
             Object option = FastNMS.INSTANCE.method$ParticleTypes$STREAM_CODEC$decode(buf);
             if (option == null) return;
-            if (!Reflections.clazz$BlockParticleOption.isInstance(option)) return;
+            if (!CoreReflections.clazz$BlockParticleOption.isInstance(option)) return;
             Object blockState = FastNMS.INSTANCE.field$BlockParticleOption$blockState(option);
             int id = BlockStateUtils.blockStateToId(blockState);
             int remapped = remap(id);
@@ -998,7 +1059,7 @@ public class PacketConsumers {
     public static final BiConsumer<NetWorkUser, ByteBufPacketEvent> LEVEL_PARTICLE_1_20 = (user, event) -> {
         try {
             FriendlyByteBuf buf = event.getBuffer();
-            Object particleType = FastNMS.INSTANCE.method$FriendlyByteBuf$readById(buf, Reflections.instance$BuiltInRegistries$PARTICLE_TYPE);
+            Object particleType = FastNMS.INSTANCE.method$FriendlyByteBuf$readById(buf, MBuiltInRegistries.PARTICLE_TYPE);
             boolean overrideLimiter = buf.readBoolean();
             double x = buf.readDouble();
             double y = buf.readDouble();
@@ -1010,7 +1071,7 @@ public class PacketConsumers {
             int count = buf.readInt();
             Object option = FastNMS.INSTANCE.method$ClientboundLevelParticlesPacket$readParticle(buf, particleType);
             if (option == null) return;
-            if (!Reflections.clazz$BlockParticleOption.isInstance(option)) return;
+            if (!CoreReflections.clazz$BlockParticleOption.isInstance(option)) return;
             Object blockState = FastNMS.INSTANCE.field$BlockParticleOption$blockState(option);
             int id = BlockStateUtils.blockStateToId(blockState);
             int remapped = remap(id);
@@ -1020,7 +1081,7 @@ public class PacketConsumers {
             event.setChanged(true);
             buf.clear();
             buf.writeVarInt(event.packetID());
-            FastNMS.INSTANCE.method$FriendlyByteBuf$writeId(buf, remappedOption, Reflections.instance$BuiltInRegistries$PARTICLE_TYPE);
+            FastNMS.INSTANCE.method$FriendlyByteBuf$writeId(buf, remappedOption, MBuiltInRegistries.PARTICLE_TYPE);
             buf.writeBoolean(overrideLimiter);
             buf.writeDouble(x);
             buf.writeDouble(y);
@@ -1062,7 +1123,7 @@ public class PacketConsumers {
 
     private static void handlePlayerActionPacketOnMainThread(BukkitServerPlayer player, World world, BlockPos pos, Object packet) {
         Object action = FastNMS.INSTANCE.field$ServerboundPlayerActionPacket$action(packet);
-        if (action == Reflections.instance$ServerboundPlayerActionPacket$Action$START_DESTROY_BLOCK) {
+        if (action == NetworkReflections.instance$ServerboundPlayerActionPacket$Action$START_DESTROY_BLOCK) {
             Object serverLevel = FastNMS.INSTANCE.field$CraftWorld$ServerLevel(world);
             Object blockState = FastNMS.INSTANCE.method$BlockGetter$getBlockState(serverLevel, LocationUtils.toBlockPos(pos));
             int stateId = BlockStateUtils.blockStateToId(blockState);
@@ -1097,11 +1158,11 @@ public class PacketConsumers {
                 }
             }
             player.startMiningBlock(pos, blockState, BukkitBlockManager.instance().getImmutableBlockStateUnsafe(stateId));
-        } else if (action == Reflections.instance$ServerboundPlayerActionPacket$Action$ABORT_DESTROY_BLOCK) {
+        } else if (action == NetworkReflections.instance$ServerboundPlayerActionPacket$Action$ABORT_DESTROY_BLOCK) {
             if (player.isMiningBlock()) {
                 player.abortMiningBlock();
             }
-        } else if (action == Reflections.instance$ServerboundPlayerActionPacket$Action$STOP_DESTROY_BLOCK) {
+        } else if (action == NetworkReflections.instance$ServerboundPlayerActionPacket$Action$STOP_DESTROY_BLOCK) {
             if (player.isMiningBlock()) {
                 player.stopMiningBlock();
             }
@@ -1111,14 +1172,14 @@ public class PacketConsumers {
     public static final TriConsumer<NetWorkUser, NMSPacketEvent, Object> HELLO_C2S = (user, event, packet) -> {
         try {
             BukkitServerPlayer player = (BukkitServerPlayer) user;
-            String name = (String) Reflections.field$ServerboundHelloPacket$name.get(packet);
+            String name = (String) NetworkReflections.field$ServerboundHelloPacket$name.get(packet);
             player.setName(name);
             if (VersionHelper.isOrAbove1_20_2()) {
-                UUID uuid = (UUID) Reflections.field$ServerboundHelloPacket$uuid.get(packet);
+                UUID uuid = (UUID) NetworkReflections.field$ServerboundHelloPacket$uuid.get(packet);
                 player.setUUID(uuid);
             } else {
                 @SuppressWarnings("unchecked")
-                Optional<UUID> uuid = (Optional<UUID>) Reflections.field$ServerboundHelloPacket$uuid.get(packet);
+                Optional<UUID> uuid = (Optional<UUID>) NetworkReflections.field$ServerboundHelloPacket$uuid.get(packet);
                 if (uuid.isPresent()) {
                     player.setUUID(uuid.get());
                 } else {
@@ -1136,7 +1197,7 @@ public class PacketConsumers {
             BukkitServerPlayer player = (BukkitServerPlayer) user;
             if (!player.isMiningBlock()) return;
             Object hand = FastNMS.INSTANCE.field$ServerboundSwingPacket$hand(packet);
-            if (hand == Reflections.instance$InteractionHand$MAIN_HAND) {
+            if (hand == CoreReflections.instance$InteractionHand$MAIN_HAND) {
                 player.onSwingHand();
             }
         } catch (Exception e) {
@@ -1162,10 +1223,10 @@ public class PacketConsumers {
             player.clearView();
             Object dimensionKey;
             if (!VersionHelper.isOrAbove1_20_2()) {
-                dimensionKey = Reflections.field$ClientboundRespawnPacket$dimension.get(packet);
+                dimensionKey = NetworkReflections.field$ClientboundRespawnPacket$dimension.get(packet);
             } else {
-                Object commonInfo = Reflections.field$ClientboundRespawnPacket$commonPlayerSpawnInfo.get(packet);
-                dimensionKey = Reflections.field$CommonPlayerSpawnInfo$dimension.get(commonInfo);
+                Object commonInfo = NetworkReflections.field$ClientboundRespawnPacket$commonPlayerSpawnInfo.get(packet);
+                dimensionKey = NetworkReflections.field$CommonPlayerSpawnInfo$dimension.get(commonInfo);
             }
             Object location = FastNMS.INSTANCE.field$ResourceKey$location(dimensionKey);
             World world = Bukkit.getWorld(Objects.requireNonNull(NamespacedKey.fromString(location.toString())));
@@ -1190,10 +1251,10 @@ public class PacketConsumers {
                 if (BukkitNetworkManager.hasViaVersion()) {
                     user.setProtocolVersion(CraftEngine.instance().compatibilityManager().getPlayerProtocolVersion(player.uuid()));
                 }
-                dimensionKey = Reflections.field$ClientboundLoginPacket$dimension.get(packet);
+                dimensionKey = NetworkReflections.field$ClientboundLoginPacket$dimension.get(packet);
             } else {
-                Object commonInfo = Reflections.field$ClientboundLoginPacket$commonPlayerSpawnInfo.get(packet);
-                dimensionKey = Reflections.field$CommonPlayerSpawnInfo$dimension.get(commonInfo);
+                Object commonInfo = NetworkReflections.field$ClientboundLoginPacket$commonPlayerSpawnInfo.get(packet);
+                dimensionKey = NetworkReflections.field$CommonPlayerSpawnInfo$dimension.get(commonInfo);
             }
             Object location = FastNMS.INSTANCE.field$ResourceKey$location(dimensionKey);
             World world = Bukkit.getWorld(Objects.requireNonNull(NamespacedKey.fromString(location.toString())));
@@ -1218,13 +1279,13 @@ public class PacketConsumers {
             if (!user.isOnline()) return;
             BukkitServerPlayer player = (BukkitServerPlayer) user;
             if (VersionHelper.isFolia()) {
-                BukkitCraftEngine.instance().scheduler().sync().run(() -> {
+                player.platformPlayer().getScheduler().run(BukkitCraftEngine.instance().javaPlugin(), (t) -> {
                     try {
                         handleSetCreativeSlotPacketOnMainThread(player, packet);
                     } catch (Exception e) {
                         CraftEngine.instance().logger().warn("Failed to handle ServerboundSetCreativeModeSlotPacket", e);
                     }
-                }, (World) player.world().platformWorld(), (MCUtils.fastFloor(player.x())) >> 4, (MCUtils.fastFloor(player.z())) >> 4);
+                }, () -> {});
             } else {
                 handleSetCreativeSlotPacketOnMainThread(player, packet);
             }
@@ -1237,9 +1298,9 @@ public class PacketConsumers {
         Player bukkitPlayer = player.platformPlayer();
         if (bukkitPlayer == null) return;
         if (bukkitPlayer.getGameMode() != GameMode.CREATIVE) return;
-        int slot = VersionHelper.isOrAbove1_20_5() ? Reflections.field$ServerboundSetCreativeModeSlotPacket$slotNum.getShort(packet) : Reflections.field$ServerboundSetCreativeModeSlotPacket$slotNum.getInt(packet);
+        int slot = VersionHelper.isOrAbove1_20_5() ? NetworkReflections.field$ServerboundSetCreativeModeSlotPacket$slotNum.getShort(packet) : NetworkReflections.field$ServerboundSetCreativeModeSlotPacket$slotNum.getInt(packet);
         if (slot < 36 || slot > 44) return;
-        ItemStack item = FastNMS.INSTANCE.method$CraftItemStack$asCraftMirror(Reflections.field$ServerboundSetCreativeModeSlotPacket$itemStack.get(packet));
+        ItemStack item = FastNMS.INSTANCE.method$CraftItemStack$asCraftMirror(NetworkReflections.field$ServerboundSetCreativeModeSlotPacket$itemStack.get(packet));
         if (ItemUtils.isEmpty(item)) return;
         if (slot - 36 != bukkitPlayer.getInventory().getHeldItemSlot()) {
             return;
@@ -1312,7 +1373,7 @@ public class PacketConsumers {
             if (!user.isOnline()) return;
             Player player = (Player) user.platformPlayer();
             if (player == null) return;
-            Object pos = Reflections.field$ServerboundPickItemFromBlockPacket$pos.get(packet);
+            Object pos = NetworkReflections.field$ServerboundPickItemFromBlockPacket$pos.get(packet);
             if (VersionHelper.isFolia()) {
                 int x = FastNMS.INSTANCE.field$Vec3i$x(pos);
                 int z = FastNMS.INSTANCE.field$Vec3i$z(pos);
@@ -1350,22 +1411,19 @@ public class PacketConsumers {
     // 1.21.4+
     public static final TriConsumer<NetWorkUser, NMSPacketEvent, Object> PICK_ITEM_FROM_ENTITY = (user, event, packet) -> {
         try {
-            int entityId = (int) Reflections.field$ServerboundPickItemFromEntityPacket$id.get(packet);
+            int entityId = (int) NetworkReflections.field$ServerboundPickItemFromEntityPacket$id.get(packet);
             BukkitFurniture furniture = BukkitFurnitureManager.instance().loadedFurnitureByEntityId(entityId);
             if (furniture == null) return;
             Player player = (Player) user.platformPlayer();
             if (player == null) return;
             if (VersionHelper.isFolia()) {
-                Location location = player.getLocation();
-                int x = location.getBlockX();
-                int z = location.getBlockZ();
-                BukkitCraftEngine.instance().scheduler().sync().run(() -> {
+                player.getScheduler().run(BukkitCraftEngine.instance().javaPlugin(), (t) -> {
                     try {
                         handlePickItemFromEntityOnMainThread(player, furniture);
                     } catch (Exception e) {
                         CraftEngine.instance().logger().warn("Failed to handle ServerboundPickItemFromEntityPacket", e);
                     }
-                }, player.getWorld(), x >> 4, z >> 4);
+                }, () -> {});
             } else {
                 BukkitCraftEngine.instance().scheduler().sync().run(() -> {
                     try {
@@ -1392,14 +1450,14 @@ public class PacketConsumers {
             CraftEngine.instance().logger().warn("Item: " + itemId + " is not a valid item");
             return;
         }
-        assert Reflections.method$ServerGamePacketListenerImpl$tryPickItem != null;
+        assert CoreReflections.method$ServerGamePacketListenerImpl$tryPickItem != null;
         if (VersionHelper.isOrAbove1_21_5()) {
-            Reflections.method$ServerGamePacketListenerImpl$tryPickItem.invoke(
-                    Reflections.field$ServerPlayer$connection.get(FastNMS.INSTANCE.method$CraftPlayer$getHandle(player)),
+            CoreReflections.method$ServerGamePacketListenerImpl$tryPickItem.invoke(
+                    CoreReflections.field$ServerPlayer$connection.get(FastNMS.INSTANCE.method$CraftPlayer$getHandle(player)),
                     FastNMS.INSTANCE.method$CraftItemStack$asNMSCopy(itemStack), blockPos, entity, true);
         } else {
-            Reflections.method$ServerGamePacketListenerImpl$tryPickItem.invoke(
-                    Reflections.field$ServerPlayer$connection.get(FastNMS.INSTANCE.method$CraftPlayer$getHandle(player)), FastNMS.INSTANCE.method$CraftItemStack$asNMSCopy(itemStack));
+            CoreReflections.method$ServerGamePacketListenerImpl$tryPickItem.invoke(
+                    CoreReflections.field$ServerPlayer$connection.get(FastNMS.INSTANCE.method$CraftPlayer$getHandle(player)), FastNMS.INSTANCE.method$CraftItemStack$asNMSCopy(itemStack));
         }
     }
 
@@ -1410,39 +1468,6 @@ public class PacketConsumers {
             buf.readUUID();
             int type = buf.readVarInt();
             ADD_ENTITY_HANDLERS[type].accept(user, event);
-        } catch (Exception e) {
-            CraftEngine.instance().logger().warn("Failed to handle ClientboundAddEntityPacket", e);
-        }
-    };
-
-    public static final TriConsumer<NetWorkUser, NMSPacketEvent, Object> ADD_ENTITY = (user, event, packet) -> {
-        try {
-            Object entityType = FastNMS.INSTANCE.field$ClientboundAddEntityPacket$type(packet);
-            int entityId = FastNMS.INSTANCE.field$ClientboundAddEntityPacket$entityId(packet);
-            if (entityType == Reflections.instance$EntityType$ITEM_DISPLAY) {
-                // Furniture
-                BukkitFurniture furniture = BukkitFurnitureManager.instance().loadedFurnitureByRealEntityId(entityId);
-                if (furniture != null) {
-                    user.entityPacketHandlers().computeIfAbsent(entityId, k -> new FurniturePacketHandler(furniture.fakeEntityIds()));
-                    user.sendPacket(furniture.spawnPacket((Player) user.platformPlayer()), false);
-                    if (Config.hideBaseEntity() && !furniture.hasExternalModel()) {
-                        event.setCancelled(true);
-                    }
-                }
-            } else if (entityType == BukkitFurnitureManager.NMS_COLLISION_ENTITY_TYPE) {
-                // Cancel collider entity packet
-                BukkitFurniture furniture = BukkitFurnitureManager.instance().loadedFurnitureByRealEntityId(entityId);
-                if (furniture != null) {
-                    event.setCancelled(true);
-                    user.entityPacketHandlers().put(entityId, FurnitureCollisionPacketHandler.INSTANCE);
-                }
-            } else {
-                BukkitProjectileManager.instance().projectileByEntityId(entityId).ifPresent(customProjectile -> {
-                    ProjectilePacketHandler handler = new ProjectilePacketHandler(customProjectile, entityId);
-                    event.replacePacket(handler.convertAddCustomProjectilePacket(packet));
-                    user.entityPacketHandlers().put(entityId, handler);
-                });
-            }
         } catch (Exception e) {
             CraftEngine.instance().logger().warn("Failed to handle ClientboundAddEntityPacket", e);
         }
@@ -1497,14 +1522,14 @@ public class PacketConsumers {
             }
             BukkitFurniture furniture = BukkitFurnitureManager.instance().loadedFurnitureByEntityId(entityId);
             if (furniture == null) return;
-            Object action = Reflections.field$ServerboundInteractPacket$action.get(packet);
-            Object actionType = Reflections.method$ServerboundInteractPacket$Action$getType.invoke(action);
+            Object action = NetworkReflections.field$ServerboundInteractPacket$action.get(packet);
+            Object actionType = NetworkReflections.method$ServerboundInteractPacket$Action$getType.invoke(action);
             if (actionType == null) return;
             Location location = furniture.baseEntity().getLocation();
             BukkitServerPlayer serverPlayer = (BukkitServerPlayer) user;
             if (serverPlayer.isSpectatorMode()) return;
             BukkitCraftEngine.instance().scheduler().sync().run(() -> {
-                if (actionType == Reflections.instance$ServerboundInteractPacket$ActionType$ATTACK) {
+                if (actionType == NetworkReflections.instance$ServerboundInteractPacket$ActionType$ATTACK) {
                     // todo 冒险模式破坏工具白名单
                     if (serverPlayer.isAdventureMode()) return;
                     if (furniture.isValid()) {
@@ -1526,13 +1551,13 @@ public class PacketConsumers {
 
                         CraftEngineFurniture.remove(furniture, serverPlayer, !serverPlayer.isCreativeMode(), true);
                     }
-                } else if (actionType == Reflections.instance$ServerboundInteractPacket$ActionType$INTERACT_AT) {
+                } else if (actionType == NetworkReflections.instance$ServerboundInteractPacket$ActionType$INTERACT_AT) {
                     InteractionHand hand;
                     Location interactionPoint;
                     try {
-                        Object interactionHand = Reflections.field$ServerboundInteractPacket$InteractionAtLocationAction$hand.get(action);
-                        hand = interactionHand == Reflections.instance$InteractionHand$MAIN_HAND ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
-                        Object vec3 = Reflections.field$ServerboundInteractPacket$InteractionAtLocationAction$location.get(action);
+                        Object interactionHand = NetworkReflections.field$ServerboundInteractPacket$InteractionAtLocationAction$hand.get(action);
+                        hand = interactionHand == CoreReflections.instance$InteractionHand$MAIN_HAND ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+                        Object vec3 = NetworkReflections.field$ServerboundInteractPacket$InteractionAtLocationAction$location.get(action);
 
                         double x = FastNMS.INSTANCE.field$Vec3$x(vec3);
                         double y = FastNMS.INSTANCE.field$Vec3$y(vec3);
@@ -1633,7 +1658,7 @@ public class PacketConsumers {
                     buf.writeLong(seed);
                 }
             } else {
-                Optional<Object> optionalSound = FastNMS.INSTANCE.method$IdMap$byId(Reflections.instance$BuiltInRegistries$SOUND_EVENT, id - 1);
+                Optional<Object> optionalSound = FastNMS.INSTANCE.method$IdMap$byId(MBuiltInRegistries.SOUND_EVENT, id - 1);
                 if (optionalSound.isEmpty()) return;
                 Object soundEvent = optionalSound.get();
                 Key soundId = Key.of(FastNMS.INSTANCE.method$SoundEvent$location(soundEvent));
@@ -1674,14 +1699,14 @@ public class PacketConsumers {
             if (((BukkitServerPlayer) user).hasPermission(FontManager.BYPASS_ANVIL)) {
                 return;
             }
-            String message = (String) Reflections.field$ServerboundRenameItemPacket$name.get(packet);
+            String message = (String) NetworkReflections.field$ServerboundRenameItemPacket$name.get(packet);
             if (message != null && !message.isEmpty()) {
                 // check bypass
                 FontManager manager = CraftEngine.instance().fontManager();
                 IllegalCharacterProcessResult result = manager.processIllegalCharacters(message);
                 if (result.has()) {
                     try {
-                        Reflections.field$ServerboundRenameItemPacket$name.set(packet, result.text());
+                        NetworkReflections.field$ServerboundRenameItemPacket$name.set(packet, result.text());
                     } catch (ReflectiveOperationException e) {
                         CraftEngine.instance().logger().warn("Failed to replace chat", e);
                     }
@@ -1700,7 +1725,7 @@ public class PacketConsumers {
             if (((BukkitServerPlayer) user).hasPermission(FontManager.BYPASS_SIGN)) {
                 return;
             }
-            String[] lines = (String[]) Reflections.field$ServerboundSignUpdatePacket$lines.get(packet);
+            String[] lines = (String[]) NetworkReflections.field$ServerboundSignUpdatePacket$lines.get(packet);
             FontManager manager = CraftEngine.instance().fontManager();
             if (!manager.isDefaultFontInUse()) return;
             for (int i = 0; i < lines.length; i++) {
@@ -1731,9 +1756,9 @@ public class PacketConsumers {
 
             boolean changed = false;
 
-            List<String> pages = (List<String>) Reflections.field$ServerboundEditBookPacket$pages.get(packet);
+            List<String> pages = (List<String>) NetworkReflections.field$ServerboundEditBookPacket$pages.get(packet);
             List<String> newPages = new ArrayList<>(pages.size());
-            Optional<String> title = (Optional<String>) Reflections.field$ServerboundEditBookPacket$title.get(packet);
+            Optional<String> title = (Optional<String>) NetworkReflections.field$ServerboundEditBookPacket$title.get(packet);
             Optional<String> newTitle;
 
             if (title.isPresent()) {
@@ -1756,8 +1781,8 @@ public class PacketConsumers {
             }
 
             if (changed) {
-                Object newPacket = Reflections.constructor$ServerboundEditBookPacket.newInstance(
-                        Reflections.field$ServerboundEditBookPacket$slot.get(packet),
+                Object newPacket = NetworkReflections.constructor$ServerboundEditBookPacket.newInstance(
+                        NetworkReflections.field$ServerboundEditBookPacket$slot.get(packet),
                         newPages,
                         newTitle
                 );
@@ -1790,8 +1815,8 @@ public class PacketConsumers {
     public static final TriConsumer<NetWorkUser, NMSPacketEvent, Object> CUSTOM_PAYLOAD = (user, event, packet) -> {
         try {
             if (!VersionHelper.isOrAbove1_20_5()) return;
-            Object payload = Reflections.field$ServerboundCustomPayloadPacket$payload.get(packet);
-            if (Reflections.clazz$DiscardedPayload.isInstance(payload)) {
+            Object payload = NetworkReflections.field$ServerboundCustomPayloadPacket$payload.get(packet);
+            if (NetworkReflections.clazz$DiscardedPayload.isInstance(payload)) {
                 Payload discardedPayload = DiscardedPayload.from(payload);
                 if (discardedPayload == null || !discardedPayload.channel().equals(NetworkManager.MOD_CHANNEL_KEY))
                     return;
@@ -1954,17 +1979,17 @@ public class PacketConsumers {
 
     public static final BiConsumer<NetWorkUser, ByteBufPacketEvent> CONTAINER_SET_CONTENT = (user, event) -> {
         try {
+            if (!(user instanceof BukkitServerPlayer serverPlayer)) return;
             FriendlyByteBuf buf = event.getBuffer();
             int containerId = buf.readContainerId();
             int stateId = buf.readVarInt();
             int listSize = buf.readVarInt();
-            ItemBuildContext context = ItemBuildContext.of((BukkitServerPlayer) user);
             List<ItemStack> items = new ArrayList<>(listSize);
             boolean changed = false;
             Object friendlyBuf = FastNMS.INSTANCE.constructor$FriendlyByteBuf(buf);
             for (int i = 0; i < listSize; i++) {
                 ItemStack itemStack = FastNMS.INSTANCE.method$FriendlyByteBuf$readItem(friendlyBuf);
-                Optional<ItemStack> optional = BukkitItemManager.instance().s2c(itemStack, context);
+                Optional<ItemStack> optional = BukkitItemManager.instance().s2c(itemStack, serverPlayer);
                 if (optional.isPresent()) {
                     items.add(optional.get());
                     changed = true;
@@ -1974,7 +1999,7 @@ public class PacketConsumers {
             }
             ItemStack carriedItem = FastNMS.INSTANCE.method$FriendlyByteBuf$readItem(friendlyBuf);
             ItemStack newCarriedItem = carriedItem;
-            Optional<ItemStack> optional = BukkitItemManager.instance().s2c(carriedItem, context);
+            Optional<ItemStack> optional = BukkitItemManager.instance().s2c(carriedItem, serverPlayer);
             if (optional.isPresent()) {
                 changed = true;
                 newCarriedItem = optional.get();
@@ -1998,14 +2023,14 @@ public class PacketConsumers {
 
     public static final BiConsumer<NetWorkUser, ByteBufPacketEvent> CONTAINER_SET_SLOT = (user, event) -> {
         try {
+            if (!(user instanceof BukkitServerPlayer serverPlayer)) return;
             FriendlyByteBuf buf = event.getBuffer();
-            ItemBuildContext context = ItemBuildContext.of((BukkitServerPlayer) user);
             int containerId = buf.readContainerId();
             int stateId = buf.readVarInt();
             int slot = buf.readShort();
             Object friendlyBuf = FastNMS.INSTANCE.constructor$FriendlyByteBuf(buf);
             ItemStack itemStack = FastNMS.INSTANCE.method$FriendlyByteBuf$readItem(friendlyBuf);
-            BukkitItemManager.instance().s2c(itemStack, context).ifPresent((newItemStack) -> {
+            BukkitItemManager.instance().s2c(itemStack, serverPlayer).ifPresent((newItemStack) -> {
                 event.setChanged(true);
                 buf.clear();
                 buf.writeVarInt(event.packetID());
@@ -2022,11 +2047,11 @@ public class PacketConsumers {
 
     public static final BiConsumer<NetWorkUser, ByteBufPacketEvent> SET_CURSOR_ITEM = (user, event) -> {
         try {
+            if (!(user instanceof BukkitServerPlayer serverPlayer)) return;
             FriendlyByteBuf buf = event.getBuffer();
-            ItemBuildContext context = ItemBuildContext.of((BukkitServerPlayer) user);
             Object friendlyBuf = FastNMS.INSTANCE.constructor$FriendlyByteBuf(buf);
             ItemStack itemStack = FastNMS.INSTANCE.method$FriendlyByteBuf$readItem(friendlyBuf);
-            BukkitItemManager.instance().s2c(itemStack, context).ifPresent((newItemStack) -> {
+            BukkitItemManager.instance().s2c(itemStack, serverPlayer).ifPresent((newItemStack) -> {
                 event.setChanged(true);
                 buf.clear();
                 buf.writeVarInt(event.packetID());
@@ -2040,18 +2065,18 @@ public class PacketConsumers {
 
     public static final BiConsumer<NetWorkUser, ByteBufPacketEvent> SET_EQUIPMENT = (user, event) -> {
         try {
+            if (!(user instanceof BukkitServerPlayer serverPlayer)) return;
             FriendlyByteBuf buf = event.getBuffer();
             boolean changed = false;
-            ItemBuildContext context = ItemBuildContext.of((BukkitServerPlayer) user);
             Object friendlyBuf = FastNMS.INSTANCE.constructor$FriendlyByteBuf(buf);
             int entity = buf.readVarInt();
             List<com.mojang.datafixers.util.Pair<Object, ItemStack>> slots = Lists.newArrayList();
             int slotMask;
             do {
                 slotMask = buf.readByte();
-                Object equipmentSlot = Reflections.instance$EquipmentSlot$values[slotMask & 127];
+                Object equipmentSlot = CoreReflections.instance$EquipmentSlot$values[slotMask & 127];
                 ItemStack itemStack = FastNMS.INSTANCE.method$FriendlyByteBuf$readItem(friendlyBuf);
-                Optional<ItemStack> optional = BukkitItemManager.instance().s2c(itemStack, context);
+                Optional<ItemStack> optional = BukkitItemManager.instance().s2c(itemStack, serverPlayer);
                 if (optional.isPresent()) {
                     changed = true;
                     itemStack = optional.get();
@@ -2081,12 +2106,12 @@ public class PacketConsumers {
 
     public static final BiConsumer<NetWorkUser, ByteBufPacketEvent> SET_PLAYER_INVENTORY_1_21_2 = (user, event) -> {
         try {
+            if (!(user instanceof BukkitServerPlayer serverPlayer)) return;
             FriendlyByteBuf buf = event.getBuffer();
-            ItemBuildContext context = ItemBuildContext.of((BukkitServerPlayer) user);
             int slot = buf.readVarInt();
             Object friendlyBuf = FastNMS.INSTANCE.constructor$FriendlyByteBuf(buf);
             ItemStack itemStack = FastNMS.INSTANCE.method$FriendlyByteBuf$readItem(friendlyBuf);
-            BukkitItemManager.instance().s2c(itemStack, context).ifPresent((newItemStack) -> {
+            BukkitItemManager.instance().s2c(itemStack, serverPlayer).ifPresent((newItemStack) -> {
                 event.setChanged(true);
                 buf.clear();
                 buf.writeVarInt(event.packetID());
@@ -2106,8 +2131,7 @@ public class PacketConsumers {
             short slotNum = buf.readShort();
             ItemStack itemStack = VersionHelper.isOrAbove1_20_5() ?
                     FastNMS.INSTANCE.method$FriendlyByteBuf$readUntrustedItem(friendlyBuf) : FastNMS.INSTANCE.method$FriendlyByteBuf$readItem(friendlyBuf);
-            ItemBuildContext context = ItemBuildContext.of((BukkitServerPlayer) user);
-            BukkitItemManager.instance().c2s(itemStack, context).ifPresent((newItemStack) -> {
+            BukkitItemManager.instance().c2s(itemStack).ifPresent((newItemStack) -> {
                 event.setChanged(true);
                 buf.clear();
                 buf.writeVarInt(event.packetID());
@@ -2129,7 +2153,6 @@ public class PacketConsumers {
             if (VersionHelper.isOrAbove1_21_5()) return; // 1.21.5+需要其他办法解决同步问题
             FriendlyByteBuf buf = event.getBuffer();
             boolean changed = false;
-            ItemBuildContext context = ItemBuildContext.of((BukkitServerPlayer) user);
             Object friendlyBuf = FastNMS.INSTANCE.constructor$FriendlyByteBuf(buf);
             int containerId = buf.readContainerId();
             int stateId = buf.readVarInt();
@@ -2141,7 +2164,7 @@ public class PacketConsumers {
             for (int j = 0; j < i; ++j) {
                 int k = buf.readShort();
                 ItemStack itemStack = FastNMS.INSTANCE.method$FriendlyByteBuf$readItem(friendlyBuf);
-                Optional<ItemStack> optional = BukkitItemManager.instance().c2s(itemStack, context);
+                Optional<ItemStack> optional = BukkitItemManager.instance().c2s(itemStack);
                 if (optional.isPresent()) {
                     changed = true;
                     itemStack = optional.get();
@@ -2149,7 +2172,7 @@ public class PacketConsumers {
                 changedSlots.put(k, itemStack);
             }
             ItemStack carriedItem = FastNMS.INSTANCE.method$FriendlyByteBuf$readItem(friendlyBuf);
-            Optional<ItemStack> optional = BukkitItemManager.instance().c2s(carriedItem, context);
+            Optional<ItemStack> optional = BukkitItemManager.instance().c2s(carriedItem);
             if (optional.isPresent()) {
                 changed = true;
                 carriedItem = optional.get();
@@ -2195,7 +2218,7 @@ public class PacketConsumers {
                 }
                 for (ResourcePackDownloadData data : dataList) {
                     Object newPacket = ResourcePackUtils.createPacket(data.uuid(), data.url(), data.sha1());
-                    user.nettyChannel().writeAndFlush(newPacket);
+                    user.sendPacket(newPacket, true);
                     user.addResourcePackUUID(data.uuid());
                 }
             }).exceptionally(throwable -> {
@@ -2211,7 +2234,7 @@ public class PacketConsumers {
     public static final TriConsumer<NetWorkUser, NMSPacketEvent, Object> HANDSHAKE_C2S = (user, event, packet) -> {
         try {
             if (BukkitNetworkManager.hasViaVersion()) return;
-            int protocolVersion = Reflections.field$ClientIntentionPacket$protocolVersion.getInt(packet);
+            int protocolVersion = NetworkReflections.field$ClientIntentionPacket$protocolVersion.getInt(packet);
             user.setProtocolVersion(protocolVersion);
         } catch (Exception e) {
             CraftEngine.instance().logger().warn("Failed to handle ClientIntentionPacket", e);
@@ -2231,17 +2254,17 @@ public class PacketConsumers {
     public static final TriConsumer<NetWorkUser, NMSPacketEvent, Object> RESOURCE_PACK_RESPONSE = (user, event, packet) -> {
         try {
             if (user.sentResourcePack() || !Config.sendPackOnJoin() || !Config.kickOnDeclined()) return;
-            Object action = Reflections.field$ServerboundResourcePackPacket$action.get(packet);
+            Object action = NetworkReflections.field$ServerboundResourcePackPacket$action.get(packet);
             if (action == null) return;
-            if (action == Reflections.instance$ServerboundResourcePackPacket$Action$DECLINED
-                    || action == Reflections.instance$ServerboundResourcePackPacket$Action$FAILED_DOWNLOAD) {
-                Object kickPacket = Reflections.constructor$ClientboundDisconnectPacket.newInstance(
+            if (action == NetworkReflections.instance$ServerboundResourcePackPacket$Action$DECLINED
+                    || action == NetworkReflections.instance$ServerboundResourcePackPacket$Action$FAILED_DOWNLOAD) {
+                Object kickPacket = NetworkReflections.constructor$ClientboundDisconnectPacket.newInstance(
                         ComponentUtils.adventureToMinecraft(Component.translatable("multiplayer.requiredTexturePrompt.disconnect")));
-                user.nettyChannel().writeAndFlush(kickPacket);
+                user.sendPacket(kickPacket, true);
                 user.nettyChannel().disconnect();
                 return;
             }
-            if (action == Reflections.instance$ServerboundResourcePackPacket$Action$SUCCESSFULLY_LOADED) {
+            if (action == NetworkReflections.instance$ServerboundResourcePackPacket$Action$SUCCESSFULLY_LOADED) {
                 user.setSentResourcePack(true);
             }
         } catch (Exception e) {
@@ -2253,9 +2276,9 @@ public class PacketConsumers {
         try {
             Object player = user.serverPlayer();
             if (player == null) return;
-            int entityId = Reflections.field$ClientboundEntityEventPacket$entityId.getInt(packet);
+            int entityId = NetworkReflections.field$ClientboundEntityEventPacket$entityId.getInt(packet);
             if (entityId != FastNMS.INSTANCE.method$Entity$getId(player)) return;
-            byte eventId = Reflections.field$ClientboundEntityEventPacket$eventId.getByte(packet);
+            byte eventId = NetworkReflections.field$ClientboundEntityEventPacket$eventId.getByte(packet);
             if (eventId >= 24 && eventId <= 28) {
                 CraftEngine.instance().fontManager().refreshEmojiSuggestions(user.uuid());
             }
@@ -2266,7 +2289,7 @@ public class PacketConsumers {
 
     public static final TriConsumer<NetWorkUser, NMSPacketEvent, Object> MOVE_POS_ENTITY = (user, event, packet) -> {
         try {
-            int entityId = BukkitInjector.internalFieldAccessor().field$ClientboundMoveEntityPacket$entityId(packet);
+            int entityId = ProtectedFieldVisitor.get().field$ClientboundMoveEntityPacket$entityId(packet);
             if (BukkitFurnitureManager.instance().isFurnitureRealEntity(entityId)) {
                 event.setCancelled(true);
             }
@@ -2277,7 +2300,7 @@ public class PacketConsumers {
 
     public static final TriConsumer<NetWorkUser, NMSPacketEvent, Object> MOVE_POS_AND_ROTATE_ENTITY = (user, event, packet) -> {
         try {
-            int entityId = BukkitInjector.internalFieldAccessor().field$ClientboundMoveEntityPacket$entityId(packet);
+            int entityId = ProtectedFieldVisitor.get().field$ClientboundMoveEntityPacket$entityId(packet);
             EntityPacketHandler handler = user.entityPacketHandlers().get(entityId);
             if (handler != null) {
                 handler.handleMoveAndRotate(user, event, packet);
@@ -2286,11 +2309,4 @@ public class PacketConsumers {
             CraftEngine.instance().logger().warn("Failed to handle ClientboundMoveEntityPacket$PosRot", e);
         }
     };
-
-    private static BukkitNetworkManager.Handlers simpleAddEntityHandler(EntityPacketHandler handler) {
-        return (user, event) -> {
-            FriendlyByteBuf buf = event.getBuffer();
-            user.entityPacketHandlers().putIfAbsent(buf.readVarInt(), handler);
-        };
-    }
 }

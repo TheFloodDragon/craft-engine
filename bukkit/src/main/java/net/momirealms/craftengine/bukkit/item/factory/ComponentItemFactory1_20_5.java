@@ -4,11 +4,14 @@ import com.google.gson.JsonElement;
 import net.momirealms.craftengine.bukkit.item.ComponentItemWrapper;
 import net.momirealms.craftengine.bukkit.item.ComponentTypes;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MRegistryOps;
 import net.momirealms.craftengine.bukkit.util.EnchantmentUtils;
 import net.momirealms.craftengine.core.item.Enchantment;
 import net.momirealms.craftengine.core.item.Trim;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.util.Key;
+import net.momirealms.sparrow.nbt.CompoundTag;
 import net.momirealms.sparrow.nbt.Tag;
 import org.bukkit.inventory.ItemStack;
 
@@ -38,29 +41,136 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
         return new ComponentItemWrapper(item);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected Object getJavaTag(ComponentItemWrapper item, Object... path) {
-        throw new UnsupportedOperationException("This feature is not available on 1.20.5+");
+        Map<String, Object> rootMap = (Map<String, Object>) item.getJavaComponent(ComponentTypes.CUSTOM_DATA).orElse(null);
+        if (rootMap == null) return null;
+        Object currentObj = rootMap;
+        for (int i = 0; i < path.length; i++) {
+            Object pathSegment = path[i];
+            if (pathSegment == null) return null;
+            String key = pathSegment.toString();
+            currentObj = ((Map<String, Object>) currentObj).get(key);
+            if (currentObj == null) return null;
+            if (i == path.length - 1) {
+                return currentObj;
+            }
+            if (!(currentObj instanceof Map)) {
+                return null;
+            }
+        }
+        return currentObj;
     }
 
     @Override
     protected Tag getNBTTag(ComponentItemWrapper item, Object... path) {
-        throw new UnsupportedOperationException("This feature is not available on 1.20.5+");
+        CompoundTag rootTag = (CompoundTag) item.getSparrowNBTComponent(ComponentTypes.CUSTOM_DATA).orElse(null);
+        if (rootTag == null) return null;
+        Tag currentTag = rootTag;
+        for (int i = 0; i < path.length; i++) {
+            Object pathSegment = path[i];
+            if (pathSegment == null) return null;
+            CompoundTag t = (CompoundTag) currentTag;
+            String key = pathSegment.toString();
+            currentTag = t.get(key);
+            if (currentTag == null) return null;
+            if (i == path.length - 1) {
+                return currentTag;
+            }
+            if (!(currentTag instanceof CompoundTag)) {
+                return null;
+            }
+        }
+        return currentTag;
     }
 
     @Override
     protected void setTag(ComponentItemWrapper item, Object value, Object... path) {
-        throw new UnsupportedOperationException("This feature is not available on 1.20.5+");
+        Tag valueTag;
+        if (value instanceof Tag tag) {
+            valueTag = tag;
+        } else if (value instanceof JsonElement je) {
+            valueTag = MRegistryOps.JSON.convertTo(MRegistryOps.SPARROW_NBT, je);
+        } else if (CoreReflections.clazz$Tag.isInstance(value)) {
+            valueTag = MRegistryOps.NBT.convertTo(MRegistryOps.SPARROW_NBT, value);
+        } else {
+            assert MRegistryOps.JAVA != null;
+            valueTag = MRegistryOps.JAVA.convertTo(MRegistryOps.SPARROW_NBT, value);
+        }
+
+        CompoundTag rootTag = (CompoundTag) item.getSparrowNBTComponent(ComponentTypes.CUSTOM_DATA).orElse(new CompoundTag());
+
+        if (path == null || path.length == 0) {
+            if (valueTag instanceof CompoundTag) {
+                rootTag = (CompoundTag) valueTag;
+            } else {
+                throw new IllegalArgumentException("Cannot set non-CompoundTag as root without path");
+            }
+        } else {
+            CompoundTag currentTag = rootTag;
+            for (int i = 0; i < path.length - 1; i++) {
+                Object pathSegment = path[i];
+                if (pathSegment == null) throw new NullPointerException("Path segment cannot be null");
+
+                String key = pathSegment.toString();
+                Tag nextTag = currentTag.get(key);
+
+                if (!(nextTag instanceof CompoundTag)) {
+                    nextTag = new CompoundTag();
+                    currentTag.put(key, nextTag);
+                }
+                currentTag = (CompoundTag) nextTag;
+            }
+
+            String finalKey = path[path.length - 1].toString();
+            currentTag.put(finalKey, valueTag);
+        }
+
+        item.setSparrowNBTComponent(ComponentTypes.CUSTOM_DATA, rootTag);
     }
 
     @Override
     protected boolean hasTag(ComponentItemWrapper item, Object... path) {
-        throw new UnsupportedOperationException("This feature is not available on 1.20.5+");
+        return getNBTTag(item, path) != null;
     }
 
     @Override
     protected boolean removeTag(ComponentItemWrapper item, Object... path) {
-        throw new UnsupportedOperationException("This feature is not available on 1.20.5+");
+        CompoundTag rootTag = (CompoundTag) item.getSparrowNBTComponent(ComponentTypes.CUSTOM_DATA).orElse(null);
+        if (rootTag == null || path == null || path.length == 0) return false;
+
+        if (path.length == 1) {
+            String key = path[0].toString();
+            if (rootTag.containsKey(key)) {
+                rootTag.remove(key);
+                item.setSparrowNBTComponent(ComponentTypes.CUSTOM_DATA, rootTag);
+                return true;
+            }
+            return false;
+        }
+
+        CompoundTag parentTag = rootTag;
+        for (int i = 0; i < path.length - 1; i++) {
+            Object pathSegment = path[i];
+            if (pathSegment == null) return false;
+
+            String key = pathSegment.toString();
+            Tag childTag = parentTag.get(key);
+
+            if (!(childTag instanceof CompoundTag)) {
+                return false;
+            }
+            parentTag = (CompoundTag) childTag;
+        }
+
+        String finalKey = path[path.length - 1].toString();
+        if (parentTag.containsKey(finalKey)) {
+            parentTag.remove(finalKey);
+            item.setSparrowNBTComponent(ComponentTypes.CUSTOM_DATA, rootTag);
+            return true;
+        }
+        return false;
     }
 
     @Override

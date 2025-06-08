@@ -52,7 +52,7 @@ public class EnableResourceCommand extends BukkitCommandFeature<CommandSender> {
                             return;
                         }
                     }
-                    YamlDocument document = plugin().config().loadYamlData(packMetaPath.toFile());
+                    YamlDocument document = plugin().config().loadYamlData(packMetaPath);
                     document.set("enable", true);
                     try {
                         document.save(packMetaPath.toFile());

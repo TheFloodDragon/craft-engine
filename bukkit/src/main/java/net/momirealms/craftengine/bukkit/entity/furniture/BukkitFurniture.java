@@ -4,10 +4,10 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.momirealms.craftengine.bukkit.entity.BukkitEntity;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.util.EntityUtils;
 import net.momirealms.craftengine.bukkit.util.LegacyAttributeUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
-import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.core.entity.furniture.*;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.util.ArrayUtils;
@@ -91,7 +91,7 @@ public class BukkitFurniture implements Furniture {
         WorldPosition position = position();
         Integer dyedColor = this.extraData.dyedColor().orElse(null);
         for (FurnitureElement element : placement.elements()) {
-            int entityId = Reflections.instance$Entity$ENTITY_COUNTER.incrementAndGet();
+            int entityId = CoreReflections.instance$Entity$ENTITY_COUNTER.incrementAndGet();
             fakeEntityIds.add(entityId);
             element.initPackets(entityId, position, conjugated, dyedColor, packet -> {
                 packets.add(packet);
@@ -99,7 +99,7 @@ public class BukkitFurniture implements Furniture {
             });
         }
         for (HitBox hitBox : placement.hitBoxes()) {
-            int[] ids = hitBox.acquireEntityIds(Reflections.instance$Entity$ENTITY_COUNTER::incrementAndGet);
+            int[] ids = hitBox.acquireEntityIds(CoreReflections.instance$Entity$ENTITY_COUNTER::incrementAndGet);
             for (int entityId : ids) {
                 fakeEntityIds.add(entityId);
                 mainEntityIds.add(entityId);

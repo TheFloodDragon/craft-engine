@@ -44,8 +44,28 @@ public class FriendlyByteBuf extends ByteBuf {
         return source;
     }
 
-    public BlockPos readBlockPos(ByteBuf buf) {
-        return BlockPos.of(buf.readLong());
+    public <T, C extends Collection<T>> C readCollection(IntFunction<C> collectionFactory, Reader<T> reader) {
+        int i = this.readVarInt();
+        C c0 = (C)(collectionFactory.apply(i));
+
+        for(int j = 0; j < i; ++j) {
+            c0.add(reader.apply(this));
+        }
+
+        return c0;
+    }
+
+    public <T> void writeCollection(Collection<T> collection, Writer<T> writer) {
+        this.writeVarInt(collection.size());
+
+        for(T t0 : collection) {
+            writer.accept(this, t0);
+        }
+
+    }
+
+    public BlockPos readBlockPos() {
+        return BlockPos.of(this.readLong());
     }
 
     public int readContainerId() {

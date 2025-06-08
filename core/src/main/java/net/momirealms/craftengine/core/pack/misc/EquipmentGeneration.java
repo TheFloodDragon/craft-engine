@@ -2,7 +2,7 @@ package net.momirealms.craftengine.core.pack.misc;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.momirealms.craftengine.core.item.EquipmentData;
+import net.momirealms.craftengine.core.item.setting.EquipmentData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

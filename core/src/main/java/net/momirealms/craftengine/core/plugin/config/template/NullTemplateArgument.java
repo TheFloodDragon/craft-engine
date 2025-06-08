@@ -17,7 +17,7 @@ public class NullTemplateArgument implements TemplateArgument {
     }
 
     @Override
-    public Object get() {
+    public Object get(Map<String, TemplateArgument> arguments) {
         return null;
     }
 

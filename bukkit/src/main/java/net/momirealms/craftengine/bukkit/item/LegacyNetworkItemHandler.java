@@ -1,13 +1,17 @@
 package net.momirealms.craftengine.bukkit.item;
 
 import net.kyori.adventure.text.Component;
+import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.CustomItem;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.item.ItemBuildContext;
 import net.momirealms.craftengine.core.item.NetworkItemHandler;
+import net.momirealms.craftengine.core.item.modifier.ArgumentModifier;
 import net.momirealms.craftengine.core.item.modifier.ItemDataModifier;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.config.Config;
+import net.momirealms.craftengine.core.plugin.context.ContextHolder;
+import net.momirealms.craftengine.core.plugin.context.ContextKey;
 import net.momirealms.craftengine.core.util.AdventureHelper;
 import net.momirealms.sparrow.nbt.CompoundTag;
 import net.momirealms.sparrow.nbt.ListTag;
@@ -24,7 +28,7 @@ import java.util.function.BiConsumer;
 public class LegacyNetworkItemHandler implements NetworkItemHandler<ItemStack> {
 
     @Override
-    public Optional<Item<ItemStack>> c2s(Item<ItemStack> wrapped, ItemBuildContext context) {
+    public Optional<Item<ItemStack>> c2s(Item<ItemStack> wrapped) {
         if (!wrapped.hasTag(NETWORK_ITEM_TAG)) return Optional.empty();
         CompoundTag networkData = (CompoundTag) wrapped.getNBTTag(NETWORK_ITEM_TAG);
         if (networkData == null) return Optional.empty();
@@ -38,7 +42,7 @@ public class LegacyNetworkItemHandler implements NetworkItemHandler<ItemStack> {
     }
 
     @Override
-    public Optional<Item<ItemStack>> s2c(Item<ItemStack> wrapped, ItemBuildContext context) {
+    public Optional<Item<ItemStack>> s2c(Item<ItemStack> wrapped, Player player) {
         Optional<CustomItem<ItemStack>> optionalCustomItem = wrapped.getCustomItem();
         if (optionalCustomItem.isEmpty()) {
             if (!Config.interceptItem()) return Optional.empty();
@@ -50,6 +54,17 @@ public class LegacyNetworkItemHandler implements NetworkItemHandler<ItemStack> {
                 return new OtherItem(wrapped).process();
             } else {
                 CompoundTag tag = new CompoundTag();
+                Tag argumentTag = wrapped.getNBTTag(ArgumentModifier.ARGUMENTS_TAG);
+                ItemBuildContext context;
+                if (argumentTag instanceof CompoundTag arguments) {
+                    ContextHolder.Builder builder = ContextHolder.builder();
+                    for (Map.Entry<String, Tag> entry : arguments.entrySet()) {
+                        builder.withParameter(ContextKey.direct(entry.getKey()), entry.getValue().getAsString());
+                    }
+                    context = ItemBuildContext.of(player, builder);
+                } else {
+                    context = ItemBuildContext.of(player);
+                }
                 for (ItemDataModifier<ItemStack> modifier : customItem.clientBoundDataModifiers()) {
                     modifier.prepareNetworkItem(wrapped, context, tag);
                     modifier.apply(wrapped, context);

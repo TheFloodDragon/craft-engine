@@ -48,6 +48,11 @@ public class BlockSettings {
         return applyModifiers(BlockSettings.of(), map);
     }
 
+    public static BlockSettings fromMap(Key id, Map<String, Object> map) {
+        if (map == null || map.isEmpty()) return BlockSettings.of().itemId(id);
+        return applyModifiers(BlockSettings.of().itemId(id), map);
+    }
+
     public static BlockSettings ofFullCopy(BlockSettings settings, Map<String, Object> map) {
         return applyModifiers(ofFullCopy(settings), map);
     }

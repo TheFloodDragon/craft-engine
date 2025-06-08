@@ -5,10 +5,11 @@ import net.momirealms.craftengine.bukkit.nms.CollisionEntity;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.plugin.network.handler.FurniturePacketHandler;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MEntityTypes;
 import net.momirealms.craftengine.bukkit.util.EntityUtils;
 import net.momirealms.craftengine.bukkit.util.KeyUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
-import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.core.entity.furniture.*;
 import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.sound.SoundData;
@@ -39,7 +40,7 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
     public static final NamespacedKey FURNITURE_SEAT_VECTOR_3F_KEY = KeyUtils.toNamespacedKey(FurnitureManager.FURNITURE_SEAT_VECTOR_3F_KEY);
     public static final NamespacedKey FURNITURE_COLLISION = KeyUtils.toNamespacedKey(FurnitureManager.FURNITURE_COLLISION);
     public static Class<?> COLLISION_ENTITY_CLASS = Interaction.class;
-    public static Object NMS_COLLISION_ENTITY_TYPE = Reflections.instance$EntityType$INTERACTION;
+    public static Object NMS_COLLISION_ENTITY_TYPE = MEntityTypes.INTERACTION;
     public static ColliderType COLLISION_ENTITY_TYPE = ColliderType.INTERACTION;
     private static BukkitFurnitureManager instance;
     private final BukkitCraftEngine plugin;
@@ -91,10 +92,10 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
     @Override
     public void delayedInit() {
         COLLISION_ENTITY_CLASS = Config.colliderType() == ColliderType.INTERACTION ? Interaction.class : Boat.class;
-        NMS_COLLISION_ENTITY_TYPE = Config.colliderType() == ColliderType.INTERACTION ? Reflections.instance$EntityType$INTERACTION : Reflections.instance$EntityType$OAK_BOAT;
+        NMS_COLLISION_ENTITY_TYPE = Config.colliderType() == ColliderType.INTERACTION ? MEntityTypes.INTERACTION : MEntityTypes.OAK_BOAT;
         COLLISION_ENTITY_TYPE = Config.colliderType();
-        Bukkit.getPluginManager().registerEvents(this.dismountListener, this.plugin.bootstrap());
-        Bukkit.getPluginManager().registerEvents(this.furnitureEventListener, this.plugin.bootstrap());
+        Bukkit.getPluginManager().registerEvents(this.dismountListener, this.plugin.javaPlugin());
+        Bukkit.getPluginManager().registerEvents(this.furnitureEventListener, this.plugin.javaPlugin());
         for (World world : Bukkit.getWorlds()) {
             List<Entity> entities = world.getEntities();
             for (Entity entity : entities) {
@@ -192,14 +193,14 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
                 furniture.initializeColliders();
                 for (Player player : display.getTrackedPlayers()) {
                     this.plugin.adapt(player).entityPacketHandlers().computeIfAbsent(furniture.baseEntityId(), k -> new FurniturePacketHandler(furniture.fakeEntityIds()));
-                    this.plugin.networkManager().sendPacket(player, furniture.spawnPacket(player));
+                    this.plugin.networkManager().sendPacket(this.plugin.adapt(player), furniture.spawnPacket(player));
                 }
             }
         } else {
             BukkitFurniture furniture = addNewFurniture(display, customFurniture);
             for (Player player : display.getTrackedPlayers()) {
                 this.plugin.adapt(player).entityPacketHandlers().computeIfAbsent(furniture.baseEntityId(), k -> new FurniturePacketHandler(furniture.fakeEntityIds()));
-                this.plugin.networkManager().sendPacket(player, furniture.spawnPacket(player));
+                this.plugin.networkManager().sendPacket(this.plugin.adapt(player), furniture.spawnPacket(player));
             }
             if (preventChange) {
                 this.plugin.scheduler().sync().runLater(furniture::initializeColliders, 1, location.getWorld(), location.getBlockX() >> 4, location.getBlockZ() >> 4);
@@ -395,7 +396,7 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
             for (Entity bukkitEntity : nearbyEntities) {
                 if (bukkitEntity instanceof Player) continue;
                 Object nmsEntity = FastNMS.INSTANCE.method$CraftEntity$getHandle(bukkitEntity);
-                return (boolean) Reflections.method$Entity$canBeCollidedWith.invoke(nmsEntity);
+                return (boolean) CoreReflections.method$Entity$canBeCollidedWith.invoke(nmsEntity);
             }
         } catch (Exception ignored) {}
         return false;

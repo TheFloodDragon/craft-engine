@@ -3,11 +3,13 @@ package net.momirealms.craftengine.bukkit.compatibility;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.compatibility.bettermodel.BetterModelModel;
 import net.momirealms.craftengine.bukkit.compatibility.item.MMOItemsProvider;
+import net.momirealms.craftengine.bukkit.compatibility.item.MythicMobsProvider;
 import net.momirealms.craftengine.bukkit.compatibility.item.NeigeItemsProvider;
 import net.momirealms.craftengine.bukkit.compatibility.legacy.slimeworld.LegacySlimeFormatStorageAdaptor;
 import net.momirealms.craftengine.bukkit.compatibility.leveler.AuraSkillsLevelerProvider;
 import net.momirealms.craftengine.bukkit.compatibility.modelengine.ModelEngineModel;
 import net.momirealms.craftengine.bukkit.compatibility.modelengine.ModelEngineUtils;
+import net.momirealms.craftengine.bukkit.compatibility.mythicmobs.MythicMobsListener;
 import net.momirealms.craftengine.bukkit.compatibility.papi.PlaceholderAPIUtils;
 import net.momirealms.craftengine.bukkit.compatibility.permission.LuckPermsEventListeners;
 import net.momirealms.craftengine.bukkit.compatibility.skript.SkriptHook;
@@ -104,6 +106,12 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
         }
         if (this.isPluginEnabled("AuraSkills")) {
             this.registerLevelerProvider("AuraSkills", new AuraSkillsLevelerProvider());
+            logHook("AuraSkills");
+        }
+        if (this.isPluginEnabled("MythicMobs")) {
+            BukkitItemManager.instance().registerExternalItemProvider(new MythicMobsProvider());
+            new MythicMobsListener(this.plugin);
+            logHook("MythicMobs");
         }
     }
 
@@ -141,7 +149,7 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
     }
 
     private void initLuckPermsHook() {
-        new LuckPermsEventListeners(plugin.bootstrap(), (uuid) -> {
+        new LuckPermsEventListeners(plugin.javaPlugin(), (uuid) -> {
             BukkitFontManager fontManager = (BukkitFontManager) plugin.fontManager();
             fontManager.refreshEmojiSuggestions(uuid);
         });
@@ -154,7 +162,7 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
                 Class.forName("com.infernalsuite.asp.api.AdvancedSlimePaperAPI");
                 SlimeFormatStorageAdaptor adaptor = new SlimeFormatStorageAdaptor(worldManager);
                 worldManager.setStorageAdaptor(adaptor);
-                Bukkit.getPluginManager().registerEvents(adaptor, plugin.bootstrap());
+                Bukkit.getPluginManager().registerEvents(adaptor, plugin.javaPlugin());
                 logHook("AdvancedSlimePaper");
             } catch (ClassNotFoundException ignored) {
             }
@@ -163,39 +171,35 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
                 Class.forName("com.infernalsuite.aswm.api.SlimePlugin");
                 LegacySlimeFormatStorageAdaptor adaptor = new LegacySlimeFormatStorageAdaptor(worldManager, 1);
                 worldManager.setStorageAdaptor(adaptor);
-                Bukkit.getPluginManager().registerEvents(adaptor, plugin.bootstrap());
+                Bukkit.getPluginManager().registerEvents(adaptor, plugin.javaPlugin());
                 logHook("AdvancedSlimePaper");
             } catch (ClassNotFoundException ignored) {
                 if (Bukkit.getPluginManager().isPluginEnabled("SlimeWorldPlugin")) {
                     LegacySlimeFormatStorageAdaptor adaptor = new LegacySlimeFormatStorageAdaptor(worldManager, 2);
                     worldManager.setStorageAdaptor(adaptor);
-                    Bukkit.getPluginManager().registerEvents(adaptor, plugin.bootstrap());
+                    Bukkit.getPluginManager().registerEvents(adaptor, plugin.javaPlugin());
                     logHook("AdvancedSlimePaper");
                 }
             }
         }
     }
 
-    @SuppressWarnings("all")
+    @SuppressWarnings({"deprecation", "all"})
     private void initFastAsyncWorldEditHook() {
         Plugin fastAsyncWorldEdit = Bukkit.getPluginManager().getPlugin("FastAsyncWorldEdit");
         String version = VersionHelper.isPaper() ? fastAsyncWorldEdit.getPluginMeta().getVersion() : fastAsyncWorldEdit.getDescription().getVersion();
-        if (!this.fastAsyncWorldEditVersionCheck(new int[]{2, 13, 0}, version)) {
-            this.plugin.logger().warn("[Compatibility] FastAsyncWorldEdit version is too old, please update to 2.13.0 or newer");
+        if (!this.fastAsyncWorldEditVersionCheck(version)) {
+            this.plugin.logger().warn("[Compatibility] Please update FastAsyncWorldEdit to 2.13.0 or newer for better compatibility");
         }
         new WorldEditBlockRegister(BukkitBlockManager.instance(), true);
     }
 
-    private boolean fastAsyncWorldEditVersionCheck(int[] target, String version) {
+    private boolean fastAsyncWorldEditVersionCheck(String version) {
         String cleanVersion = version.split("-")[0];
         String[] parts = cleanVersion.split("\\.");
-        for (int i = 0; i < target.length; i++) {
-            if (i >= parts.length) return false;
-            int currentPart = Integer.parseInt(parts[i]);
-            if (currentPart > target[i]) return true;
-            if (currentPart < target[i]) return false;
-        }
-        return true;
+        int first = Integer.parseInt(parts[0]);
+        int second = Integer.parseInt(parts[1]);
+        return first >= 2 && second >= 13;
     }
 
     private void initWorldEditHook() {

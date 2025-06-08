@@ -6,18 +6,21 @@ import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.item.ComponentTypes;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
-import net.momirealms.craftengine.bukkit.plugin.injector.BukkitInjector;
+import net.momirealms.craftengine.bukkit.plugin.injector.RecipeInjector;
+import net.momirealms.craftengine.bukkit.plugin.reflection.bukkit.CraftBukkitReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MRecipeTypes;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.bukkit.util.ComponentUtils;
 import net.momirealms.craftengine.bukkit.util.ItemUtils;
 import net.momirealms.craftengine.bukkit.util.LegacyInventoryUtils;
-import net.momirealms.craftengine.bukkit.util.Reflections;
 import net.momirealms.craftengine.core.item.*;
 import net.momirealms.craftengine.core.item.recipe.*;
 import net.momirealms.craftengine.core.item.recipe.Recipe;
 import net.momirealms.craftengine.core.item.recipe.input.CraftingInput;
 import net.momirealms.craftengine.core.item.recipe.input.SingleItemInput;
 import net.momirealms.craftengine.core.item.recipe.input.SmithingInput;
+import net.momirealms.craftengine.core.item.setting.AnvilRepairItem;
 import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.plugin.context.ContextHolder;
 import net.momirealms.craftengine.core.registry.BuiltInRegistries;
@@ -268,8 +271,8 @@ public class RecipeEventListener implements Listener {
         }
         Furnace furnace = furnaceInventory.getHolder();
         try {
-            Object blockEntity = Reflections.field$CraftBlockEntityState$tileEntity.get(furnace);
-            BukkitInjector.injectCookingBlockEntity(blockEntity);
+            Object blockEntity = CraftBukkitReflections.field$CraftBlockEntityState$tileEntity.get(furnace);
+            RecipeInjector.injectCookingBlockEntity(blockEntity);
         } catch (Exception e) {
             this.plugin.logger().warn("Failed to inject cooking block entity", e);
         }
@@ -285,8 +288,8 @@ public class RecipeEventListener implements Listener {
         if (material == Material.CAMPFIRE) {
             if (block.getState() instanceof Campfire campfire) {
                 try {
-                    Object blockEntity = Reflections.field$CraftBlockEntityState$tileEntity.get(campfire);
-                    BukkitInjector.injectCookingBlockEntity(blockEntity);
+                    Object blockEntity = CraftBukkitReflections.field$CraftBlockEntityState$tileEntity.get(campfire);
+                    RecipeInjector.injectCookingBlockEntity(blockEntity);
                 } catch (Exception e) {
                     this.plugin.logger().warn("Failed to inject cooking block entity", e);
                 }
@@ -302,8 +305,8 @@ public class RecipeEventListener implements Listener {
         if (material == Material.FURNACE || material == Material.BLAST_FURNACE || material == Material.SMOKER) {
             if (block.getState() instanceof Furnace furnace) {
                 try {
-                    Object blockEntity = Reflections.field$CraftBlockEntityState$tileEntity.get(furnace);
-                    BukkitInjector.injectCookingBlockEntity(blockEntity);
+                    Object blockEntity = CraftBukkitReflections.field$CraftBlockEntityState$tileEntity.get(furnace);
+                    RecipeInjector.injectCookingBlockEntity(blockEntity);
                 } catch (Exception e) {
                     plugin.logger().warn("Failed to inject cooking block entity", e);
                 }
@@ -311,8 +314,8 @@ public class RecipeEventListener implements Listener {
         } else if (!VersionHelper.isOrAbove1_21_2() && material == Material.CAMPFIRE) {
             if (block.getState() instanceof Campfire campfire) {
                 try {
-                    Object blockEntity = Reflections.field$CraftBlockEntityState$tileEntity.get(campfire);
-                    BukkitInjector.injectCookingBlockEntity(blockEntity);
+                    Object blockEntity = CraftBukkitReflections.field$CraftBlockEntityState$tileEntity.get(campfire);
+                    RecipeInjector.injectCookingBlockEntity(blockEntity);
                 } catch (Exception e) {
                     this.plugin.logger().warn("Failed to inject cooking block entity", e);
                 }
@@ -332,8 +335,8 @@ public class RecipeEventListener implements Listener {
         if (type != Material.CAMPFIRE && type != Material.SOUL_CAMPFIRE) return;
         if (clicked.getState() instanceof Campfire campfire) {
             try {
-                Object blockEntity = Reflections.field$CraftBlockEntityState$tileEntity.get(campfire);
-                BukkitInjector.injectCookingBlockEntity(blockEntity);
+                Object blockEntity = CraftBukkitReflections.field$CraftBlockEntityState$tileEntity.get(campfire);
+                RecipeInjector.injectCookingBlockEntity(blockEntity);
             } catch (Exception e) {
                 this.plugin.logger().warn("Failed to inject cooking block entity", e);
             }
@@ -345,8 +348,8 @@ public class RecipeEventListener implements Listener {
             @SuppressWarnings("unchecked")
             Optional<Object> optionalMCRecipe = FastNMS.INSTANCE.method$RecipeManager$getRecipeFor(
                     BukkitRecipeManager.nmsRecipeManager(),
-                    Reflections.instance$RecipeType$CAMPFIRE_COOKING,
-                    Reflections.constructor$SingleRecipeInput.newInstance(FastNMS.INSTANCE.method$CraftItemStack$asNMSCopy(itemStack)),
+                    MRecipeTypes.CAMPFIRE_COOKING,
+                    CoreReflections.constructor$SingleRecipeInput.newInstance(FastNMS.INSTANCE.method$CraftItemStack$asNMSCopy(itemStack)),
                     FastNMS.INSTANCE.field$CraftWorld$ServerLevel(event.getPlayer().getWorld()),
                     null
             );
@@ -577,7 +580,7 @@ public class RecipeEventListener implements Listener {
 
         if (renameText != null && !renameText.isBlank()) {
             try {
-                if (!renameText.equals(Reflections.method$Component$getString.invoke(ComponentUtils.jsonToMinecraft(wrappedFirst.hoverNameJson().orElse(AdventureHelper.EMPTY_COMPONENT))))) {
+                if (!renameText.equals(CoreReflections.method$Component$getString.invoke(ComponentUtils.jsonToMinecraft(wrappedFirst.hoverNameJson().orElse(AdventureHelper.EMPTY_COMPONENT))))) {
                     wrappedFirst.customNameJson(AdventureHelper.componentToJson(Component.text(renameText)));
                     repairCost += 1;
                 } else if (repairCost == 0) {
@@ -600,11 +603,11 @@ public class RecipeEventListener implements Listener {
         try {
             Object anvilMenu;
             if (VersionHelper.isOrAbove1_21()) {
-                anvilMenu = Reflections.field$CraftInventoryView$container.get(event.getView());
+                anvilMenu = CraftBukkitReflections.field$CraftInventoryView$container.get(event.getView());
             } else {
-                anvilMenu = Reflections.field$CraftInventoryAnvil$menu.get(inventory);
+                anvilMenu = CraftBukkitReflections.field$CraftInventoryAnvil$menu.get(inventory);
             }
-            Reflections.method$AbstractContainerMenu$broadcastFullState.invoke(anvilMenu);
+            CoreReflections.method$AbstractContainerMenu$broadcastFullState.invoke(anvilMenu);
         } catch (ReflectiveOperationException e) {
             this.plugin.logger().warn("Failed to broadcast changes", e);
         }
@@ -620,7 +623,7 @@ public class RecipeEventListener implements Listener {
 
         Player player;
         try {
-            player = (Player) Reflections.method$InventoryView$getPlayer.invoke(VersionHelper.isOrAbove1_21() ? event.getView() : LegacyInventoryUtils.getView(event));
+            player = (Player) CraftBukkitReflections.method$InventoryView$getPlayer.invoke(VersionHelper.isOrAbove1_21() ? event.getView() : LegacyInventoryUtils.getView(event));
         } catch (ReflectiveOperationException e) {
             plugin.logger().warn("Failed to get inventory viewer", e);
             return;
@@ -665,7 +668,7 @@ public class RecipeEventListener implements Listener {
                 }
                 if (renameText != null && !renameText.isBlank()) {
                     try {
-                        if (!renameText.equals(Reflections.method$Component$getString.invoke(ComponentUtils.jsonToMinecraft(wrappedFirst.hoverNameJson().orElse(AdventureHelper.EMPTY_COMPONENT))))) {
+                        if (!renameText.equals(CoreReflections.method$Component$getString.invoke(ComponentUtils.jsonToMinecraft(wrappedFirst.hoverNameJson().orElse(AdventureHelper.EMPTY_COMPONENT))))) {
                             event.setResult(null);
                         }
                     } catch (Exception e) {
@@ -695,16 +698,16 @@ public class RecipeEventListener implements Listener {
             return;
         }
 
-        if (!Reflections.clazz$CraftComplexRecipe.isInstance(complexRecipe)) {
+        if (!CraftBukkitReflections.clazz$CraftComplexRecipe.isInstance(complexRecipe)) {
             inventory.setResult(null);
             return;
         }
 
         try {
-            Object mcRecipe = Reflections.field$CraftComplexRecipe$recipe.get(complexRecipe);
+            Object mcRecipe = CraftBukkitReflections.field$CraftComplexRecipe$recipe.get(complexRecipe);
 
             // Repair recipe
-            if (Reflections.clazz$RepairItemRecipe.isInstance(mcRecipe)) {
+            if (CoreReflections.clazz$RepairItemRecipe.isInstance(mcRecipe)) {
                 // repair item
                 ItemStack[] itemStacks = inventory.getMatrix();
                 Pair<ItemStack, ItemStack> onlyTwoItems = getTheOnlyTwoItem(itemStacks);
@@ -730,7 +733,7 @@ public class RecipeEventListener implements Listener {
 
                 Player player;
                 try {
-                    player = (Player) Reflections.method$InventoryView$getPlayer.invoke(event.getView());
+                    player = (Player) CraftBukkitReflections.method$InventoryView$getPlayer.invoke(event.getView());
                 } catch (ReflectiveOperationException e) {
                     plugin.logger().warn("Failed to get inventory viewer", e);
                     return;
@@ -753,7 +756,7 @@ public class RecipeEventListener implements Listener {
                 int newItemDamage = Math.max(0, newItem.maxDamage() - remainingDurability);
                 newItem.damage(newItemDamage);
                 inventory.setResult(newItem.load());
-            } else if (Reflections.clazz$ArmorDyeRecipe.isInstance(mcRecipe)) {
+            } else if (CoreReflections.clazz$ArmorDyeRecipe.isInstance(mcRecipe)) {
                 ItemStack[] itemStacks = inventory.getMatrix();
                 for (ItemStack itemStack : itemStacks) {
                     if (itemStack == null) continue;
@@ -839,9 +842,9 @@ public class RecipeEventListener implements Listener {
 
         Player player;
         try {
-            player = (Player) Reflections.method$InventoryView$getPlayer.invoke(event.getView());
+            player = (Player) CraftBukkitReflections.method$InventoryView$getPlayer.invoke(event.getView());
         } catch (ReflectiveOperationException e) {
-            plugin.logger().warn("Failed to get inventory viewer", e);
+            this.plugin.logger().warn("Failed to get inventory viewer", e);
             return;
         }
 
@@ -852,14 +855,18 @@ public class RecipeEventListener implements Listener {
         if (ceRecipe != null) {
             inventory.setResult(ceRecipe.result(new ItemBuildContext(serverPlayer, ContextHolder.EMPTY)));
             serverPlayer.setLastUsedRecipe(ceRecipe.id());
-            correctCraftingRecipeUsed(inventory, ceRecipe);
+            if (!ceRecipe.id().equals(recipeId)) {
+                correctCraftingRecipeUsed(inventory, ceRecipe);
+            }
             return;
         }
         ceRecipe = this.recipeManager.recipeByInput(RecipeTypes.SHAPED, input, lastRecipe);
         if (ceRecipe != null) {
             inventory.setResult(ceRecipe.result(new ItemBuildContext(serverPlayer, ContextHolder.EMPTY)));
             serverPlayer.setLastUsedRecipe(ceRecipe.id());
-            correctCraftingRecipeUsed(inventory, ceRecipe);
+            if (!ceRecipe.id().equals(recipeId)) {
+                correctCraftingRecipeUsed(inventory, ceRecipe);
+            }
             return;
         }
         // clear result if not met
@@ -867,14 +874,13 @@ public class RecipeEventListener implements Listener {
     }
 
     private void correctCraftingRecipeUsed(CraftingInventory inventory, Recipe<ItemStack> recipe) {
-        Object holderOrRecipe = recipeManager.nmsRecipeHolderByRecipe(recipe);
+        Object holderOrRecipe = this.recipeManager.nmsRecipeHolderByRecipe(recipe);
         if (holderOrRecipe == null) {
-            // it's a vanilla recipe but not injected
             return;
         }
         try {
-            Object resultInventory = Reflections.field$CraftInventoryCrafting$resultInventory.get(inventory);
-            Reflections.field$ResultContainer$recipeUsed.set(resultInventory, holderOrRecipe);
+            Object resultInventory = CraftBukkitReflections.field$CraftInventoryCrafting$resultInventory.get(inventory);
+            CoreReflections.field$ResultContainer$recipeUsed.set(resultInventory, holderOrRecipe);
         } catch (ReflectiveOperationException e) {
             plugin.logger().warn("Failed to correct used recipe", e);
         }
@@ -911,7 +917,7 @@ public class RecipeEventListener implements Listener {
 
         Player player;
         try {
-            player = (Player) Reflections.method$InventoryView$getPlayer.invoke(event.getView());
+            player = (Player) CraftBukkitReflections.method$InventoryView$getPlayer.invoke(event.getView());
         } catch (ReflectiveOperationException e) {
             this.plugin.logger().warn("Failed to get inventory viewer", e);
             return;
@@ -920,20 +926,21 @@ public class RecipeEventListener implements Listener {
         CustomSmithingTransformRecipe<ItemStack> transformRecipe = (CustomSmithingTransformRecipe<ItemStack>) ceRecipe;
         ItemStack processed = transformRecipe.assemble(new ItemBuildContext(this.plugin.adapt(player), ContextHolder.EMPTY), this.itemManager.wrap(base));
         event.setResult(processed);
-        correctSmithingRecipeUsed(inventory, ceRecipe);
+        if (!ceRecipe.id().equals(recipeId)) {
+            correctSmithingRecipeUsed(inventory, ceRecipe);
+        }
     }
 
     private void correctSmithingRecipeUsed(SmithingInventory inventory, Recipe<ItemStack> recipe) {
-        Object holderOrRecipe = recipeManager.nmsRecipeHolderByRecipe(recipe);
+        Object holderOrRecipe = this.recipeManager.nmsRecipeHolderByRecipe(recipe);
         if (holderOrRecipe == null) {
-            // it's a vanilla recipe but not injected
             return;
         }
         try {
-            Object resultInventory = Reflections.field$CraftResultInventory$resultInventory.get(inventory);
-            Reflections.field$ResultContainer$recipeUsed.set(resultInventory, holderOrRecipe);
+            Object resultInventory = CraftBukkitReflections.field$CraftResultInventory$resultInventory.get(inventory);
+            CoreReflections.field$ResultContainer$recipeUsed.set(resultInventory, holderOrRecipe);
         } catch (ReflectiveOperationException e) {
-            plugin.logger().warn("Failed to correct used recipe", e);
+            this.plugin.logger().warn("Failed to correct used recipe", e);
         }
     }
 

@@ -1,10 +1,14 @@
 package net.momirealms.craftengine.bukkit.item;
 
 import net.kyori.adventure.text.Component;
+import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.*;
+import net.momirealms.craftengine.core.item.modifier.ArgumentModifier;
 import net.momirealms.craftengine.core.item.modifier.ItemDataModifier;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.config.Config;
+import net.momirealms.craftengine.core.plugin.context.ContextHolder;
+import net.momirealms.craftengine.core.plugin.context.ContextKey;
 import net.momirealms.craftengine.core.util.AdventureHelper;
 import net.momirealms.craftengine.core.util.VersionHelper;
 import net.momirealms.sparrow.nbt.CompoundTag;
@@ -23,7 +27,7 @@ import java.util.function.Supplier;
 public final class ModernNetworkItemHandler implements NetworkItemHandler<ItemStack> {
 
     @Override
-    public Optional<Item<ItemStack>> c2s(Item<ItemStack> wrapped, ItemBuildContext context) {
+    public Optional<Item<ItemStack>> c2s(Item<ItemStack> wrapped) {
         Tag customData = wrapped.getNBTComponent(ComponentTypes.CUSTOM_DATA);
         if (!(customData instanceof CompoundTag compoundTag)) return Optional.empty();
         CompoundTag networkData = compoundTag.getCompound(NETWORK_ITEM_TAG);
@@ -34,14 +38,13 @@ public final class ModernNetworkItemHandler implements NetworkItemHandler<ItemSt
                 NetworkItemHandler.apply(entry.getKey(), tag, wrapped);
             }
         }
-        // todo 可能会是 !custom_data吗，不可能，绝对不可能！
         if (compoundTag.isEmpty()) wrapped.resetComponent(ComponentTypes.CUSTOM_DATA);
         else wrapped.setNBTComponent(ComponentTypes.CUSTOM_DATA, compoundTag);
         return Optional.of(wrapped);
     }
 
     @Override
-    public Optional<Item<ItemStack>> s2c(Item<ItemStack> wrapped, ItemBuildContext context) {
+    public Optional<Item<ItemStack>> s2c(Item<ItemStack> wrapped, Player player) {
         Optional<CustomItem<ItemStack>> optionalCustomItem = wrapped.getCustomItem();
         if (optionalCustomItem.isEmpty()) {
             if (!Config.interceptItem()) return Optional.empty();
@@ -53,6 +56,17 @@ public final class ModernNetworkItemHandler implements NetworkItemHandler<ItemSt
                 return new OtherItem(wrapped).process();
             } else {
                 CompoundTag customData = Optional.ofNullable(wrapped.getNBTComponent(ComponentTypes.CUSTOM_DATA)).map(CompoundTag.class::cast).orElse(new CompoundTag());
+                CompoundTag arguments = customData.getCompound(ArgumentModifier.ARGUMENTS_TAG);
+                ItemBuildContext context;
+                if (arguments == null) {
+                    context = ItemBuildContext.of(player);
+                } else {
+                    ContextHolder.Builder builder = ContextHolder.builder();
+                    for (Map.Entry<String, Tag> entry : arguments.entrySet()) {
+                        builder.withParameter(ContextKey.direct(entry.getKey()), entry.getValue().getAsString());
+                    }
+                    context = ItemBuildContext.of(player, builder);
+                }
                 CompoundTag tag = new CompoundTag();
                 for (ItemDataModifier<ItemStack> modifier : customItem.clientBoundDataModifiers()) {
                     modifier.prepareNetworkItem(wrapped, context, tag);

@@ -8,7 +8,7 @@ import dev.dejvokep.boostedyaml.block.implementation.Section;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.momirealms.craftengine.core.font.BitmapImage;
 import net.momirealms.craftengine.core.font.Font;
-import net.momirealms.craftengine.core.item.EquipmentData;
+import net.momirealms.craftengine.core.item.setting.EquipmentData;
 import net.momirealms.craftengine.core.pack.conflict.PathContext;
 import net.momirealms.craftengine.core.pack.conflict.resolution.ResolutionConditional;
 import net.momirealms.craftengine.core.pack.host.ResourcePackHost;
@@ -266,7 +266,7 @@ public abstract class AbstractPackManager implements PackManager {
                     String author = null;
                     boolean enable = true;
                     if (Files.exists(metaFile) && Files.isRegularFile(metaFile)) {
-                        YamlDocument metaYML = Config.instance().loadYamlData(metaFile.toFile());
+                        YamlDocument metaYML = Config.instance().loadYamlData(metaFile);
                         enable = metaYML.getBoolean("enable", true);
                         namespace = metaYML.getString("namespace", namespace);
                         description = metaYML.getString("description");
@@ -377,6 +377,11 @@ public abstract class AbstractPackManager implements PackManager {
             plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/topaz_" + item + ".png");
             plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/topaz_" + item + ".png.mcmeta");
         }
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/flame_elytra.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/broken_flame_elytra.png");
+        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/entity/equipment/wings/flame_elytra.png");
+//        plugin.saveResource("resources/default/resourcepack/assets/minecraft/textures/item/custom/cap.png");
+//        plugin.saveResource("resources/default/resourcepack/assets/minecraft/models/item/custom/cap.json");
 
         // ores
         plugin.saveResource("resources/default/configuration/ores.yml");
@@ -462,7 +467,8 @@ public abstract class AbstractPackManager implements PackManager {
                             }
                             for (Map.Entry<String, Object> entry : cachedFile.config().entrySet()) {
                                 processConfigEntry(entry, path, cachedFile.pack(), (p, c) ->
-                                        cachedConfigs.computeIfAbsent(p, k -> new ArrayList<>()).add(c));
+                                        cachedConfigs.computeIfAbsent(p, k -> new ArrayList<>()).add(c)
+                                );
                             }
                         }
                         return FileVisitResult.CONTINUE;
@@ -482,6 +488,7 @@ public abstract class AbstractPackManager implements PackManager {
         this.plugin.logger().info("Loaded packs. Took " + String.format("%.2f", ((o2 - o1) / 1_000_000.0)) + " ms");
         for (Map.Entry<ConfigParser, List<CachedConfigSection>> entry : cachedConfigs.entrySet()) {
             ConfigParser parser = entry.getKey();
+            if (!predicate.test(parser)) continue;
             long t1 = System.nanoTime();
             for (CachedConfigSection cached : entry.getValue()) {
                 for (Map.Entry<String, Object> configEntry : cached.config().entrySet()) {
@@ -489,12 +496,13 @@ public abstract class AbstractPackManager implements PackManager {
                     Key id = Key.withDefaultNamespace(key, cached.pack().namespace());
                     try {
                         if (parser.supportsParsingObject()) {
+                            // do not apply templates
                             parser.parseObject(cached.pack(), cached.filePath(), id, configEntry.getValue());
-                        } else if (predicate.test(parser)) {
+                        } else {
                             if (configEntry.getValue() instanceof Map<?, ?> configSection0) {
-                                Map<String, Object> configSection1 = castToMap(configSection0, false);
-                                if ((boolean) configSection1.getOrDefault("enable", true)) {
-                                    parser.parseSection(cached.pack(), cached.filePath(), id, plugin.templateManager().applyTemplates(configSection1));
+                                Map<String, Object> config = castToMap(configSection0, false);
+                                if ((boolean) config.getOrDefault("enable", true)) {
+                                    parser.parseSection(cached.pack(), cached.filePath(), id, MiscUtils.castToMap(this.plugin.templateManager().applyTemplates(id, config), false));
                                 }
                             } else {
                                 TranslationManager.instance().log("warning.config.structure.not_section", cached.filePath().toString(), cached.prefix() + "." + key, configEntry.getValue().getClass().getSimpleName());
@@ -830,8 +838,8 @@ public abstract class AbstractPackManager implements PackManager {
     }
 
     private void generateBlockOverrides(Path generatedPackPath) {
-        File blockStatesFile = new File(plugin.dataFolderFile(), "blockstates.yml");
-        if (!blockStatesFile.exists()) plugin.saveResource("blockstates.yml");
+        Path blockStatesFile = this.plugin.dataFolderPath().resolve("blockstates.yml");
+        if (!Files.exists(blockStatesFile)) this.plugin.saveResource("blockstates.yml");
         YamlDocument preset = Config.instance().loadYamlData(blockStatesFile);
         for (Map.Entry<Key, Map<String, JsonElement>> entry : plugin.blockManager().blockOverrides().entrySet()) {
             Key key = entry.getKey();

@@ -2,9 +2,9 @@ package net.momirealms.craftengine.bukkit.plugin.network.handler;
 
 import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.bukkit.util.EntityDataUtils;
-import net.momirealms.craftengine.core.item.ItemBuildContext;
 import net.momirealms.craftengine.core.plugin.network.ByteBufPacketEvent;
 import net.momirealms.craftengine.core.plugin.network.EntityPacketHandler;
 import net.momirealms.craftengine.core.plugin.network.NetWorkUser;
@@ -20,17 +20,17 @@ public class CommonItemPacketHandler implements EntityPacketHandler {
     @Override
     public void handleSetEntityData(NetWorkUser user, ByteBufPacketEvent event) {
         FriendlyByteBuf buf = event.getBuffer();
-        ItemBuildContext context = ItemBuildContext.of((BukkitServerPlayer) user);
         int id = buf.readVarInt();
         boolean isChanged = false;
         List<Object> packedItems = FastNMS.INSTANCE.method$ClientboundSetEntityDataPacket$unpack(buf);
         for (int i = 0; i < packedItems.size(); i++) {
             Object packedItem = packedItems.get(i);
             int entityDataId = FastNMS.INSTANCE.field$SynchedEntityData$DataValue$id(packedItem);
-            if (entityDataId == EntityDataUtils.ITEM_DATA_ID) {
+            // TODO 检查为什么会导致问题，难道是其他插件乱发entity id？
+            if (entityDataId == EntityDataUtils.ITEM_DATA_ID && CoreReflections.clazz$ItemStack.isInstance(packedItem)) {
                 Object nmsItemStack = FastNMS.INSTANCE.field$SynchedEntityData$DataValue$value(packedItem);
                 ItemStack itemStack = FastNMS.INSTANCE.method$CraftItemStack$asCraftMirror(nmsItemStack);
-                Optional<ItemStack> optional = BukkitItemManager.instance().s2c(itemStack, context);
+                Optional<ItemStack> optional = BukkitItemManager.instance().s2c(itemStack, (BukkitServerPlayer) user);
                 if (optional.isPresent()) {
                     isChanged = true;
                     itemStack = optional.get();

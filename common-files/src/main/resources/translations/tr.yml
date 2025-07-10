@@ -139,7 +139,7 @@ warning.config.item.model.condition.missing_property: "<yellow><arg:0> dosyasın
 warning.config.item.model.condition.invalid_property: "<yellow><arg:0> dosyasında sorun bulundu - '<arg:1>' eşyası, 'minecraft:condition' modeli için geçersiz bir özellik '<arg:2>' kullanıyor.</yellow>"
 warning.config.item.model.condition.missing_on_true: "<yellow><arg:0> dosyasında sorun bulundu - '<arg:1>' eşyası, 'minecraft:condition' modeli için gerekli 'on-true' argümanı eksik.</yellow>"
 warning.config.item.model.condition.missing_on_false: "<yellow><arg:0> dosyasında sorun bulundu - '<arg:1>' eşyası, 'minecraft:condition' modeli için gerekli 'on-false' argümanı eksik.</yellow>"
-warning.config.item.model.condition.keybind.missing: "<yellow><arg:0> dosyasında sorun bulundu - '<arg:1>' eşyası, 'minecraft:keybind_down' özelliği için gerekli 'keybind' argümanı eksik.</yellow>"
+warning.config.item.model.condition.keybind.missing_keybind: "<yellow><arg:0> dosyasında sorun bulundu - '<arg:1>' eşyası, 'minecraft:keybind_down' özelliği için gerekli 'keybind' argümanı eksik.</yellow>"
 warning.config.item.model.condition.has_component.missing_component: "<yellow><arg:0> dosyasında sorun bulundu - '<arg:1>' eşyası, 'minecraft:has_component' özelliği için gerekli 'component' argümanı eksik.</yellow>"
 warning.config.item.model.composite.missing_models: "<yellow><arg:0> dosyasında sorun bulundu - '<arg:1>' eşyası, 'minecraft:composite' modeli için gerekli 'models' argümanı eksik.</yellow>"
 warning.config.item.model.range_dispatch.missing_property: "<yellow><arg:0> dosyasında sorun bulundu - '<arg:1>' eşyası, 'minecraft:range_dispatch' modeli için gerekli 'property' argümanı eksik.</yellow>"

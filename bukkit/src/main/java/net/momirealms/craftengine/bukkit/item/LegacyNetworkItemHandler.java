@@ -1,6 +1,7 @@
 package net.momirealms.craftengine.bukkit.item;
 
 import net.kyori.adventure.text.Component;
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.CustomItem;
 import net.momirealms.craftengine.core.item.Item;
@@ -25,11 +26,25 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
-public class LegacyNetworkItemHandler implements NetworkItemHandler<ItemStack> {
+@SuppressWarnings("DuplicatedCode")
+public final class LegacyNetworkItemHandler implements NetworkItemHandler<ItemStack> {
 
     @Override
     public Optional<Item<ItemStack>> c2s(Item<ItemStack> wrapped) {
-        if (!wrapped.hasTag(NETWORK_ITEM_TAG)) return Optional.empty();
+        Optional<CustomItem<ItemStack>> optionalCustomItem = wrapped.getCustomItem();
+        boolean hasDifferentMaterial = false;
+        if (optionalCustomItem.isPresent()) {
+            BukkitCustomItem customItem = (BukkitCustomItem) optionalCustomItem.get();
+            if (customItem.item() != FastNMS.INSTANCE.method$ItemStack$getItem(wrapped.getLiteralObject())) {
+                wrapped = wrapped.unsafeTransmuteCopy(customItem.item(), wrapped.count());
+                hasDifferentMaterial = true;
+            }
+        }
+        if (!wrapped.hasTag(NETWORK_ITEM_TAG)) {
+            if (hasDifferentMaterial) {
+                return Optional.of(wrapped);
+            }
+        }
         CompoundTag networkData = (CompoundTag) wrapped.getNBTTag(NETWORK_ITEM_TAG);
         if (networkData == null) return Optional.empty();
         wrapped.removeTag(NETWORK_ITEM_TAG);
@@ -46,12 +61,17 @@ public class LegacyNetworkItemHandler implements NetworkItemHandler<ItemStack> {
         Optional<CustomItem<ItemStack>> optionalCustomItem = wrapped.getCustomItem();
         if (optionalCustomItem.isEmpty()) {
             if (!Config.interceptItem()) return Optional.empty();
-            return new OtherItem(wrapped).process();
+            return new OtherItem(wrapped, false).process();
         } else {
-            CustomItem<ItemStack> customItem = optionalCustomItem.get();
+            BukkitCustomItem customItem = (BukkitCustomItem) optionalCustomItem.get();
+            Object serverItem = FastNMS.INSTANCE.method$ItemStack$getItem(wrapped.getLiteralObject());
+            boolean hasDifferentMaterial = serverItem == customItem.item() && serverItem != customItem.clientItem();
+            if (hasDifferentMaterial) {
+                wrapped = wrapped.unsafeTransmuteCopy(customItem.clientItem(), wrapped.count());
+            }
             if (!customItem.hasClientBoundDataModifier()) {
-                if (!Config.interceptItem()) return Optional.empty();
-                return new OtherItem(wrapped).process();
+                if (!Config.interceptItem() && !hasDifferentMaterial) return Optional.empty();
+                return new OtherItem(wrapped, hasDifferentMaterial).process();
             } else {
                 CompoundTag tag = new CompoundTag();
                 Tag argumentTag = wrapped.getNBTTag(ArgumentModifier.ARGUMENTS_TAG);
@@ -67,6 +87,8 @@ public class LegacyNetworkItemHandler implements NetworkItemHandler<ItemStack> {
                 }
                 for (ItemDataModifier<ItemStack> modifier : customItem.clientBoundDataModifiers()) {
                     modifier.prepareNetworkItem(wrapped, context, tag);
+                }
+                for (ItemDataModifier<ItemStack> modifier : customItem.clientBoundDataModifiers()) {
                     modifier.apply(wrapped, context);
                 }
                 if (Config.interceptItem()) {
@@ -77,7 +99,12 @@ public class LegacyNetworkItemHandler implements NetworkItemHandler<ItemStack> {
                         processLore(wrapped, tag::put);
                     }
                 }
-                if (tag.isEmpty()) return Optional.empty();
+                if (tag.isEmpty()) {
+                    if (hasDifferentMaterial) {
+                        return Optional.of(wrapped);
+                    }
+                    return Optional.empty();
+                }
                 wrapped.setTag(tag, NETWORK_ITEM_TAG);
                 return Optional.of(wrapped);
             }
@@ -130,9 +157,11 @@ public class LegacyNetworkItemHandler implements NetworkItemHandler<ItemStack> {
         private final Item<ItemStack> item;
         private boolean globalChanged = false;
         private CompoundTag networkTag;
+        private final boolean forceReturn;
 
-        public OtherItem(Item<ItemStack> item) {
+        public OtherItem(Item<ItemStack> item, boolean forceReturn) {
             this.item = item;
+            this.forceReturn = forceReturn;
         }
 
         public Optional<Item<ItemStack>> process() {
@@ -144,6 +173,8 @@ public class LegacyNetworkItemHandler implements NetworkItemHandler<ItemStack> {
             }
             if (this.globalChanged) {
                 this.item.setTag(this.networkTag, NETWORK_ITEM_TAG);
+                return Optional.of(this.item);
+            } else if (this.forceReturn) {
                 return Optional.of(this.item);
             } else {
                 return Optional.empty();

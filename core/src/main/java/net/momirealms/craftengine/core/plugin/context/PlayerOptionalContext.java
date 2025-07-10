@@ -57,7 +57,7 @@ public class PlayerOptionalContext extends AbstractChainParameterContext impleme
     @NotNull
     public TagResolver[] tagResolvers() {
         if (this.tagResolvers == null) {
-            this.tagResolvers = new TagResolver[]{ShiftTag.INSTANCE, ImageTag.INSTANCE, new PlaceholderTag(this.player), new I18NTag(this),
+            this.tagResolvers = new TagResolver[]{ShiftTag.INSTANCE, ImageTag.INSTANCE, new PlaceholderTag(this), new I18NTag(this),
                     new NamedArgumentTag(this), new ExpressionTag(this), new GlobalVariableTag(this)};
         }
         return this.tagResolvers;

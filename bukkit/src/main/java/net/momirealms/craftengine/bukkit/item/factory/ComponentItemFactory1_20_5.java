@@ -1,16 +1,21 @@
 package net.momirealms.craftengine.bukkit.item.factory;
 
 import com.google.gson.JsonElement;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.momirealms.craftengine.bukkit.item.ComponentItemWrapper;
 import net.momirealms.craftengine.bukkit.item.ComponentTypes;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MBuiltInRegistries;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MRegistryOps;
 import net.momirealms.craftengine.bukkit.util.EnchantmentUtils;
-import net.momirealms.craftengine.core.item.Enchantment;
-import net.momirealms.craftengine.core.item.Trim;
+import net.momirealms.craftengine.bukkit.util.KeyUtils;
+import net.momirealms.craftengine.core.item.data.Enchantment;
+import net.momirealms.craftengine.core.item.data.FireworkExplosion;
+import net.momirealms.craftengine.core.item.data.Trim;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.util.Key;
+import net.momirealms.craftengine.core.util.MiscUtils;
 import net.momirealms.sparrow.nbt.CompoundTag;
 import net.momirealms.sparrow.nbt.Tag;
 import org.bukkit.inventory.ItemStack;
@@ -50,8 +55,7 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
         for (int i = 0; i < path.length; i++) {
             Object pathSegment = path[i];
             if (pathSegment == null) return null;
-            String key = pathSegment.toString();
-            currentObj = ((Map<String, Object>) currentObj).get(key);
+            currentObj = ((Map<String, Object>) currentObj).get(pathSegment.toString());
             if (currentObj == null) return null;
             if (i == path.length - 1) {
                 return currentObj;
@@ -72,8 +76,7 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
             Object pathSegment = path[i];
             if (pathSegment == null) return null;
             CompoundTag t = (CompoundTag) currentTag;
-            String key = pathSegment.toString();
-            currentTag = t.get(key);
+            currentTag = t.get(pathSegment.toString());
             if (currentTag == null) return null;
             if (i == path.length - 1) {
                 return currentTag;
@@ -224,7 +227,12 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
     }
 
     @Override
-    protected Tag getNBTComponent(ComponentItemWrapper item, Object type) {
+    public Object getNBTComponent(ComponentItemWrapper item, Object type) {
+        return item.getNBTComponent(type).orElse(null);
+    }
+
+    @Override
+    protected Tag getSparrowNBTComponent(ComponentItemWrapper item, Object type) {
         return item.getSparrowNBTComponent(type).orElse(null);
     }
 
@@ -423,30 +431,6 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
     }
 
     @Override
-    protected void addEnchantment(ComponentItemWrapper item, Enchantment enchantment) {
-        Object enchant = item.getComponentExact(ComponentTypes.ENCHANTMENTS);
-        try {
-            Map<String, Integer> map = EnchantmentUtils.toMap(enchant);
-            map.put(enchantment.id().toString(), enchantment.level());
-            item.setJavaComponent(ComponentTypes.ENCHANTMENTS, map);
-        } catch (ReflectiveOperationException e) {
-            plugin.logger().warn("Failed to add enchantment", e);
-        }
-    }
-
-    @Override
-    protected void addStoredEnchantment(ComponentItemWrapper item, Enchantment enchantment) {
-        Object enchant = item.getComponentExact(ComponentTypes.STORED_ENCHANTMENTS);
-        try {
-            Map<String, Integer> map = EnchantmentUtils.toMap(enchant);
-            map.put(enchantment.id().toString(), enchantment.level());
-            item.setJavaComponent(ComponentTypes.STORED_ENCHANTMENTS, map);
-        } catch (ReflectiveOperationException e) {
-            plugin.logger().warn("Failed to add stored enchantment", e);
-        }
-    }
-
-    @Override
     protected void itemFlags(ComponentItemWrapper item, List<String> flags) {
         throw new UnsupportedOperationException("This feature is not available on 1.20.5+");
     }
@@ -503,13 +487,48 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
         return Optional.of(new Trim(trimMap.get("pattern"), trimMap.get("material")));
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    protected Optional<FireworkExplosion> fireworkExplosion(ComponentItemWrapper item) {
+        Optional<Object> optionalExplosion = item.getJavaComponent(ComponentTypes.FIREWORK_EXPLOSION);
+        if (optionalExplosion.isEmpty()) return Optional.empty();
+        Map<String, Object> explosions = MiscUtils.castToMap(optionalExplosion.get(), false);
+        FireworkExplosion.Shape shape = Optional.ofNullable(FireworkExplosion.Shape.byName((String) explosions.get("shape"))).orElse(FireworkExplosion.Shape.SMALL_BALL);
+        boolean hasTrail = (boolean) explosions.getOrDefault("has_trail", false);
+        boolean hasTwinkler = (boolean) explosions.getOrDefault("has_twinkle", false);
+        List<Integer> colors = (List<Integer>) Optional.ofNullable(explosions.get("colors")).orElse(new IntArrayList());
+        List<Integer> fadeColors = (List<Integer>) Optional.ofNullable(explosions.get("fade_colors")).orElse(new IntArrayList());
+        return Optional.of(new FireworkExplosion(
+                shape,
+                new IntArrayList(colors),
+                new IntArrayList(fadeColors),
+                hasTrail,
+                hasTwinkler
+        ));
+    }
+
+    @Override
+    protected void fireworkExplosion(ComponentItemWrapper item, FireworkExplosion explosion) {
+        if (explosion == null) {
+            item.resetComponent(ComponentTypes.FIREWORK_EXPLOSION);
+        } else {
+            item.setJavaComponent(ComponentTypes.FIREWORK_EXPLOSION, Map.of(
+                    "shape", explosion.shape().getName(),
+                    "has_trail", explosion.hasTrail(),
+                    "has_twinkle", explosion.hasTwinkle(),
+                    "colors", explosion.colors(),
+                    "fade_colors", explosion.fadeColors()
+            ));
+        }
+    }
+
     @Override
     protected ComponentItemWrapper mergeCopy(ComponentItemWrapper item1, ComponentItemWrapper item2) {
         Object itemStack1 = item1.getLiteralObject();
         Object itemStack2 = item2.getLiteralObject();
-        Object itemStack3 = FastNMS.INSTANCE.method$ItemStack$transmuteCopy(itemStack1, itemStack2);
+        Object itemStack3 = FastNMS.INSTANCE.method$ItemStack$transmuteCopy(itemStack1, FastNMS.INSTANCE.method$ItemStack$getItem(itemStack2), item2.count());
         FastNMS.INSTANCE.method$ItemStack$applyComponents(itemStack3, FastNMS.INSTANCE.method$ItemStack$getComponentsPatch(itemStack2));
-        return new ComponentItemWrapper(FastNMS.INSTANCE.method$CraftItemStack$asCraftMirror(itemStack3), item2.count());
+        return new ComponentItemWrapper(FastNMS.INSTANCE.method$CraftItemStack$asCraftMirror(itemStack3));
     }
 
     @Override
@@ -519,7 +538,21 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
         try {
             FastNMS.INSTANCE.method$ItemStack$applyComponents(itemStack1, FastNMS.INSTANCE.method$ItemStack$getComponentsPatch(itemStack2));
         } catch (Exception e) {
-            plugin.logger().warn("Failed to merge item", e);
+            this.plugin.logger().warn("Failed to merge item", e);
         }
+    }
+
+    @Override
+    protected ComponentItemWrapper transmuteCopy(ComponentItemWrapper item, Key newItem, int amount) {
+        Object itemStack1 = item.getLiteralObject();
+        Object itemStack2 = FastNMS.INSTANCE.method$ItemStack$transmuteCopy(itemStack1, FastNMS.INSTANCE.method$Registry$getValue(MBuiltInRegistries.ITEM, KeyUtils.toResourceLocation(newItem)), amount);
+        return new ComponentItemWrapper(FastNMS.INSTANCE.method$CraftItemStack$asCraftMirror(itemStack2));
+    }
+
+    @Override
+    protected ComponentItemWrapper unsafeTransmuteCopy(ComponentItemWrapper item, Object newItem, int amount) {
+        Object itemStack1 = item.getLiteralObject();
+        Object itemStack2 = FastNMS.INSTANCE.method$ItemStack$transmuteCopy(itemStack1, newItem, amount);
+        return new ComponentItemWrapper(FastNMS.INSTANCE.method$CraftItemStack$asCraftMirror(itemStack2));
     }
 }

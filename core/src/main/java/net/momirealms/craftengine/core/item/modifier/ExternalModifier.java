@@ -21,13 +21,14 @@ public class ExternalModifier<I> implements ItemDataModifier<I> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void apply(Item<I> item, ItemBuildContext context) {
+    public Item<I> apply(Item<I> item, ItemBuildContext context) {
         I another = this.provider.build(id, context);
         if (another == null) {
             CraftEngine.instance().logger().warn("'" + id + "' could not be found in " + provider.plugin());
-            return;
+            return item;
         }
         Item<I> anotherWrapped = (Item<I>) CraftEngine.instance().itemManager().wrap(another);
         item.merge(anotherWrapped);
+        return item;
     }
 }

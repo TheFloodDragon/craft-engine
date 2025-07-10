@@ -16,7 +16,6 @@ import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.util.Direction;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
-import net.momirealms.craftengine.core.util.VersionHelper;
 import org.bukkit.block.BlockState;
 import org.bukkit.event.block.BlockFormEvent;
 
@@ -59,6 +58,7 @@ public class ConcretePowderBlockBehavior extends BukkitBlockBehavior {
         return this.defaultBlockState;
     }
 
+    @SuppressWarnings("UnstableApiUsage")
     @Override
     public ImmutableBlockState updateStateForPlacement(BlockPlaceContext context, ImmutableBlockState state) {
         Object level = context.getLevel().serverWorld();
@@ -93,17 +93,11 @@ public class ConcretePowderBlockBehavior extends BukkitBlockBehavior {
         }
     }
 
+    @SuppressWarnings("UnstableApiUsage")
     @Override
     public Object updateShape(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
-        Object level;
-        Object pos;
-        if (VersionHelper.isOrAbove1_21_2()) {
-            level = args[1];
-            pos = args[3];
-        } else {
-            level = args[3];
-            pos = args[4];
-        }
+        Object level = args[updateShape$level];
+        Object pos = args[updateShape$blockPos];
         if (touchesLiquid(level, pos)) {
             if (!CoreReflections.clazz$Level.isInstance(level)) {
                 return getDefaultBlockState();
@@ -126,8 +120,8 @@ public class ConcretePowderBlockBehavior extends BukkitBlockBehavior {
     private static boolean canSolidify(Object state) throws ReflectiveOperationException {
         Object fluidState = CoreReflections.field$BlockStateBase$fluidState.get(state);
         if (fluidState == null) return false;
-        Object fluidType = CoreReflections.method$FluidState$getType.invoke(fluidState);
-        return fluidType == MFluids.instance$Fluids$WATER || fluidType == MFluids.instance$Fluids$FLOWING_WATER;
+        Object fluidType = FastNMS.INSTANCE.method$FluidState$getType(fluidState);
+        return fluidType == MFluids.WATER || fluidType == MFluids.FLOWING_WATER;
     }
 
     private static boolean touchesLiquid(Object level, Object pos) throws ReflectiveOperationException {

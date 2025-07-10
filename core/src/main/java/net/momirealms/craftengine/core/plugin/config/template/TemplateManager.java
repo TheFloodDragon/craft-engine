@@ -2,7 +2,9 @@ package net.momirealms.craftengine.core.plugin.config.template;
 
 import net.momirealms.craftengine.core.plugin.Manageable;
 import net.momirealms.craftengine.core.plugin.config.ConfigParser;
+import net.momirealms.craftengine.core.plugin.locale.LocalizedResourceConfigException;
 import net.momirealms.craftengine.core.util.Key;
+import net.momirealms.craftengine.core.util.SNBTReader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,10 +64,27 @@ public interface TemplateManager extends Manageable {
     final class Placeholder implements ArgumentString {
         private final String placeholder;
         private final String rawText;
+        private final Object defaultValue;
+        private final boolean hasDefaultValue;
 
-        public Placeholder(String placeholder) {
-            this.placeholder = placeholder;
-            this.rawText = "{" + this.placeholder + "}";
+        public Placeholder(String placeholderContent) {
+            this.rawText = "${" + placeholderContent + "}";
+            int separatorIndex = placeholderContent.indexOf(":-");
+            if (separatorIndex == -1) {
+                this.placeholder = placeholderContent;
+                this.defaultValue = null;
+                this.hasDefaultValue = false;
+            } else {
+                this.placeholder = placeholderContent.substring(0, separatorIndex);
+                String defaultValueString = placeholderContent.substring(separatorIndex + 2);
+                try {
+                    this.defaultValue = new SNBTReader(defaultValueString).deserializeAsJava();
+                } catch (LocalizedResourceConfigException e) {
+                    e.appendTailArgument(this.placeholder);
+                    throw e;
+                }
+                this.hasDefaultValue = true;
+            }
         }
 
         public static Placeholder placeholder(String placeholder) {
@@ -78,7 +97,10 @@ public interface TemplateManager extends Manageable {
             if (replacement != null) {
                 return replacement.get(arguments);
             }
-            return rawValue();
+            if (this.hasDefaultValue) {
+                return this.defaultValue;
+            }
+            throw new LocalizedResourceConfigException("warning.config.template.argument.missing_value", this.rawText);
         }
 
         @Override
@@ -196,79 +218,90 @@ public interface TemplateManager extends Manageable {
         if (input == null || input.isEmpty()) {
             return Literal.literal("");
         }
-        int n = input.length();
-        int lastAppendPosition = 0; // 追踪上一次追加操作结束的位置
-        int i = 0;
 
         List<ArgumentString> arguments = new ArrayList<>();
+        StringBuilder currentLiteral = new StringBuilder();
+        final int n = input.length();
+        int i = 0;
+
         while (i < n) {
-            // 检查当前字符是否为未转义的 '{'
-            int backslashes = 0;
-            int temp_i = i - 1;
-            while (temp_i >= 0 && input.charAt(temp_i) == '\\') {
-                backslashes++;
-                temp_i--;
-            }
-            if (input.charAt(i) == '{' && backslashes % 2 == 0) {
-                // 发现占位符起点
-                int placeholderStartIndex = i;
-                // 追加从上一个位置到当前占位符之前的文本
-                if (lastAppendPosition < i) {
-                    arguments.add(Literal.literal(input.substring(lastAppendPosition, i)));
+            char c = input.charAt(i);
+
+            // --- 1. 优先检测占位符触发器 ---
+            if (c == '$' && i + 1 < n && input.charAt(i + 1) == '{') {
+
+                // a. 提交之前的普通文本
+                if (!currentLiteral.isEmpty()) {
+                    arguments.add(Literal.literal(currentLiteral.toString()));
+                    currentLiteral.setLength(0);
                 }
-                // --- 开始解析占位符内部 ---
+
+                // b. 解析占位符内部，此处的逻辑拥有自己的转义规则
+                int contentStartIndex = i + 2;
                 StringBuilder keyBuilder = new StringBuilder();
                 int depth = 1;
-                int j = i + 1;
+                int j = contentStartIndex;
                 boolean foundMatch = false;
+
                 while (j < n) {
-                    char c = input.charAt(j);
-                    if (c == '\\') { // 处理转义
-                        if (j + 1 < n) {
+                    char innerChar = input.charAt(j);
+
+                    // --- 占位符内部的转义逻辑 ---
+                    if (innerChar == '\\') {
+                        if (j + 1 < n && (input.charAt(j + 1) == '{' || input.charAt(j + 1) == '}')) {
                             keyBuilder.append(input.charAt(j + 1));
                             j += 2;
                         } else {
-                            keyBuilder.append(c);
+                            // 在占位符内部，一个无法识别的转义\依旧被当作普通\处理
+                            keyBuilder.append(innerChar);
                             j++;
                         }
-                    } else if (c == '{') {
+                    } else if (innerChar == '{') {
                         depth++;
-                        keyBuilder.append(c);
+                        keyBuilder.append(innerChar);
                         j++;
-                    } else if (c == '}') {
+                    } else if (innerChar == '}') {
                         depth--;
-                        if (depth == 0) { // 找到匹配的结束括号
-                            String key = keyBuilder.toString();
-                            arguments.add(Placeholder.placeholder(key));
-
-                            // 更新位置指针
+                        if (depth == 0) { // 找到匹配的闭合括号
+                            arguments.add(Placeholder.placeholder(keyBuilder.toString()));
                             i = j + 1;
-                            lastAppendPosition = i;
                             foundMatch = true;
                             break;
                         }
-                        keyBuilder.append(c); // 嵌套的 '}'
+                        keyBuilder.append(innerChar);
                         j++;
                     } else {
-                        keyBuilder.append(c);
+                        keyBuilder.append(innerChar);
                         j++;
                     }
                 }
-                // --- 占位符解析结束 ---
-                if (!foundMatch) {
-                    // 如果内层循环结束仍未找到匹配的 '}'，则不进行任何特殊处理
-                    // 外层循环的 i 会自然递增
+
+                if (foundMatch) {
+                    continue;
+                } else {
+                    // 未找到闭合括号，将 '$' 视为普通字符
+                    currentLiteral.append(c);
                     i++;
                 }
-            } else {
+            }
+            // --- 2. 其次，只处理对触发器'$'的转义 ---
+            else if (c == '\\' && i + 1 < n && input.charAt(i + 1) == '$') {
+                currentLiteral.append('$'); // 直接添加 '$'
+                i += 2; // 跳过 '\' 和 '$'
+            }
+            // --- 3. 处理所有其他字符（包括独立的'\'和'{'）为普通文本 ---
+            else {
+                currentLiteral.append(c);
                 i++;
             }
         }
-        // 追加最后一个占位符之后的所有剩余文本
-        if (lastAppendPosition < n) {
-            arguments.add(Literal.literal(input.substring(lastAppendPosition)));
+
+        if (!currentLiteral.isEmpty()) {
+            arguments.add(Literal.literal(currentLiteral.toString()));
         }
+
         return switch (arguments.size()) {
+            case 0 -> Literal.literal("");
             case 1 -> arguments.getFirst();
             case 2 -> new Complex2(input, arguments.get(0), arguments.get(1));
             default -> new Complex(input, arguments);

@@ -21,17 +21,19 @@ public class TooltipStyleModifier<I> implements ItemDataModifier<I> {
     }
 
     @Override
-    public void apply(Item<I> item, ItemBuildContext context) {
+    public Item<I> apply(Item<I> item, ItemBuildContext context) {
         item.tooltipStyle(argument.toString());
+        return item;
     }
 
     @Override
-    public void prepareNetworkItem(Item<I> item, ItemBuildContext context, CompoundTag networkData) {
-        Tag previous = item.getNBTComponent(ComponentKeys.TOOLTIP_STYLE);
+    public Item<I> prepareNetworkItem(Item<I> item, ItemBuildContext context, CompoundTag networkData) {
+        Tag previous = item.getSparrowNBTComponent(ComponentKeys.TOOLTIP_STYLE);
         if (previous != null) {
             networkData.put(ComponentKeys.TOOLTIP_STYLE.asString(), NetworkItemHandler.pack(NetworkItemHandler.Operation.ADD, previous));
         } else {
             networkData.put(ComponentKeys.TOOLTIP_STYLE.asString(), NetworkItemHandler.pack(NetworkItemHandler.Operation.REMOVE));
         }
+        return item;
     }
 }

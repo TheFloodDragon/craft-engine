@@ -52,6 +52,7 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
     public void unload() {
         this.byId.clear();
         this.categoryOnMainPage.clear();
+        this.externalMembers.clear();
     }
 
     @Override
@@ -117,7 +118,8 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
             List<String> members = MiscUtils.getAsStringList(section.getOrDefault("list", List.of()));
             Key icon = Key.of(section.getOrDefault("icon", ItemKeys.STONE).toString());
             int priority = ResourceConfigUtils.getAsInt(section.getOrDefault("priority", 0), "priority");
-            Category category = new Category(id, name, MiscUtils.getAsStringList(section.getOrDefault("lore", List.of())), icon, members.stream().distinct().toList(), priority, (boolean) section.getOrDefault("hidden", false));
+            Category category = new Category(id, name, MiscUtils.getAsStringList(section.getOrDefault("lore", List.of())), icon, members.stream().distinct().toList(), priority,
+                    ResourceConfigUtils.getAsBoolean(section.getOrDefault("hidden", false), "hidden"));
             if (ItemBrowserManagerImpl.this.byId.containsKey(id)) {
                 ItemBrowserManagerImpl.this.byId.get(id).merge(category);
             } else {
@@ -165,7 +167,6 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
             }
             item.customNameJson(AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(it.displayName(), ItemBuildContext.EMPTY.tagResolvers())));
             item.loreJson(it.displayLore().stream().map(lore -> AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(lore, ItemBuildContext.EMPTY.tagResolvers()))).toList());
-            item.load();
             return new ItemWithAction(item, (element, click) -> {
                 click.cancel();
                 player.playSound(Constants.SOUND_CLICK_BUTTON);
@@ -247,16 +248,13 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                 Item<?> item = this.plugin.itemManager().createWrappedItem(subCategory.icon(), player);
                 if (item == null) {
                     if (!subCategory.icon().equals(ItemKeys.AIR)) {
-                        this.plugin.logger().warn("Can't find item " + subCategory.icon() + " as icon for sub category " + subCategoryId);
                         item = this.plugin.itemManager().createWrappedItem(ItemKeys.BARRIER, player);
                         item.customNameJson(AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(subCategory.displayName(), ItemBuildContext.EMPTY.tagResolvers())));
                         item.loreJson(subCategory.displayLore().stream().map(lore -> AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(lore, ItemBuildContext.EMPTY.tagResolvers()))).toList());
-                        item.load();
                     }
                 } else {
                     item.customNameJson(AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(subCategory.displayName(), ItemBuildContext.EMPTY.tagResolvers())));
                     item.loreJson(subCategory.displayLore().stream().map(lore -> AdventureHelper.componentToJson(AdventureHelper.miniMessage().deserialize(lore, ItemBuildContext.EMPTY.tagResolvers()))).toList());
-                    item.load();
                 }
                 return new ItemWithAction(item, (element, click) -> {
                     click.cancel();
@@ -269,7 +267,6 @@ public class ItemBrowserManagerImpl implements ItemBrowserManager {
                 boolean canGoFurther;
                 if (item == null) {
                     if (!itemId.equals(ItemKeys.AIR)) {
-                        this.plugin.logger().warn("Can't find item " + itemId + " for category " + categoryId);
                         item = this.plugin.itemManager().createWrappedItem(ItemKeys.BARRIER, player);
                         item.customNameJson(AdventureHelper.componentToJson(Component.text(it).decoration(TextDecoration.ITALIC, TextDecoration.State.FALSE).color(NamedTextColor.RED)));
                     }

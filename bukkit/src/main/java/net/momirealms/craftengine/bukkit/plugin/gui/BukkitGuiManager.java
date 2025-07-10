@@ -1,6 +1,7 @@
 package net.momirealms.craftengine.bukkit.plugin.gui;
 
 import net.kyori.adventure.text.Component;
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.NetworkReflections;
@@ -47,7 +48,7 @@ public class BukkitGuiManager implements GuiManager, Listener {
                 case ANVIL -> MenuType.ANVIL.create(bukkitPlayer).open();
                 case LOOM -> MenuType.LOOM.create(bukkitPlayer).open();
                 case ENCHANTMENT -> MenuType.ENCHANTMENT.create(bukkitPlayer).open();
-                case CRAFTING -> MenuType.CRAFTING.create(bukkitPlayer).open();
+                case CRAFTING -> MenuType.CRAFTER_3X3.create(bukkitPlayer).open();
                 case CARTOGRAPHY -> MenuType.CARTOGRAPHY_TABLE.create(bukkitPlayer).open();
                 case SMITHING -> MenuType.SMITHING.create(bukkitPlayer).open();
                 case GRINDSTONE -> MenuType.GRINDSTONE.create(bukkitPlayer).open();
@@ -69,7 +70,7 @@ public class BukkitGuiManager implements GuiManager, Listener {
     public void updateInventoryTitle(net.momirealms.craftengine.core.entity.player.Player player, Component component) {
         Object nmsPlayer = player.serverPlayer();
         try {
-            Object containerMenu = CoreReflections.field$Player$containerMenu.get(nmsPlayer);
+            Object containerMenu = FastNMS.INSTANCE.field$Player$containerMenu(nmsPlayer);
             int containerId = CoreReflections.field$AbstractContainerMenu$containerId.getInt(containerMenu);
             Object menuType = CoreReflections.field$AbstractContainerMenu$menuType.get(containerMenu);
             Object packet = NetworkReflections.constructor$ClientboundOpenScreenPacket.newInstance(containerId, menuType, ComponentUtils.adventureToMinecraft(component));

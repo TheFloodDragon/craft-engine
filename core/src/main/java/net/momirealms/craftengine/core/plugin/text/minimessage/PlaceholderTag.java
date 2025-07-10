@@ -5,17 +5,17 @@ import net.kyori.adventure.text.minimessage.ParsingException;
 import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.ArgumentQueue;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
+import net.momirealms.craftengine.core.plugin.context.PlayerOptionalContext;
 import net.momirealms.craftengine.core.util.AdventureHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class PlaceholderTag implements TagResolver {
-    private final Player player;
+    private final net.momirealms.craftengine.core.plugin.context.Context context;
 
-    public PlaceholderTag(@Nullable Player player) {
-        this.player = player;
+    public PlaceholderTag(@NotNull net.momirealms.craftengine.core.plugin.context.Context context) {
+        this.context = context;
     }
 
     @Override
@@ -23,8 +23,10 @@ public class PlaceholderTag implements TagResolver {
         if (!this.has(name) || !CraftEngine.instance().compatibilityManager().hasPlaceholderAPI()) {
             return null;
         }
-        String placeholder = "%" + arguments.popOr("No argument placeholder provided") + "%";
-        String parsed = CraftEngine.instance().compatibilityManager().parse(player, placeholder);
+        String rawArgument = arguments.popOr("No argument relational placeholder provided").toString();
+        if (rawArgument.contains("<")) rawArgument = AdventureHelper.resolvePlainStringTags(rawArgument, this.context.tagResolvers());
+        String placeholder = "%" + rawArgument + "%";
+        String parsed = this.context instanceof PlayerOptionalContext playerOptionalContext ? CraftEngine.instance().compatibilityManager().parse(playerOptionalContext.player(), placeholder) : CraftEngine.instance().compatibilityManager().parse(null, placeholder);
         if (parsed.equals(placeholder)) {
             parsed = arguments.popOr("No default papi value provided").toString();
         }

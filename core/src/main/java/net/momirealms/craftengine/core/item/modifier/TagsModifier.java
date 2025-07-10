@@ -28,17 +28,18 @@ public class TagsModifier<I> implements ItemDataModifier<I> {
     }
 
     @Override
-    public void apply(Item<I> item, ItemBuildContext context) {
+    public Item<I> apply(Item<I> item, ItemBuildContext context) {
         for (Map.Entry<String, Object> entry : this.arguments.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
             item.setTag(value, key);
         }
+        return item;
     }
 
     // TODO NOT PERFECT
     @Override
-    public void prepareNetworkItem(Item<I> item, ItemBuildContext context, CompoundTag networkData) {
+    public Item<I> prepareNetworkItem(Item<I> item, ItemBuildContext context, CompoundTag networkData) {
         for (Map.Entry<String, Object> entry : this.arguments.entrySet()) {
             Tag previous = item.getNBTTag(entry.getKey());
             if (previous != null) {
@@ -47,6 +48,7 @@ public class TagsModifier<I> implements ItemDataModifier<I> {
                 networkData.put(entry.getKey(), NetworkItemHandler.pack(NetworkItemHandler.Operation.REMOVE));
             }
         }
+        return item;
     }
 
     private static Map<String, Object> mapToMap(final Map<String, Object> source) {

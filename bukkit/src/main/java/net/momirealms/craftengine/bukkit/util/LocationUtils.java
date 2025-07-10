@@ -61,6 +61,10 @@ public class LocationUtils {
         );
     }
 
+    public static Vec3d toVec3d(BlockPos pos) {
+        return new Vec3d(pos.x(), pos.y(), pos.z());
+    }
+
     public static double getDistance(Location location1, Location location2) {
         return Math.sqrt(Math.pow(location2.getX() - location1.getX(), 2) +
                 Math.pow(location2.getY() - location1.getY(), 2) +

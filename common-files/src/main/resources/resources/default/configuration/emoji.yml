@@ -1,145 +1,142 @@
 templates:
   default:emoji/basic:
-    content: "<hover:show_text:'<i18n:emoji.tip>'><!shadow><white><arg:emoji></white></!shadow></hover>"
+    content: <hover:show_text:'<i18n:emoji.tip>'><!shadow><white><arg:emoji></white></!shadow></hover>
   default:emoji/addition_info:
-    content: "<hover:show_text:'<i18n:emoji.tip>'><!shadow><white><arg:emoji></white></!shadow>{text}</hover>"
-
+    content: <hover:show_text:'<i18n:emoji.tip>'><!shadow><white><arg:emoji></white></!shadow>${text}</hover>
 emoji:
   default:emoji_location:
-    template: "default:emoji/addition_info"
+    template: default:emoji/addition_info
     arguments:
-      text: "<i18n:emoji.location>"
+      text: <i18n:emoji.location>
     overrides:
-      image: "default:icons:0:0"
+      image: default:icons:0:0
       permission: emoji.location
       keywords:
-        - ":location:"
-        - ":pos:"
+        - ':location:'
+        - ':pos:'
   default:emoji_time:
-    template: "default:emoji/addition_info"
+    template: default:emoji/addition_info
     arguments:
-      text: "<i18n:emoji.time>"
+      text: <i18n:emoji.time>
     overrides:
-      image: "default:icons:0:1"
+      image: default:icons:0:1
       permission: emoji.time
       keywords:
-        - ":time:"
-
+        - ':time:'
   default:emoji_smiley:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:0:0"
+      image: default:emojis:0:0
       permission: emoji.smile
       keywords:
-        - ":)"
-        - ":smiley:"
-        - ":smile:"
+        - :)
+        - ':smiley:'
+        - ':smile:'
   default:emoji_angry:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:0:1"
+      image: default:emojis:0:1
       permission: emoji.angry
       keywords:
-        - ":angry:"
+        - ':angry:'
   default:emoji_grin:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:0:2"
+      image: default:emojis:0:2
       permission: emoji.grin
       keywords:
-        - ":grin:"
+        - ':grin:'
   default:emoji_sob:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:0:3"
+      image: default:emojis:0:3
       permission: emoji.sob
       keywords:
-        - ":sob:"
+        - ':sob:'
   default:emoji_sweat_smile:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:1:0"
+      image: default:emojis:1:0
       permission: emoji.sweat_smile
       keywords:
-        - ":sweat_smile:"
+        - ':sweat_smile:'
   default:emoji_blush:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:1:1"
+      image: default:emojis:1:1
       permission: emoji.blush
       keywords:
-        - ":blush:"
+        - ':blush:'
   default:emoji_joy:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:1:2"
+      image: default:emojis:1:2
       permission: emoji.joy
       keywords:
-        - ":joy:"
+        - ':joy:'
   default:emoji_slight_frown:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:1:3"
+      image: default:emojis:1:3
       permission: emoji.slight_frown
       keywords:
-        - ":slight_frown:"
+        - ':slight_frown:'
   default:emoji_unamused:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:2:0"
+      image: default:emojis:2:0
       permission: emoji.unamused
       keywords:
-        - ":unamused:"
+        - ':unamused:'
   default:emoji_laughing:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:2:1"
+      image: default:emojis:2:1
       permission: emoji.laughing
       keywords:
-        - ":laughing:"
+        - ':laughing:'
   default:emoji_sunglasses:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:2:2"
+      image: default:emojis:2:2
       permission: emoji.sunglasses
       keywords:
-        - ":sunglasses:"
+        - ':sunglasses:'
   default:emoji_innocent:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:2:3"
+      image: default:emojis:2:3
       permission: emoji.innocent
       keywords:
-        - ":innocent:"
+        - ':innocent:'
   default:emoji_face_vomiting:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:3:0"
+      image: default:emojis:3:0
       permission: emoji.face_vomiting
       keywords:
-        - ":face_vomiting:"
+        - ':face_vomiting:'
   default:emoji_rolling_eyes:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:3:1"
+      image: default:emojis:3:1
       permission: emoji.rolling_eyes
       keywords:
-        - ":rolling_eyes:"
+        - ':rolling_eyes:'
   default:emoji_yum:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:3:2"
+      image: default:emojis:3:2
       permission: emoji.yum
       keywords:
-        - ":yum:"
+        - ':yum:'
   default:emoji_confounded:
-    template: "default:emoji/basic"
+    template: default:emoji/basic
     overrides:
-      image: "default:emojis:3:2"
+      image: default:emojis:3:2
       permission: emoji.confounded
       keywords:
-        - ":confounded:"
-
+        - ':confounded:'
 images:
   default:emojis:
     height: 11
@@ -147,7 +144,7 @@ images:
     font: minecraft:emoji
     file: minecraft:font/image/emojis.png
     chars:
-      - '\ub000\ub001\ub002\ub003'
-      - '\ub004\ub005\ub006\ub007'
-      - '\ub008\ub009\ub00a\ub00b'
-      - '\ub00c\ub00d\ub00e\ub00f'
+      - \ub000\ub001\ub002\ub003
+      - \ub004\ub005\ub006\ub007
+      - \ub008\ub009\ub00a\ub00b
+      - \ub00c\ub00d\ub00e\ub00f

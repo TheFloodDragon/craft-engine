@@ -6,39 +6,40 @@ import org.joml.Vector3f;
 
 public class DisplayEntityData<T> extends BaseEntityData<T> {
     // Display only
-    public static final DisplayEntityData<Integer> InterpolationDelay = of(8, EntityDataValue.Serializers$INT, 0);
+    public static final DisplayEntityData<Integer> InterpolationDelay = of(DisplayEntityData.class, EntityDataValue.Serializers$INT, 0, true);
 
     // 1.19.4-1.20.1
-    public static final DisplayEntityData<Integer> InterpolationDuration = of(9, EntityDataValue.Serializers$INT, 0);
+    public static final DisplayEntityData<Integer> InterpolationDuration = of(DisplayEntityData.class, EntityDataValue.Serializers$INT, 0, !VersionHelper.isOrAbove1_20_2());
 
     // 1.20.2+
-    public static final DisplayEntityData<Integer> TransformationInterpolationDuration = of(9, EntityDataValue.Serializers$INT, 0);
-    public static final DisplayEntityData<Integer> PositionRotationInterpolationDuration = of(10, EntityDataValue.Serializers$INT, 0);
+    public static final DisplayEntityData<Integer> TransformationInterpolationDuration = of(DisplayEntityData.class, EntityDataValue.Serializers$INT, 0, VersionHelper.isOrAbove1_20_2());
+    public static final DisplayEntityData<Integer> PositionRotationInterpolationDuration = of(DisplayEntityData.class, EntityDataValue.Serializers$INT, 0, VersionHelper.isOrAbove1_20_2());
 
-    public static final DisplayEntityData<Object> Translation = of(11, EntityDataValue.Serializers$VECTOR3, new Vector3f(0f));
-    public static final DisplayEntityData<Object> Scale = of(12, EntityDataValue.Serializers$VECTOR3, new Vector3f(1f));
-    public static final DisplayEntityData<Object> RotationLeft = of(13, EntityDataValue.Serializers$QUATERNION, new Quaternionf(0f, 0f, 0f, 1f));
-    public static final DisplayEntityData<Object> RotationRight = of(14, EntityDataValue.Serializers$QUATERNION, new Quaternionf(0f, 0f, 0f, 1f));
+    public static final DisplayEntityData<Object> Translation = of(DisplayEntityData.class, EntityDataValue.Serializers$VECTOR3, new Vector3f(0f), true);
+    public static final DisplayEntityData<Object> Scale = of(DisplayEntityData.class, EntityDataValue.Serializers$VECTOR3, new Vector3f(1f), true);
+    public static final DisplayEntityData<Object> RotationLeft = of(DisplayEntityData.class, EntityDataValue.Serializers$QUATERNION, new Quaternionf(0f, 0f, 0f, 1f), true);
+    public static final DisplayEntityData<Object> RotationRight = of(DisplayEntityData.class, EntityDataValue.Serializers$QUATERNION, new Quaternionf(0f, 0f, 0f, 1f), true);
     /**
      * 	Billboard Constraints (0 = FIXED, 1 = VERTICAL, 2 = HORIZONTAL, 3 = CENTER)
      */
-    public static final DisplayEntityData<Byte> BillboardConstraints = of(15, EntityDataValue.Serializers$BYTE, (byte) 0);
+    public static final DisplayEntityData<Byte> BillboardConstraints = of(DisplayEntityData.class, EntityDataValue.Serializers$BYTE, (byte) 0, true);
     /**
      * Brightness override (blockLight << 4 | skyLight << 20)
      */
-    public static final DisplayEntityData<Integer> BrightnessOverride = of(16, EntityDataValue.Serializers$INT, -1);
-    public static final DisplayEntityData<Float> ViewRange = of(17, EntityDataValue.Serializers$FLOAT, 1f);
-    public static final DisplayEntityData<Float> ShadowRadius = of(18, EntityDataValue.Serializers$FLOAT, 0f);
-    public static final DisplayEntityData<Float> ShadowStrength = of(19, EntityDataValue.Serializers$FLOAT, 0f);
-    public static final DisplayEntityData<Float> Width = of(20, EntityDataValue.Serializers$FLOAT, 0f);
-    public static final DisplayEntityData<Float> Height = of(21, EntityDataValue.Serializers$FLOAT, 0f);
-    public static final DisplayEntityData<Integer> GlowColorOverride = of(22, EntityDataValue.Serializers$INT, -1);
+    public static final DisplayEntityData<Integer> BrightnessOverride = of(DisplayEntityData.class, EntityDataValue.Serializers$INT, -1, true);
+    public static final DisplayEntityData<Float> ViewRange = of(DisplayEntityData.class, EntityDataValue.Serializers$FLOAT, 1f, true);
+    public static final DisplayEntityData<Float> ShadowRadius = of(DisplayEntityData.class, EntityDataValue.Serializers$FLOAT, 0f, true);
+    public static final DisplayEntityData<Float> ShadowStrength = of(DisplayEntityData.class, EntityDataValue.Serializers$FLOAT, 0f, true);
+    public static final DisplayEntityData<Float> Width = of(DisplayEntityData.class, EntityDataValue.Serializers$FLOAT, 0f, true);
+    public static final DisplayEntityData<Float> Height = of(DisplayEntityData.class, EntityDataValue.Serializers$FLOAT, 0f, true);
+    public static final DisplayEntityData<Integer> GlowColorOverride = of(DisplayEntityData.class, EntityDataValue.Serializers$INT, -1, true);
 
-    public static <T> DisplayEntityData<T> of(final int id, final Object serializer, T defaultValue) {
-        return new DisplayEntityData<>(id, serializer, defaultValue);
+    public static <T> DisplayEntityData<T> of(final Class<?> clazz, final Object serializer, T defaultValue, boolean condition) {
+        if (!condition) return null;
+        return new DisplayEntityData<>(clazz, serializer, defaultValue);
     }
 
-    public DisplayEntityData(int id, Object serializer, T defaultValue) {
-        super(!VersionHelper.isOrAbove1_20_2() && id >= 11 ? id - 1 : id, serializer, defaultValue);
+    public DisplayEntityData(Class<?> clazz, Object serializer, T defaultValue) {
+        super(clazz, serializer, defaultValue);
     }
 }

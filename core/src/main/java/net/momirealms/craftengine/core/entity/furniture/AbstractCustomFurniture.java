@@ -64,7 +64,7 @@ public abstract class AbstractCustomFurniture implements CustomFurniture {
     }
 
     @Override
-    public AnchorType getAnyPlacement() {
+    public AnchorType getAnyAnchorType() {
         return this.anyType;
     }
 
@@ -76,5 +76,14 @@ public abstract class AbstractCustomFurniture implements CustomFurniture {
     @Override
     public Placement getPlacement(AnchorType anchorType) {
         return this.placements.get(anchorType);
+    }
+
+    @Override
+    public Placement getValidPlacement(AnchorType anchorType) {
+        Placement placement = this.placements.get(anchorType);
+        if (placement == null) {
+            return this.placements.get(getAnyAnchorType());
+        }
+        return placement;
     }
 }

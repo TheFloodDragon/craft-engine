@@ -2,7 +2,9 @@ package net.momirealms.craftengine.core.block;
 
 import net.momirealms.craftengine.core.util.Key;
 
-public class BlockKeys {
+public final class BlockKeys {
+    private BlockKeys() {}
+
     public static final Key NOTE_BLOCK = Key.of("minecraft:note_block");
     public static final Key TRIPWIRE = Key.of("minecraft:tripwire");
     public static final Key CRAFTING_TABLE = Key.of("minecraft:crafting_table");
@@ -39,6 +41,7 @@ public class BlockKeys {
     public static final Key COMMAND_BLOCK = Key.of("minecraft:command_block");
     public static final Key CHAIN_COMMAND_BLOCK = Key.of("minecraft:chain_command_block");
     public static final Key REPEATING_COMMAND_BLOCK = Key.of("minecraft:repeating_command_block");
+    public static final Key DECORATED_POT = Key.of("minecraft:decorated_pot");
 
     public static final Key CAKE = Key.of("minecraft:cake");
     public static final Key CANDLE_CAKE = Key.of("minecraft:candle_cake");
@@ -104,6 +107,10 @@ public class BlockKeys {
     public static final Key PALE_OAK_BUTTON = Key.of("minecraft:pale_oak_button");
     public static final Key MANGROVE_BUTTON = Key.of("minecraft:mangrove_button");
     public static final Key BAMBOO_BUTTON = Key.of("minecraft:bamboo_button");
+    public static final Key CRIMSON_BUTTON = Key.of("minecraft:crimson_button");
+    public static final Key WARPED_BUTTON = Key.of("minecraft:warped_button");
+    public static final Key STONE_BUTTON = Key.of("minecraft:stone_button");
+    public static final Key POLISHED_BLACKSTONE_BUTTON = Key.of("minecraft:polished_blackstone_button");
 
     public static final Key OAK_TRAPDOOR = Key.of("minecraft:oak_trapdoor");
     public static final Key SPRUCE_TRAPDOOR = Key.of("minecraft:spruce_trapdoor");
@@ -117,6 +124,7 @@ public class BlockKeys {
     public static final Key BAMBOO_TRAPDOOR = Key.of("minecraft:bamboo_trapdoor");
     public static final Key CRIMSON_TRAPDOOR = Key.of("minecraft:crimson_trapdoor");
     public static final Key WARPED_TRAPDOOR = Key.of("minecraft:warped_trapdoor");
+    public static final Key IRON_TRAPDOOR = Key.of("minecraft:iron_trapdoor");
 
     public static final Key OAK_DOOR = Key.of("minecraft:oak_door");
     public static final Key SPRUCE_DOOR = Key.of("minecraft:spruce_door");
@@ -130,6 +138,7 @@ public class BlockKeys {
     public static final Key BAMBOO_DOOR = Key.of("minecraft:bamboo_door");
     public static final Key CRIMSON_DOOR = Key.of("minecraft:crimson_door");
     public static final Key WARPED_DOOR = Key.of("minecraft:warped_door");
+    public static final Key IRON_DOOR = Key.of("minecraft:iron_door");
 
     public static final Key COPPER_DOOR = Key.of("minecraft:copper_door");
     public static final Key EXPOSED_COPPER_DOOR = Key.of("minecraft:exposed_copper_door");

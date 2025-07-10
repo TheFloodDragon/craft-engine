@@ -3,6 +3,11 @@ package net.momirealms.craftengine.core.item;
 import com.google.gson.JsonElement;
 import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
+import net.momirealms.craftengine.core.item.data.Enchantment;
+import net.momirealms.craftengine.core.item.data.FireworkExplosion;
+import net.momirealms.craftengine.core.item.data.JukeboxPlayable;
+import net.momirealms.craftengine.core.item.data.Trim;
+import net.momirealms.craftengine.core.item.modifier.ItemDataModifier;
 import net.momirealms.craftengine.core.item.setting.EquipmentData;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.sparrow.nbt.Tag;
@@ -63,6 +68,10 @@ public interface Item<I> {
 
     Optional<Integer> dyedColor();
 
+    Item<I> fireworkExplosion(FireworkExplosion explosion);
+
+    Optional<FireworkExplosion> fireworkExplosion();
+
     Item<I> customNameJson(String displayName);
 
     Item<I> customNameComponent(Component displayName);
@@ -111,7 +120,6 @@ public interface Item<I> {
 
     Item<I> equippable(EquipmentData equipmentData);
 
-
     Item<I> unbreakable(boolean unbreakable);
 
     boolean unbreakable();
@@ -122,11 +130,7 @@ public interface Item<I> {
 
     Item<I> setEnchantments(List<Enchantment> enchantments);
 
-    Item<I> addEnchantment(Enchantment enchantment);
-
     Item<I> setStoredEnchantments(List<Enchantment> enchantments);
-
-    Item<I> addStoredEnchantment(Enchantment enchantment);
 
     Item<I> itemFlags(List<String> flags);
 
@@ -150,7 +154,9 @@ public interface Item<I> {
 
     JsonElement getJsonComponent(Object type);
 
-    Tag getNBTComponent(Object type);
+    Tag getSparrowNBTComponent(Object type);
+
+    Object getNBTComponent(Object type);
 
     void setComponent(Object type, Object value);
 
@@ -164,8 +170,6 @@ public interface Item<I> {
 
     I getItem();
 
-    I load();
-
     int maxStackSize();
 
     Item<I> maxStackSize(int amount);
@@ -178,7 +182,21 @@ public interface Item<I> {
 
     Item<I> mergeCopy(Item<?> another);
 
+    Item<I> transmuteCopy(Key another, int count);
+
+    Item<I> unsafeTransmuteCopy(Object another, int count);
+
+    void shrink(int amount);
+
+    default Item<I> transmuteCopy(Key another) {
+        return transmuteCopy(another, this.count());
+    }
+
     void merge(Item<I> another);
+
+    default Item<I> apply(ItemDataModifier<I> modifier, ItemBuildContext context) {
+        return modifier.apply(this, context);
+    }
 
     byte[] toByteArray();
 }

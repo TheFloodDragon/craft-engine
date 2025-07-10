@@ -23,7 +23,6 @@ dependencies {
     implementation(project(":bukkit:compatibility:legacy"))
     implementation(project(":common-files"))
 
-    implementation("com.saicone.rtag:rtag-item:${rootProject.properties["rtag_version"]}")
     implementation("net.momirealms:sparrow-util:${rootProject.properties["sparrow_util_version"]}")
     implementation("net.momirealms:antigrieflib:${rootProject.properties["anti_grief_version"]}")
     implementation("net.momirealms:craft-engine-nms-helper-mojmap:${rootProject.properties["nms_helper_version"]}")
@@ -51,7 +50,7 @@ paper {
     name = "CraftEngine"
     apiVersion = "1.20"
     authors = listOf("XiaoMoMi")
-    contributors = listOf("jhqwqmc", "iqtesterrr")
+    contributors = listOf("jhqwqmc", "iqtesterrr", "WhiteProject1", "Catnies", "xiaozhangup", "TamashiiMon")
     foliaSupported = true
     serverDependencies {
         register("PlaceholderAPI") {
@@ -71,30 +70,54 @@ paper {
             required = false
             load = PaperPluginDescription.RelativeLoadOrder.BEFORE
         }
-        register("NeigeItems") {
-            required = false
-        }
-        register("MMOItems") {
-            required = false
-        }
-        register("ModelEngine") {
-            required = false
-        }
-        register("BetterModel") {
-            required = false
-        }
-        register("AuraSkills") {
-            required = false
-        }
-        register("LuckPerms") {
-            required = false
-        }
-        register("ViaVersion") {
-            required = false
-        }
-        register("MythicMobs") {
-            required = false
-        }
+        register("LuckPerms") { required = false }
+        register("ViaVersion") { required = false }
+
+        // external models
+        register("ModelEngine") { required = false }
+        register("BetterModel") { required = false }
+
+        // external items
+        register("NeigeItems") { required = false }
+        register("MMOItems") { required = false }
+        register("MythicMobs") { required = false }
+        register("CustomFishing") { required = false }
+
+        // leveler
+        register("AuraSkills") { required = false }
+        register("AureliumSkills") { required = false }
+        register("McMMO") { required = false }
+        register("MMOCore") { required = false }
+        register("Jobs") { required = false }
+        register("EcoSkills") { required = false }
+        register("EcoJobs") { required = false }
+
+        // anti grief lib
+        register("Dominion") { required = false }
+        register("WorldGuard") { required = false }
+        register("Kingdoms") { required = false }
+        register("Lands") { required = false }
+        register("IridiumSkyblock") { required = false }
+        register("CrashClaim") { required = false }
+        register("GriefDefender") { required = false }
+        register("HuskClaims") { required = false }
+        register("BentoBox") { required = false }
+        register("HuskTowns") { required = false }
+        register("PlotSquared") { required = false }
+        register("Residence") { required = false }
+        register("SuperiorSkyblock2") { required = false }
+        register("Towny") { required = false }
+        register("FabledSkyBlock") { required = false }
+        register("GriefPrevention") { required = false }
+        register("RedProtect") { required = false }
+        register("Landlord") { required = false }
+        register("uSkyBlock") { required = false }
+        register("XClaim") { required = false }
+        register("UltimateClaims") { required = false }
+        register("UltimateClans") { required = false }
+        register("PreciousStones") { required = false }
+        register("hClaims") { required = false }
+        register("Factions") { required = false }
     }
 }
 
@@ -112,7 +135,6 @@ tasks {
         relocate("net.kyori", "net.momirealms.craftengine.libraries")
         relocate("net.momirealms.sparrow.nbt", "net.momirealms.craftengine.libraries.nbt")
         relocate("net.momirealms.antigrieflib", "net.momirealms.craftengine.libraries.antigrieflib")
-        relocate("com.saicone.rtag", "net.momirealms.craftengine.libraries.tag")
         relocate("org.incendo", "net.momirealms.craftengine.libraries")
         relocate("dev.dejvokep", "net.momirealms.craftengine.libraries")
         relocate("org.bstats", "net.momirealms.craftengine.libraries.bstats")

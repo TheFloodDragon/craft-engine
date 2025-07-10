@@ -5,7 +5,6 @@ import net.momirealms.craftengine.bukkit.nms.CollisionEntity;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.plugin.network.handler.FurniturePacketHandler;
-import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MEntityTypes;
 import net.momirealms.craftengine.bukkit.util.EntityUtils;
 import net.momirealms.craftengine.bukkit.util.KeyUtils;
@@ -27,11 +26,11 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 public class BukkitFurnitureManager extends AbstractFurnitureManager {
     public static final NamespacedKey FURNITURE_KEY = KeyUtils.toNamespacedKey(FurnitureManager.FURNITURE_KEY);
@@ -70,7 +69,7 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
     public BukkitFurniture place(Location location, CustomFurniture furniture, FurnitureExtraData extraData, boolean playSound) {
         Optional<AnchorType> optionalAnchorType = extraData.anchorType();
         if (optionalAnchorType.isEmpty() || !furniture.isAllowedPlacement(optionalAnchorType.get())) {
-            extraData.anchorType(furniture.getAnyPlacement());
+            extraData.anchorType(furniture.getAnyAnchorType());
         }
         Entity furnitureEntity = EntityUtils.spawnEntity(location.getWorld(), location, EntityType.ITEM_DISPLAY, entity -> {
             ItemDisplay display = (ItemDisplay) entity;
@@ -84,7 +83,7 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
         });
         if (playSound) {
             SoundData data = furniture.settings().sounds().placeSound();
-            location.getWorld().playSound(location, data.id().toString(), SoundCategory.BLOCKS, data.volume(), data.pitch());
+            location.getWorld().playSound(location, data.id().toString(), SoundCategory.BLOCKS, data.volume().get(), data.pitch().get());
         }
         return loadedFurnitureByRealEntityId(furnitureEntity.getEntityId());
     }
@@ -96,15 +95,31 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
         COLLISION_ENTITY_TYPE = Config.colliderType();
         Bukkit.getPluginManager().registerEvents(this.dismountListener, this.plugin.javaPlugin());
         Bukkit.getPluginManager().registerEvents(this.furnitureEventListener, this.plugin.javaPlugin());
-        for (World world : Bukkit.getWorlds()) {
-            List<Entity> entities = world.getEntities();
-            for (Entity entity : entities) {
-                if (entity instanceof ItemDisplay display) {
-                    handleBaseEntityLoadEarly(display);
-                } else if (entity instanceof Interaction interaction) {
-                    handleCollisionEntityLoadOnEntitiesLoad(interaction);
-                } else if (entity instanceof Boat boat) {
-                    handleCollisionEntityLoadOnEntitiesLoad(boat);
+        if (VersionHelper.isFolia()) {
+            BiConsumer<Entity, Runnable> taskExecutor = (entity, runnable) -> entity.getScheduler().run(this.plugin.javaPlugin(), (t) -> runnable.run(), () -> {});
+            for (World world : Bukkit.getWorlds()) {
+                List<Entity> entities = world.getEntities();
+                for (Entity entity : entities) {
+                    if (entity instanceof ItemDisplay display) {
+                        taskExecutor.accept(entity, () -> handleBaseEntityLoadEarly(display));
+                    } else if (entity instanceof Interaction interaction) {
+                        taskExecutor.accept(entity, () -> handleCollisionEntityLoadOnEntitiesLoad(interaction));
+                    } else if (entity instanceof Boat boat) {
+                        taskExecutor.accept(entity, () -> handleCollisionEntityLoadOnEntitiesLoad(boat));
+                    }
+                }
+            }
+        } else {
+            for (World world : Bukkit.getWorlds()) {
+                List<Entity> entities = world.getEntities();
+                for (Entity entity : entities) {
+                    if (entity instanceof ItemDisplay display) {
+                        handleBaseEntityLoadEarly(display);
+                    } else if (entity instanceof Interaction interaction) {
+                        handleCollisionEntityLoadOnEntitiesLoad(interaction);
+                    } else if (entity instanceof Boat boat) {
+                        handleCollisionEntityLoadOnEntitiesLoad(boat);
+                    }
                 }
             }
         }
@@ -155,7 +170,7 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
         BukkitFurniture furniture = this.furnitureByRealEntityId.remove(id);
         if (furniture != null) {
             Location location = entity.getLocation();
-            boolean isPreventing = FastNMS.INSTANCE.isPreventingStatusUpdates(location.getWorld(), location.getBlockX() >> 4, location.getBlockZ() >> 4);
+            boolean isPreventing = FastNMS.INSTANCE.method$ServerLevel$isPreventingStatusUpdates(FastNMS.INSTANCE.field$CraftWorld$ServerLevel(location.getWorld()), location.getBlockX() >> 4, location.getBlockZ() >> 4);
             if (!isPreventing) {
                 furniture.destroySeats();
             }
@@ -186,7 +201,7 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
 
         Location location = display.getLocation();
         boolean above1_20_1 = VersionHelper.isOrAbove1_20_2();
-        boolean preventChange = FastNMS.INSTANCE.isPreventingStatusUpdates(location.getWorld(), location.getBlockX() >> 4, location.getBlockZ() >> 4);
+        boolean preventChange = FastNMS.INSTANCE.method$ServerLevel$isPreventingStatusUpdates(FastNMS.INSTANCE.field$CraftWorld$ServerLevel(location.getWorld()), location.getBlockX() >> 4, location.getBlockZ() >> 4);
         if (above1_20_1) {
             if (!preventChange) {
                 BukkitFurniture furniture = addNewFurniture(display, customFurniture);
@@ -227,7 +242,7 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
         World world = location.getWorld();
         int chunkX = location.getBlockX() >> 4;
         int chunkZ = location.getBlockZ() >> 4;
-        if (!FastNMS.INSTANCE.isPreventingStatusUpdates(world, chunkX, chunkZ)) {
+        if (!FastNMS.INSTANCE.method$ServerLevel$isPreventingStatusUpdates(FastNMS.INSTANCE.field$CraftWorld$ServerLevel(world), chunkX, chunkZ)) {
             entity.remove();
             return;
         }
@@ -365,7 +380,6 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
         int z = location.getBlockZ();
         if (!world.getBlockAt(x, y - 1, z).getType().isSolid()) return false;
         if (!world.getBlockAt(x, y, z).isPassable()) return false;
-        if (isEntityBlocking(location)) return false;
         return world.getBlockAt(x, y + 1, z).isPassable();
     }
 
@@ -386,19 +400,5 @@ public class BukkitFurnitureManager extends AbstractFurnitureManager {
             }
         }
         return null;
-    }
-
-    private boolean isEntityBlocking(Location location) {
-        World world = location.getWorld();
-        if (world == null) return true;
-        try {
-            Collection<Entity> nearbyEntities = world.getNearbyEntities(location, 0.38, 2, 0.38);
-            for (Entity bukkitEntity : nearbyEntities) {
-                if (bukkitEntity instanceof Player) continue;
-                Object nmsEntity = FastNMS.INSTANCE.method$CraftEntity$getHandle(bukkitEntity);
-                return (boolean) CoreReflections.method$Entity$canBeCollidedWith.invoke(nmsEntity);
-            }
-        } catch (Exception ignored) {}
-        return false;
     }
 }

@@ -3,6 +3,10 @@ package net.momirealms.craftengine.core.item;
 import com.google.gson.JsonElement;
 import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
+import net.momirealms.craftengine.core.item.data.Enchantment;
+import net.momirealms.craftengine.core.item.data.FireworkExplosion;
+import net.momirealms.craftengine.core.item.data.JukeboxPlayable;
+import net.momirealms.craftengine.core.item.data.Trim;
 import net.momirealms.craftengine.core.item.setting.EquipmentData;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.sparrow.nbt.Tag;
@@ -105,6 +109,17 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     @Override
     public Optional<Integer> dyedColor() {
         return this.factory.dyedColor(this.item);
+    }
+
+    @Override
+    public Item<I> fireworkExplosion(FireworkExplosion explosion) {
+        this.factory.fireworkExplosion(this.item, explosion);
+        return this;
+    }
+
+    @Override
+    public Optional<FireworkExplosion> fireworkExplosion() {
+        return this.factory.fireworkExplosion(this.item);
     }
 
     @SuppressWarnings("unchecked")
@@ -277,20 +292,8 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     }
 
     @Override
-    public Item<I> addEnchantment(Enchantment enchantment) {
-        this.factory.addEnchantment(this.item, enchantment);
-        return this;
-    }
-
-    @Override
     public Item<I> setStoredEnchantments(List<Enchantment> enchantments) {
         this.factory.storedEnchantments(this.item, enchantments);
-        return this;
-    }
-
-    @Override
-    public Item<I> addStoredEnchantment(Enchantment enchantment) {
-        this.factory.addStoredEnchantment(this.item, enchantment);
         return this;
     }
 
@@ -363,7 +366,12 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     }
 
     @Override
-    public Tag getNBTComponent(Object type) {
+    public Tag getSparrowNBTComponent(Object type) {
+        return this.factory.getSparrowNBTComponent(this.item, type);
+    }
+
+    @Override
+    public Object getNBTComponent(Object type) {
         return this.factory.getNBTComponent(this.item, type);
     }
 
@@ -397,11 +405,6 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
         return this.factory.getItem(this.item);
     }
 
-    @Override
-    public I load() {
-        return this.factory.load(this.item);
-    }
-
     @SuppressWarnings({"unchecked"})
     @Override
     public AbstractItem<W, I> copyWithCount(int count) {
@@ -424,6 +427,16 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
         return new AbstractItem<>(this.factory, this.factory.mergeCopy(this.item, (W) ((AbstractItem) another).item));
     }
 
+    @Override
+    public AbstractItem<W, I> transmuteCopy(Key another, int count) {
+        return new AbstractItem<>(this.factory, this.factory.transmuteCopy(this.item, another, count));
+    }
+
+    @Override
+    public Item<I> unsafeTransmuteCopy(Object another, int count) {
+        return new AbstractItem<>(this.factory, this.factory.unsafeTransmuteCopy(this.item, another, count));
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public void merge(Item<I> another) {
@@ -433,5 +446,10 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     @Override
     public byte[] toByteArray() {
         return this.factory.toByteArray(this.item);
+    }
+
+    @Override
+    public void shrink(int amount) {
+        this.item.shrink(amount);
     }
 }

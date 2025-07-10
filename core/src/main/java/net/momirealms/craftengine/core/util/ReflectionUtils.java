@@ -494,12 +494,30 @@ public class ReflectionUtils {
         }
     }
 
+    public static MethodHandle unreflectSetter(Field field) throws IllegalAccessException {
+        try {
+            return LOOKUP.unreflectSetter(field);
+        } catch (IllegalAccessException e) {
+            field.setAccessible(true);
+            return LOOKUP.unreflectSetter(field);
+        }
+    }
+
     public static MethodHandle unreflectMethod(Method method) throws IllegalAccessException {
         try {
             return LOOKUP.unreflect(method);
         } catch (IllegalAccessException e) {
             method.setAccessible(true);
             return LOOKUP.unreflect(method);
+        }
+    }
+
+    public static MethodHandle unreflectConstructor(Constructor<?> constructor) throws IllegalAccessException {
+        try {
+            return LOOKUP.unreflectConstructor(constructor);
+        } catch (IllegalAccessException e) {
+            constructor.setAccessible(true);
+            return LOOKUP.unreflectConstructor(constructor);
         }
     }
 

@@ -26,11 +26,13 @@ public interface CustomFurniture {
     @Nullable
     LootTable<?> lootTable();
 
-    AnchorType getAnyPlacement();
+    AnchorType getAnyAnchorType();
 
     boolean isAllowedPlacement(AnchorType anchorType);
 
     Placement getPlacement(AnchorType anchorType);
+
+    Placement getValidPlacement(AnchorType anchorType);
 
     interface Builder {
 
@@ -47,7 +49,8 @@ public interface CustomFurniture {
         CustomFurniture build();
     }
 
-    record Placement(FurnitureElement[] elements,
+    record Placement(AnchorType anchorType,
+                     FurnitureElement[] elements,
                      HitBox[] hitBoxes,
                      RotationRule rotationRule,
                      AlignmentRule alignmentRule,

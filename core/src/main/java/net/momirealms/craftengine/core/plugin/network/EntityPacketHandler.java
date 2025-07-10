@@ -16,4 +16,7 @@ public interface EntityPacketHandler {
 
     default void handleMoveAndRotate(NetWorkUser user, NMSPacketEvent event, Object packet) {
     }
+
+    default void handleMove(NetWorkUser user, NMSPacketEvent event, Object packet) {
+    }
 }

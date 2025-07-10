@@ -38,7 +38,7 @@ public class GsonHelper {
         }
     }
 
-    public static JsonElement readJsonFile(Path path) throws IOException, JsonSyntaxException {
+    public static JsonElement readJsonFile(Path path) throws IOException, JsonParseException {
         try (BufferedReader reader = Files.newBufferedReader(path)) {
             return JsonParser.parseReader(reader);
         }

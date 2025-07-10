@@ -17,6 +17,7 @@ import net.momirealms.craftengine.core.entity.player.InteractionHand;
 import net.momirealms.craftengine.core.entity.player.InteractionResult;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.Item;
+import net.momirealms.craftengine.core.item.behavior.BlockBoundItemBehavior;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.item.behavior.ItemBehaviorFactory;
 import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
@@ -52,7 +53,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 
-public class BlockItemBehavior extends ItemBehavior {
+public class BlockItemBehavior extends BlockBoundItemBehavior {
     public static final Factory FACTORY = new Factory();
     private final Key blockId;
 
@@ -98,23 +99,18 @@ public class BlockItemBehavior extends ItemBehavior {
 
         if (player.isAdventureMode()) {
             Object againstBlockState = BlockStateUtils.blockDataToBlockState(againstBlock.getBlockData());
-            int stateId = BlockStateUtils.blockStateToId(againstBlockState);
-            if (BlockStateUtils.isVanillaBlock(stateId)) {
+            Optional<ImmutableBlockState> optionalCustomState = BlockStateUtils.getOptionalCustomBlockState(againstBlockState);
+            if (optionalCustomState.isEmpty()) {
                 if (!AdventureModeUtils.canPlace(context.getItem(), context.getLevel(), againstPos, againstBlockState)) {
                     return InteractionResult.FAIL;
                 }
             } else {
-                ImmutableBlockState customState = BukkitBlockManager.instance().getImmutableBlockStateUnsafe(stateId);
+                ImmutableBlockState customState = optionalCustomState.get();
                 // custom block
                 if (!AdventureModeUtils.canPlace(context.getItem(), context.getLevel(), againstPos, Config.simplifyAdventurePlaceCheck() ? customState.vanillaBlockState().handle() : againstBlockState)) {
                     return InteractionResult.FAIL;
                 }
             }
-        }
-
-        int gameTicks = player.gameTicks();
-        if (!player.updateLastSuccessfulInteractionTick(gameTicks)) {
-            return InteractionResult.FAIL;
         }
 
         // trigger event
@@ -161,11 +157,12 @@ public class BlockItemBehavior extends ItemBehavior {
         if (!player.isCreativeMode()) {
             Item<?> item = context.getItem();
             item.count(item.count() - 1);
-            item.load();
         }
 
+        block.setPlacedBy(context, blockStateToPlace);
+
         player.swingHand(context.getHand());
-        context.getLevel().playBlockSound(position, blockStateToPlace.sounds().placeSound());
+        context.getLevel().playBlockSound(position, blockStateToPlace.settings().sounds().placeSound());
         world.sendGameEvent(bukkitPlayer, GameEvent.BLOCK_PLACE, new Vector(pos.x(), pos.y(), pos.z()));
         return InteractionResult.SUCCESS;
     }
@@ -199,7 +196,8 @@ public class BlockItemBehavior extends ItemBehavior {
         }
     }
 
-    public Key blockId() {
+    @Override
+    public Key block() {
         return this.blockId;
     }
 

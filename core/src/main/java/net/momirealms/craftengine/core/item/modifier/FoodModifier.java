@@ -26,21 +26,23 @@ public class FoodModifier<I> implements ItemDataModifier<I> {
     }
 
     @Override
-    public void apply(Item<I> item, ItemBuildContext context) {
+    public Item<I> apply(Item<I> item, ItemBuildContext context) {
         item.setJavaComponent(ComponentKeys.FOOD, Map.of(
                 "nutrition", this.nutrition,
                 "saturation", this.saturation,
                 "can_always_eat", this.canAlwaysEat
         ));
+        return item;
     }
 
     @Override
-    public void prepareNetworkItem(Item<I> item, ItemBuildContext context, CompoundTag networkData) {
-        Tag previous = item.getNBTComponent(ComponentKeys.FOOD);
+    public Item<I> prepareNetworkItem(Item<I> item, ItemBuildContext context, CompoundTag networkData) {
+        Tag previous = item.getSparrowNBTComponent(ComponentKeys.FOOD);
         if (previous != null) {
             networkData.put(ComponentKeys.FOOD.asString(), NetworkItemHandler.pack(NetworkItemHandler.Operation.ADD, previous));
         } else {
             networkData.put(ComponentKeys.FOOD.asString(), NetworkItemHandler.pack(NetworkItemHandler.Operation.REMOVE));
         }
+        return item;
     }
 }

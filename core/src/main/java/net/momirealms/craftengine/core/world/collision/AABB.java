@@ -123,4 +123,16 @@ public class AABB {
     private static boolean isWithinBounds(double value, double min, double max) {
         return (value >= min - EPSILON) && (value <= max + EPSILON);
     }
+
+    @Override
+    public String toString() {
+        return "AABB{" +
+                "minX=" + minX +
+                ", minY=" + minY +
+                ", minZ=" + minZ +
+                ", maxX=" + maxX +
+                ", maxY=" + maxY +
+                ", maxZ=" + maxZ +
+                '}';
+    }
 }

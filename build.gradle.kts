@@ -25,7 +25,7 @@ subprojects {
             expand(rootProject.properties)
         }
 
-        filesMatching(arrayListOf("commands.yml", "config.yml", "*/*.yml", "ignite.mod.json")) {
+        filesMatching(arrayListOf("commands.yml", "config.yml")) {
             expand(
                 Pair("project_version", rootProject.properties["project_version"]),
                 Pair("config_version", rootProject.properties["config_version"]),

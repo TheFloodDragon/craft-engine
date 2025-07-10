@@ -7,6 +7,7 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class MiscUtils {
 
@@ -92,8 +93,10 @@ public class MiscUtils {
             String[] split = stringFormat.split(",");
             if (split.length == 4) {
                 return new Quaternionf(Float.parseFloat(split[0]), Float.parseFloat(split[1]), Float.parseFloat(split[2]), Float.parseFloat(split[3]));
+            } else if (split.length == 3) {
+                return QuaternionUtils.toQuaternionf((float) Math.toRadians(Float.parseFloat(split[2])), (float) Math.toRadians(Float.parseFloat(split[1])), (float) Math.toRadians(Float.parseFloat(split[0])));
             } else if (split.length == 1) {
-                return QuaternionUtils.toQuaternionf(0, Math.toRadians(Float.parseFloat(split[0])), 0);
+                return QuaternionUtils.toQuaternionf(0, (float) -Math.toRadians(Float.parseFloat(split[0])), 0);
             } else {
                 throw new LocalizedResourceConfigException("warning.config.type.quaternionf", stringFormat, option);
             }
@@ -104,23 +107,36 @@ public class MiscUtils {
     public static void deepMergeMaps(Map<String, Object> baseMap, Map<String, Object> mapToMerge) {
         for (Map.Entry<String, Object> entry : mapToMerge.entrySet()) {
             String key = entry.getKey();
-            Object value = entry.getValue();
-            if (baseMap.containsKey(key)) {
-                Object existingValue = baseMap.get(key);
-                if (existingValue instanceof Map && value instanceof Map) {
-                    Map<String, Object> existingMap = (Map<String, Object>) existingValue;
-                    Map<String, Object> newMap = (Map<String, Object>) value;
-                    deepMergeMaps(existingMap, newMap);
-                } else if (existingValue instanceof List && value instanceof List) {
-                    List<Object> existingList = (List<Object>) existingValue;
-                    List<Object> newList = (List<Object>) value;
-                    existingList.addAll(newList);
+            if (key.length() > 2 && key.charAt(0) == '$' && key.charAt(1) == '$') {
+                Object value = entry.getValue();
+                baseMap.put(key.substring(1), value);
+            } else {
+                Object value = entry.getValue();
+                if (baseMap.containsKey(key)) {
+                    Object existingValue = baseMap.get(key);
+                    if (existingValue instanceof Map && value instanceof Map) {
+                        Map<String, Object> existingMap = (Map<String, Object>) existingValue;
+                        Map<String, Object> newMap = (Map<String, Object>) value;
+                        deepMergeMaps(existingMap, newMap);
+                    } else if (existingValue instanceof List && value instanceof List) {
+                        List<Object> existingList = (List<Object>) existingValue;
+                        List<Object> newList = (List<Object>) value;
+                        existingList.addAll(newList);
+                    } else {
+                        baseMap.put(key, value);
+                    }
                 } else {
                     baseMap.put(key, value);
                 }
-            } else {
-                baseMap.put(key, value);
             }
+        }
+    }
+
+    public static <T> T requireNonNullIf(T o, boolean condition) {
+        if (condition) {
+            return Objects.requireNonNull(o);
+        } else {
+            return o;
         }
     }
 }

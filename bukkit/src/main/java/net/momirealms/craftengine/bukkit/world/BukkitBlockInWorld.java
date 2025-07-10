@@ -1,29 +1,16 @@
 package net.momirealms.craftengine.bukkit.world;
 
 import net.momirealms.craftengine.bukkit.api.CraftEngineBlocks;
-import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
-import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
-import net.momirealms.craftengine.bukkit.item.behavior.BlockItemBehavior;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
-import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MFluids;
-import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
-import net.momirealms.craftengine.core.item.CustomItem;
-import net.momirealms.craftengine.core.item.Item;
-import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
-import net.momirealms.craftengine.core.plugin.CraftEngine;
-import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.world.BlockInWorld;
 import net.momirealms.craftengine.core.world.World;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.Optional;
 
 public class BukkitBlockInWorld implements BlockInWorld {
     private final Block block;
@@ -32,41 +19,22 @@ public class BukkitBlockInWorld implements BlockInWorld {
         this.block = block;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public boolean canBeReplaced(BlockPlaceContext context) {
-        ImmutableBlockState customState = BukkitBlockManager.instance().getImmutableBlockState(BlockStateUtils.blockDataToId(this.block.getBlockData()));
+        ImmutableBlockState customState = CraftEngineBlocks.getCustomBlockState(this.block);
         if (customState != null && !customState.isEmpty()) {
-            Key clickedBlockId = customState.owner().value().id();
-            Item<ItemStack> item = (Item<ItemStack>) context.getPlayer().getItemInHand(context.getHand());
-            Optional<CustomItem<ItemStack>> customItem = BukkitItemManager.instance().getCustomItem(item.id());
-            if (customItem.isPresent()) {
-                CustomItem<ItemStack> custom = customItem.get();
-                for (ItemBehavior behavior : custom.behaviors()) {
-                    if (behavior instanceof BlockItemBehavior blockItemBehavior) {
-                        Key blockId = blockItemBehavior.blockId();
-                        if (blockId.equals(clickedBlockId)) {
-                            return false;
-                        }
-                    }
-                }
-            }
+            return customState.behavior().canBeReplaced(context, customState);
         }
         return this.block.isReplaceable();
     }
 
     @Override
     public boolean isWaterSource(BlockPlaceContext blockPlaceContext) {
-        try {
-            Location location = this.block.getLocation();
-            Object serverLevel = FastNMS.INSTANCE.field$CraftWorld$ServerLevel(this.block.getWorld());
-            Object fluidData = CoreReflections.method$Level$getFluidState.invoke(serverLevel, LocationUtils.toBlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
-            if (fluidData == null) return false;
-            return CoreReflections.method$FluidState$getType.invoke(fluidData) == MFluids.instance$Fluids$WATER;
-        } catch (ReflectiveOperationException e) {
-            CraftEngine.instance().logger().warn("Failed to check if water source is available", e);
-            return false;
-        }
+        Location location = this.block.getLocation();
+        Object serverLevel = FastNMS.INSTANCE.field$CraftWorld$ServerLevel(this.block.getWorld());
+        Object fluidData = FastNMS.INSTANCE.method$Level$getFluidState(serverLevel, LocationUtils.toBlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        if (fluidData == null) return false;
+        return FastNMS.INSTANCE.method$FluidState$getType(fluidData) == MFluids.WATER;
     }
 
     @Override

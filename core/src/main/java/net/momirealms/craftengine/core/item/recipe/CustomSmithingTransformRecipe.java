@@ -102,7 +102,7 @@ public class CustomSmithingTransformRecipe<T> implements Recipe<T> {
         for (ItemDataProcessor processor : this.processors) {
             processor.accept(base, wrappedResult, finalResult);
         }
-        return finalResult.load();
+        return finalResult.getItem();
     }
 
     @Override
@@ -133,7 +133,7 @@ public class CustomSmithingTransformRecipe<T> implements Recipe<T> {
             List<String> base = MiscUtils.getAsStringList(arguments.get("base"));
             List<String> addition = MiscUtils.getAsStringList(arguments.get("addition"));
             List<String> template = MiscUtils.getAsStringList(arguments.get("template-type"));
-            boolean mergeComponents = (boolean) arguments.getOrDefault("merge-components", true);
+            boolean mergeComponents = ResourceConfigUtils.getAsBoolean(arguments.getOrDefault("merge-components", true), "merge-components");
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> processors = (List<Map<String, Object>>) arguments.getOrDefault("post-processors", List.of());
             return new CustomSmithingTransformRecipe<>(

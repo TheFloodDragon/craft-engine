@@ -9,6 +9,8 @@ import java.util.Map;
 
 public class CrossBowPullingRangeDispatchProperty implements RangeDispatchProperty, LegacyModelPredicate<Float> {
     public static final Factory FACTORY = new Factory();
+    public static final Reader READER = new Reader();
+    public static final CrossBowPullingRangeDispatchProperty INSTANCE = new CrossBowPullingRangeDispatchProperty();
 
     @Override
     public void accept(JsonObject jsonObject) {
@@ -32,10 +34,16 @@ public class CrossBowPullingRangeDispatchProperty implements RangeDispatchProper
     }
 
     public static class Factory implements RangeDispatchPropertyFactory {
-
         @Override
         public RangeDispatchProperty create(Map<String, Object> arguments) {
-            return new CrossBowPullingRangeDispatchProperty();
+            return INSTANCE;
+        }
+    }
+
+    public static class Reader implements RangeDispatchPropertyReader {
+        @Override
+        public RangeDispatchProperty read(JsonObject json) {
+            return INSTANCE;
         }
     }
 }

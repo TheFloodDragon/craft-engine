@@ -1,12 +1,11 @@
 package net.momirealms.craftengine.core.plugin.text.minimessage;
 
-import net.momirealms.craftengine.core.entity.player.Player;
+import net.momirealms.craftengine.core.plugin.context.Context;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class ViewerPlaceholderTag extends PlaceholderTag {
 
-    public ViewerPlaceholderTag(@Nullable Player player) {
+    public ViewerPlaceholderTag(@NotNull Context player) {
         super(player);
     }
 

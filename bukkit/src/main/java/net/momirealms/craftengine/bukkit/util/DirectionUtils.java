@@ -50,4 +50,8 @@ public class DirectionUtils {
             throw new RuntimeException(e);
         }
     }
+
+    public static boolean isYAxis(Object nmsDirection) {
+        return nmsDirection == CoreReflections.instance$Direction$UP || nmsDirection == CoreReflections.instance$Direction$DOWN;
+    }
 }

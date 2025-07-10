@@ -9,13 +9,14 @@ import net.momirealms.craftengine.bukkit.util.BukkitReflectionUtils;
 import net.momirealms.craftengine.core.util.ReflectionUtils;
 import net.momirealms.craftengine.core.util.VersionHelper;
 import net.momirealms.sparrow.nbt.Tag;
+import net.momirealms.sparrow.nbt.codec.LegacyJavaOps;
 import net.momirealms.sparrow.nbt.codec.LegacyNBTOps;
 import net.momirealms.sparrow.nbt.codec.NBTOps;
 
 import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("unchecked")
-public class MRegistryOps {
+public final class MRegistryOps {
     public static final DynamicOps<Object> NBT;
     public static final DynamicOps<Tag> SPARROW_NBT;
     public static final DynamicOps<Object> JAVA;
@@ -34,10 +35,14 @@ public class MRegistryOps {
     static {
         try {
             if (clazz$JavaOps != null) {
+                // 1.20.5+
                 Object javaOps = ReflectionUtils.getDeclaredField(clazz$JavaOps, clazz$JavaOps, 0).get(null);
                 JAVA = (DynamicOps<Object>) CoreReflections.method$RegistryOps$create.invoke(null, javaOps, FastNMS.INSTANCE.registryAccess());
+            } else if (!VersionHelper.isOrAbove1_20_5()) {
+                // 1.20.1-1.20.4
+                JAVA = (DynamicOps<Object>) CoreReflections.method$RegistryOps$create.invoke(null, LegacyJavaOps.INSTANCE, FastNMS.INSTANCE.registryAccess());
             } else {
-                JAVA = null;
+                throw new ReflectionInitException("Could not find JavaOps");
             }
             NBT = (DynamicOps<Object>) CoreReflections.method$RegistryOps$create.invoke(null, ReflectionUtils.getDeclaredField(clazz$NbtOps, clazz$NbtOps, 0).get(null), FastNMS.INSTANCE.registryAccess());
             JSON = (DynamicOps<JsonElement>) CoreReflections.method$RegistryOps$create.invoke(null, JsonOps.INSTANCE, FastNMS.INSTANCE.registryAccess());

@@ -21,14 +21,15 @@ public class CustomModelDataModifier<I> implements ItemDataModifier<I> {
     }
 
     @Override
-    public void apply(Item<I> item, ItemBuildContext context) {
+    public Item<I> apply(Item<I> item, ItemBuildContext context) {
         item.customModelData(argument);
+        return item;
     }
 
     @Override
-    public void prepareNetworkItem(Item<I> item, ItemBuildContext context, CompoundTag networkData) {
+    public Item<I> prepareNetworkItem(Item<I> item, ItemBuildContext context, CompoundTag networkData) {
         if (VersionHelper.isOrAbove1_20_5()) {
-            Tag previous = item.getNBTComponent(ComponentKeys.CUSTOM_MODEL_DATA);
+            Tag previous = item.getSparrowNBTComponent(ComponentKeys.CUSTOM_MODEL_DATA);
             if (previous != null) {
                 networkData.put(ComponentKeys.CUSTOM_MODEL_DATA.asString(), NetworkItemHandler.pack(NetworkItemHandler.Operation.ADD, previous));
             } else {
@@ -42,5 +43,6 @@ public class CustomModelDataModifier<I> implements ItemDataModifier<I> {
                 networkData.put("CustomModelData", NetworkItemHandler.pack(NetworkItemHandler.Operation.REMOVE));
             }
         }
+        return item;
     }
 }

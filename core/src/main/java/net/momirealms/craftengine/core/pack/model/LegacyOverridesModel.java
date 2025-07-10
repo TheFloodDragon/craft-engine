@@ -17,7 +17,7 @@ public class LegacyOverridesModel implements Comparable<LegacyOverridesModel> {
         this.predicate = predicate == null ? new HashMap<>() : predicate;
         this.model = model;
         this.customModelData = customModelData;
-        if (customModelData > 0) {
+        if (customModelData > 0 && !this.predicate.containsKey("custom_model_data")) {
             this.predicate.put("custom_model_data", customModelData);
         }
     }

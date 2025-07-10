@@ -54,7 +54,7 @@ public class DebugSpawnFurnitureCommand extends BukkitCommandFeature<CommandSend
                     }
                     Location location = context.get("location");
                     CustomFurniture customFurniture = optionalCustomFurniture.get();
-                    AnchorType anchorType = (AnchorType) context.optional("anchor-type").orElse(customFurniture.getAnyPlacement());
+                    AnchorType anchorType = (AnchorType) context.optional("anchor-type").orElse(customFurniture.getAnyAnchorType());
                     boolean playSound = context.flags().hasFlag("silent");
                     CraftEngineFurniture.place(location, customFurniture, anchorType, playSound);
                 });

@@ -7,6 +7,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.ArgumentQueue;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
+import net.momirealms.craftengine.core.plugin.context.RelationalContext;
 import net.momirealms.craftengine.core.util.AdventureHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,10 +15,12 @@ import org.jetbrains.annotations.Nullable;
 public class RelationalPlaceholderTag implements TagResolver {
     private final Player player1;
     private final Player player2;
+    private final RelationalContext context;
 
-    public RelationalPlaceholderTag(@NotNull Player player1, @NotNull Player player2) {
+    public RelationalPlaceholderTag(@NotNull Player player1, @NotNull Player player2, RelationalContext context) {
         this.player1 = player1;
         this.player2 = player2;
+        this.context = context;
     }
 
     @Override
@@ -25,8 +28,10 @@ public class RelationalPlaceholderTag implements TagResolver {
         if (!this.has(name) || !CraftEngine.instance().compatibilityManager().hasPlaceholderAPI()) {
             return null;
         }
-        String placeholder = "%" + arguments.popOr("No argument placeholder provided") + "%";
-        String parsed = CraftEngine.instance().compatibilityManager().parse(player1, player2, placeholder);
+        String rawArgument = arguments.popOr("No argument placeholder provided").toString();
+        if (rawArgument.contains("<")) rawArgument = AdventureHelper.resolvePlainStringTags(rawArgument, this.context.tagResolvers());
+        String placeholder = "%" + rawArgument + "%";
+        String parsed = CraftEngine.instance().compatibilityManager().parse(this.player1, this.player2, placeholder);
         if (parsed.equals(placeholder)) {
             parsed = arguments.popOr("No default papi value provided").toString();
         }

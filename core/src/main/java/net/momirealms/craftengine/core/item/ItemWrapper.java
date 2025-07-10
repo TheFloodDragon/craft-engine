@@ -4,8 +4,6 @@ public interface ItemWrapper<I> {
 
     I getItem();
 
-    I load();
-
     Object getLiteralObject();
 
     int count();
@@ -13,4 +11,6 @@ public interface ItemWrapper<I> {
     void count(int amount);
 
     ItemWrapper<I> copyWithCount(int count);
+
+    void shrink(int amount);
 }

@@ -1,20 +1,14 @@
 package net.momirealms.craftengine.bukkit.world;
 
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
-import net.momirealms.craftengine.bukkit.util.EntityUtils;
-import net.momirealms.craftengine.bukkit.util.ItemUtils;
-import net.momirealms.craftengine.bukkit.util.ParticleUtils;
-import net.momirealms.craftengine.bukkit.util.SoundUtils;
+import net.momirealms.craftengine.bukkit.util.*;
 import net.momirealms.craftengine.core.block.BlockStateWrapper;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.plugin.context.Context;
 import net.momirealms.craftengine.core.sound.SoundSource;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.VersionHelper;
-import net.momirealms.craftengine.core.world.BlockInWorld;
-import net.momirealms.craftengine.core.world.Position;
-import net.momirealms.craftengine.core.world.World;
-import net.momirealms.craftengine.core.world.WorldHeight;
+import net.momirealms.craftengine.core.world.*;
 import net.momirealms.craftengine.core.world.particle.ParticleData;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -77,7 +71,7 @@ public class BukkitWorld implements World {
 
     @Override
     public void dropItemNaturally(Position location, Item<?> item) {
-        ItemStack itemStack = (ItemStack) item.load();
+        ItemStack itemStack = (ItemStack) item.getItem();
         if (ItemUtils.isEmpty(itemStack)) return;
         if (VersionHelper.isOrAbove1_21_2()) {
             platformWorld().dropItemNaturally(new Location(null, location.x(), location.y(), location.z()), (ItemStack) item.getItem());
@@ -123,5 +117,10 @@ public class BukkitWorld implements World {
         Object worldServer = serverWorld();
         Object blockPos = FastNMS.INSTANCE.constructor$BlockPos(x, y, z);
         FastNMS.INSTANCE.method$LevelWriter$setBlock(worldServer, blockPos, blockState.handle(), flags);
+    }
+
+    @Override
+    public void levelEvent(int id, BlockPos pos, int data) {
+        FastNMS.INSTANCE.method$LevelAccessor$levelEvent(serverWorld(), id, LocationUtils.toBlockPos(pos), data);
     }
 }

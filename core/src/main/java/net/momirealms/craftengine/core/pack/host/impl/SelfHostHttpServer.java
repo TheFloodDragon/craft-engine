@@ -253,7 +253,6 @@ public class SelfHostHttpServer {
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-            CraftEngine.instance().logger().warn("Channel error", cause);
             ctx.close();
         }
     }

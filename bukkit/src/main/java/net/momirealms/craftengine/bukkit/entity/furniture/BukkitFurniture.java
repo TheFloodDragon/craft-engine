@@ -32,7 +32,7 @@ import java.util.*;
 public class BukkitFurniture implements Furniture {
     private final Key id;
     private final CustomFurniture furniture;
-    private final AnchorType anchorType;
+    private final CustomFurniture.Placement placement;
     private FurnitureExtraData extraData;
     // location
     private final Location location;
@@ -61,7 +61,7 @@ public class BukkitFurniture implements Furniture {
         this.id = furniture.id();
         this.extraData = extraData;
         this.baseEntityId = baseEntity.getEntityId();
-        this.anchorType = extraData.anchorType().orElse(furniture.getAnyPlacement());
+
         this.location = baseEntity.getLocation();
         this.baseEntity = new WeakReference<>(baseEntity);
         this.furniture = furniture;
@@ -70,7 +70,7 @@ public class BukkitFurniture implements Furniture {
         List<Integer> mainEntityIds = new IntArrayList();
         mainEntityIds.add(this.baseEntityId);
 
-        CustomFurniture.Placement placement = furniture.getPlacement(anchorType);
+        this.placement = furniture.getValidPlacement(extraData.anchorType().orElseGet(furniture::getAnyAnchorType));
         // bind external furniture
         Optional<ExternalModel> optionalExternal = placement.externalModel();
         if (optionalExternal.isPresent()) {
@@ -89,11 +89,10 @@ public class BukkitFurniture implements Furniture {
         List<Object> minimizedPackets = new ArrayList<>();
         List<Collider> colliders = new ArrayList<>();
         WorldPosition position = position();
-        Integer dyedColor = this.extraData.dyedColor().orElse(null);
         for (FurnitureElement element : placement.elements()) {
             int entityId = CoreReflections.instance$Entity$ENTITY_COUNTER.incrementAndGet();
             fakeEntityIds.add(entityId);
-            element.initPackets(entityId, position, conjugated, dyedColor, packet -> {
+            element.initPackets(this, entityId, conjugated, packet -> {
                 packets.add(packet);
                 if (this.minimized) minimizedPackets.add(packet);
             });
@@ -138,6 +137,7 @@ public class BukkitFurniture implements Furniture {
     @NotNull
     public Object spawnPacket(Player player) {
         // TODO hasPermission might be slow, can we use a faster way in the future?
+        // TODO Make it based on conditions. So we can dynamically control which furniture should be sent to the player
         if (!this.minimized || player.hasPermission(FurnitureManager.FURNITURE_ADMIN_NODE)) {
             return this.cachedSpawnPacket;
         } else {
@@ -171,7 +171,7 @@ public class BukkitFurniture implements Furniture {
 
     @NotNull
     public Location dropLocation() {
-        Optional<Vector3f> dropOffset = config().getPlacement(this.anchorType).dropOffset();
+        Optional<Vector3f> dropOffset = this.placement.dropOffset();
         if (dropOffset.isEmpty()) {
             return location();
         }
@@ -275,7 +275,7 @@ public class BukkitFurniture implements Furniture {
 
     @Override
     public @NotNull AnchorType anchorType() {
-        return this.anchorType;
+        return this.placement.anchorType();
     }
 
     @Override
@@ -347,7 +347,10 @@ public class BukkitFurniture implements Furniture {
                     itemDisplay.getPersistentDataContainer().set(BukkitFurnitureManager.FURNITURE_SEAT_VECTOR_3F_KEY, PersistentDataType.STRING, seat.offset().x + ", " + seat.offset().y + ", " + seat.offset().z);
                 });
         this.seats.add(new WeakReference<>(seatEntity));
-        seatEntity.addPassenger(player);
+        if (!seatEntity.addPassenger(player)) {
+            seatEntity.remove();
+            this.removeOccupiedSeat(seat.offset());
+        }
     }
 
     private Location calculateSeatLocation(Seat seat) {

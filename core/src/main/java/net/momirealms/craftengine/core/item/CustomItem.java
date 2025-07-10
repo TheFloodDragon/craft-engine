@@ -21,15 +21,13 @@ public interface CustomItem<I> extends BuildableItem<I> {
 
     Key material();
 
-    ItemDataModifier<I>[] dataModifiers();
+    Key clientBoundMaterial();
 
-    Map<String, ItemDataModifier<I>> dataModifierMap();
+    ItemDataModifier<I>[] dataModifiers();
 
     boolean hasClientBoundDataModifier();
 
     ItemDataModifier<I>[] clientBoundDataModifiers();
-
-    Map<String, ItemDataModifier<I>> clientBoundDataModifierMap();
 
     ItemSettings settings();
 
@@ -50,6 +48,8 @@ public interface CustomItem<I> extends BuildableItem<I> {
 
     interface Builder<I> {
         Builder<I> id(Holder<Key> id);
+
+        Builder<I> clientBoundMaterial(Key clientBoundMaterialKey);
 
         Builder<I> material(Key material);
 

@@ -44,8 +44,10 @@ public interface World {
     void playBlockSound(Position location, Key sound, float volume, float pitch);
 
     default void playBlockSound(Position location, SoundData data) {
-        playBlockSound(location, data.id(), data.volume(), data.pitch());
+        playBlockSound(location, data.id(), data.volume().get(), data.pitch().get());
     }
+
+    void levelEvent(int id, BlockPos pos, int data);
 
     void spawnParticle(Position location, Key particle, int count, double xOffset, double yOffset, double zOffset, double speed, @Nullable ParticleData extraData, @NotNull Context context);
 

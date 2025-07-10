@@ -3,11 +3,16 @@ package net.momirealms.craftengine.bukkit.compatibility.worldedit;
 import com.fastasyncworldedit.bukkit.adapter.CachedBukkitAdapter;
 import com.fastasyncworldedit.bukkit.adapter.FaweAdapter;
 import com.fastasyncworldedit.core.configuration.Settings;
+import com.fastasyncworldedit.core.extent.processor.ExtentBatchProcessorHolder;
+import com.fastasyncworldedit.core.util.ExtentTraverser;
+import com.fastasyncworldedit.core.util.ProcessorTraverser;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
 import com.sk89q.worldedit.bukkit.WorldEditPlugin;
 import com.sk89q.worldedit.event.extent.EditSessionEvent;
 import com.sk89q.worldedit.extent.AbstractDelegateExtent;
+import com.sk89q.worldedit.extent.Extent;
+import com.sk89q.worldedit.extent.MaskingExtent;
 import com.sk89q.worldedit.function.mask.Mask;
 import com.sk89q.worldedit.function.operation.Operation;
 import com.sk89q.worldedit.function.pattern.Pattern;
@@ -41,12 +46,14 @@ import static java.util.Objects.requireNonNull;
 
 public class FastAsyncWorldEditDelegate extends AbstractDelegateExtent {
     private static int[] ordinalToIbdID;
+    private final Extent extent;
     private final Set<CEChunk> chunksToSave;
     private final CEWorld ceWorld;
     private final Set<ChunkPos> brokenChunks = Collections.synchronizedSet(new HashSet<>());
 
-    protected FastAsyncWorldEditDelegate(EditSessionEvent event) {
-        super(event.getExtent());
+    protected FastAsyncWorldEditDelegate(EditSessionEvent event, Extent extent) {
+        super(extent);
+        this.extent = extent;
         this.chunksToSave = new HashSet<>();
         World weWorld = event.getWorld();
         org.bukkit.World world = Bukkit.getWorld(requireNonNull(weWorld).getName());
@@ -71,7 +78,7 @@ public class FastAsyncWorldEditDelegate extends AbstractDelegateExtent {
                 World weWorld = event.getWorld();
                 if (weWorld == null) return;
                 if (event.getStage() == EditSession.Stage.BEFORE_CHANGE) {
-                    event.setExtent(new FastAsyncWorldEditDelegate(event));
+                    event.setExtent(new FastAsyncWorldEditDelegate(event, event.getExtent()));
                 }
             }
         });
@@ -95,52 +102,75 @@ public class FastAsyncWorldEditDelegate extends AbstractDelegateExtent {
 
     @Override
     public int setBlocks(final Set<BlockVector3> vset, final Pattern pattern) {
-        this.processBlocks(vset, pattern);
+        this.processBlocks(vset, pattern, getMask(), null);
         return super.setBlocks(vset, pattern);
     }
 
     @Override
     public int setBlocks(final Region region, final Pattern pattern) {
-        this.processBlocks(region, pattern);
+        this.processBlocks(region, pattern, getMask(), null);
         return super.setBlocks(region, pattern);
     }
 
     @Override
     public <B extends BlockStateHolder<B>> int setBlocks(final Region region, final B block) {
-        this.processBlocks(region, block);
+        this.processBlocks(region, block, getMask(), null);
         return super.setBlocks(region, block);
     }
 
     @Override
     public int replaceBlocks(Region region, Mask mask, Pattern pattern) {
-        this.processBlocks(region, pattern);
+        this.processBlocks(region, pattern, mask, null);
         return super.replaceBlocks(region, mask, pattern);
     }
 
     @Override
     public <B extends BlockStateHolder<B>> int replaceBlocks(final Region region, final Set<BaseBlock> filter, final B replacement) {
-        this.processBlocks(region, replacement);
+        this.processBlocks(region, replacement, null, filter);
         return super.replaceBlocks(region, filter, replacement);
     }
 
     @Override
     public int replaceBlocks(final Region region, final Set<BaseBlock> filter, final Pattern pattern) {
-        this.processBlocks(region, pattern);
+        this.processBlocks(region, pattern, null, filter);
         return super.replaceBlocks(region, filter, pattern);
     }
 
     @Override
     public <T extends BlockStateHolder<T>> boolean setBlock(int x, int y, int z, T block) {
-        BaseBlock oldBlockState = getBlock(x, y, z).toBaseBlock();
-        this.processBlock(x, y, z, block.toBaseBlock(), oldBlockState);
-        return super.setBlock(x, y, z, block);
+        boolean result = extent.setBlock(x, y, z, block);
+        if (result) {
+            Mask mask = getMask();
+            if (mask != null && !mask.test(BlockVector3.at(x, y, z))) return true;
+            BaseBlock oldBlockState = getBlock(x, y, z).toBaseBlock();
+            this.processBlock(x, y, z, block.toBaseBlock(), oldBlockState);
+        }
+        return result;
     }
 
     @Override
     public <T extends BlockStateHolder<T>> boolean setBlock(BlockVector3 position, T block) {
-        BaseBlock oldBlockState = getBlock(position).toBaseBlock();
-        this.processBlock(position.x(), position.y(), position.z(), block.toBaseBlock(), oldBlockState);
-        return super.setBlock(position, block);
+        boolean result = super.setBlock(position, block);
+        if (result) {
+            Mask mask = getMask();
+            if (mask != null && !mask.test(position)) return true;
+            BaseBlock oldBlockState = getBlock(position).toBaseBlock();
+            this.processBlock(position.x(), position.y(), position.z(), block.toBaseBlock(), oldBlockState);
+        }
+        return result;
+    }
+
+    public Mask getMask() {
+        MaskingExtent maskingExtent = new ExtentTraverser<>(getExtent()).findAndGet(MaskingExtent.class);
+        if (maskingExtent == null) {
+            ExtentBatchProcessorHolder processorExtent =
+                    new ExtentTraverser<>(getExtent()).findAndGet(ExtentBatchProcessorHolder.class);
+            if (processorExtent != null) {
+                maskingExtent =
+                        new ProcessorTraverser<>(processorExtent.getProcessor()).find(MaskingExtent.class);
+            }
+        }
+        return maskingExtent != null ? maskingExtent.getMask() : null;
     }
 
     @Override
@@ -160,9 +190,13 @@ public class FastAsyncWorldEditDelegate extends AbstractDelegateExtent {
         return operation;
     }
 
-    private void processBlocks(Iterable<BlockVector3> region, Pattern pattern) {
+    private void processBlocks(Iterable<BlockVector3> region, Pattern pattern, @Nullable Mask mask, @Nullable Set<BaseBlock> filter) {
+        final boolean hasMask = mask != null;
+        final boolean hasFilter = filter != null;
         for (BlockVector3 position : region) {
+            if (hasMask && !mask.test(position)) continue;
             BaseBlock blockState = pattern.applyBlock(position);
+            if (hasFilter && filter.contains(blockState)) continue;
             BaseBlock oldBlockState = getBlock(position).toBaseBlock();
             int blockX = position.x();
             int blockY = position.y();
@@ -177,7 +211,6 @@ public class FastAsyncWorldEditDelegate extends AbstractDelegateExtent {
         int newStateId = ordinalToIbdID[newBlock.getOrdinal()];
         int oldStateId = ordinalToIbdID[oldBlock.getOrdinal()];
         this.brokenChunks.add(ChunkPos.of(chunkX, chunkZ));
-        //CraftEngine.instance().debug(() -> "Processing block at " + blockX + ", " + blockY + ", " + blockZ + ": " + oldStateId + " -> " + newStateId);
         if (BlockStateUtils.isVanillaBlock(newStateId) && BlockStateUtils.isVanillaBlock(oldStateId)) return;
         try {
             CEChunk ceChunk = Optional.ofNullable(this.ceWorld.getChunkAtIfLoaded(chunkX, chunkZ))
@@ -197,7 +230,6 @@ public class FastAsyncWorldEditDelegate extends AbstractDelegateExtent {
     private void saveAllChunks() {
         try {
             for (CEChunk ceChunk : this.chunksToSave) {
-                CraftEngine.instance().debug(() -> "Saving chunk " + ceChunk.chunkPos());
                 this.ceWorld.worldDataStorage().writeChunkAt(ceChunk.chunkPos(), ceChunk);
             }
             this.chunksToSave.clear();

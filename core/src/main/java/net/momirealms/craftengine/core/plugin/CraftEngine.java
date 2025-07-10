@@ -7,6 +7,8 @@ import net.momirealms.craftengine.core.entity.projectile.ProjectileManager;
 import net.momirealms.craftengine.core.font.FontManager;
 import net.momirealms.craftengine.core.item.ItemManager;
 import net.momirealms.craftengine.core.item.recipe.RecipeManager;
+import net.momirealms.craftengine.core.item.recipe.network.display.RecipeDisplays;
+import net.momirealms.craftengine.core.item.recipe.network.display.slot.SlotDisplays;
 import net.momirealms.craftengine.core.loot.VanillaLootManager;
 import net.momirealms.craftengine.core.pack.PackManager;
 import net.momirealms.craftengine.core.plugin.classpath.ClassPathAppender;
@@ -40,12 +42,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 public abstract class CraftEngine implements Plugin {
     private static CraftEngine instance;
     protected PluginLogger logger;
-    protected Consumer<Supplier<String>> debugger = (s) -> {};
     protected Config config;
     protected Platform platform;
     protected ClassPathAppender classPathAppender;
@@ -95,6 +95,8 @@ public abstract class CraftEngine implements Plugin {
     }
 
     protected void onPluginLoad() {
+        RecipeDisplays.register();
+        SlotDisplays.register();
         ((Logger) LogManager.getRootLogger()).addFilter(new LogFilter());
         ((Logger) LogManager.getRootLogger()).addFilter(new DisconnectLogFilter());
     }
@@ -123,8 +125,6 @@ public abstract class CraftEngine implements Plugin {
                 long time1 = System.currentTimeMillis();
                 // firstly reload main config
                 this.config.load();
-                // reset debugger
-                this.debugger = Config.debug() ? (s) -> logger.info("[Debug] " + s.get()) : (s) -> {};
                 // now we reload the translations
                 this.translationManager.reload();
                 // clear the outdated cache by reloading the managers
@@ -151,6 +151,8 @@ public abstract class CraftEngine implements Plugin {
                 } catch (Exception e) {
                     this.logger().warn("Failed to load resources folder", e);
                 }
+                // register trims
+                this.itemManager.delayedLoad();
                 // init suggestions and packet mapper
                 this.blockManager.delayedLoad();
                 // handle some special client lang for instance block_name
@@ -263,7 +265,7 @@ public abstract class CraftEngine implements Plugin {
         // register font parser
         this.packManager.registerConfigSectionParsers(this.fontManager.parsers());
         // register item parser
-        this.packManager.registerConfigSectionParser(this.itemManager.parser());
+        this.packManager.registerConfigSectionParsers(this.itemManager.parsers());
         // register furniture parser
         this.packManager.registerConfigSectionParser(this.furnitureManager.parser());
         // register block parser
@@ -338,11 +340,6 @@ public abstract class CraftEngine implements Plugin {
     @Override
     public PluginLogger logger() {
         return logger;
-    }
-
-    @Override
-    public void debug(Supplier<String> message) {
-        debugger.accept(message);
     }
 
     @Override

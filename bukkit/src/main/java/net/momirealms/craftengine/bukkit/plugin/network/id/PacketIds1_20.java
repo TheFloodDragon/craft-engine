@@ -144,4 +144,19 @@ public class PacketIds1_20 implements PacketIds {
     public int clientboundBlockEventPacket() {
         return PacketIdFinder.clientboundByClazz(NetworkReflections.clazz$ClientboundBlockEventPacket);
     }
+
+    @Override
+    public int serverboundInteractPacket() {
+        return PacketIdFinder.serverboundByClazz(NetworkReflections.clazz$ServerboundInteractPacket);
+    }
+
+    @Override
+    public int clientboundRecipeBookAddPacket() {
+        return PacketIdFinder.serverboundByClazz(NetworkReflections.clazz$ClientboundRecipeBookAddPacket);
+    }
+
+    @Override
+    public int clientboundPlaceGhostRecipePacket() {
+        return PacketIdFinder.serverboundByClazz(NetworkReflections.clazz$ClientboundPlaceGhostRecipePacket);
+    }
 }

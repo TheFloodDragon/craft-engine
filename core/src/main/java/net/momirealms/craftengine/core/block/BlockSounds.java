@@ -5,15 +5,17 @@ import net.momirealms.craftengine.core.util.Key;
 
 import java.util.Map;
 
-public class BlockSounds {
+public final class BlockSounds {
     /*
     Fall 0.5 0.75
-    Place 1, 0.8
-    Step 0.15, 1
+    Place 1 0.8
+    Step 0.15 1
     Hit 0.5 0.5
     Break 1 0.8
+    Land 0.3 1
+    Destroy 1 1
      */
-    public static final SoundData EMPTY_SOUND = new SoundData(Key.of("minecraft:intentionally_empty"), 1, 1);
+    public static final SoundData EMPTY_SOUND = new SoundData(Key.of("minecraft:intentionally_empty"), SoundData.SoundValue.FIXED_1, SoundData.SoundValue.FIXED_1);
     public static final BlockSounds EMPTY = new BlockSounds(EMPTY_SOUND, EMPTY_SOUND, EMPTY_SOUND, EMPTY_SOUND, EMPTY_SOUND, EMPTY_SOUND, EMPTY_SOUND);
 
     private final SoundData breakSound;
@@ -37,13 +39,13 @@ public class BlockSounds {
     public static BlockSounds fromMap(Map<String, Object> map) {
         if (map == null) return EMPTY;
         return new BlockSounds(
-                SoundData.create(map.getOrDefault("break", "minecraft:intentionally_empty"), 1f, 0.8f),
-                SoundData.create(map.getOrDefault("step", "minecraft:intentionally_empty"), 0.15f, 1f),
-                SoundData.create(map.getOrDefault("place", "minecraft:intentionally_empty"), 1f, 0.8f),
-                SoundData.create(map.getOrDefault("hit", "minecraft:intentionally_empty"), 0.5f, 0.5f),
-                SoundData.create(map.getOrDefault("fall", "minecraft:intentionally_empty"), 0.5f, 0.75f),
-                SoundData.create(map.getOrDefault("land", "minecraft:intentionally_empty"), 0.3f, 1f),
-                SoundData.create(map.getOrDefault("destroy", "minecraft:intentionally_empty"), 1f, 1f)
+                SoundData.create(map.getOrDefault("break", "minecraft:intentionally_empty"), SoundData.SoundValue.FIXED_1, SoundData.SoundValue.FIXED_0_8),
+                SoundData.create(map.getOrDefault("step", "minecraft:intentionally_empty"), SoundData.SoundValue.FIXED_0_15, SoundData.SoundValue.FIXED_1),
+                SoundData.create(map.getOrDefault("place", "minecraft:intentionally_empty"), SoundData.SoundValue.FIXED_1, SoundData.SoundValue.FIXED_0_8),
+                SoundData.create(map.getOrDefault("hit", "minecraft:intentionally_empty"), SoundData.SoundValue.FIXED_0_5, SoundData.SoundValue.FIXED_0_5),
+                SoundData.create(map.getOrDefault("fall", "minecraft:intentionally_empty"), SoundData.SoundValue.FIXED_0_5, SoundData.SoundValue.FIXED_0_75),
+                SoundData.create(map.getOrDefault("land", "minecraft:intentionally_empty"), SoundData.SoundValue.FIXED_0_3, SoundData.SoundValue.FIXED_1),
+                SoundData.create(map.getOrDefault("destroy", "minecraft:intentionally_empty"), SoundData.SoundValue.FIXED_1, SoundData.SoundValue.FIXED_1)
         );
     }
 

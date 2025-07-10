@@ -2,30 +2,35 @@ package net.momirealms.craftengine.core.item;
 
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
-import net.momirealms.craftengine.core.pack.misc.EquipmentGeneration;
-import net.momirealms.craftengine.core.pack.model.ItemModel;
+import net.momirealms.craftengine.core.item.equipment.Equipment;
+import net.momirealms.craftengine.core.item.modifier.ItemDataModifier;
 import net.momirealms.craftengine.core.pack.model.LegacyOverridesModel;
+import net.momirealms.craftengine.core.pack.model.ModernItemModel;
 import net.momirealms.craftengine.core.pack.model.generation.ModelGenerator;
 import net.momirealms.craftengine.core.plugin.Manageable;
 import net.momirealms.craftengine.core.plugin.config.ConfigParser;
 import net.momirealms.craftengine.core.registry.Holder;
+import net.momirealms.craftengine.core.util.FriendlyByteBuf;
 import net.momirealms.craftengine.core.util.Key;
 import org.incendo.cloud.suggestion.Suggestion;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Function;
 
 public interface ItemManager<T> extends Manageable, ModelGenerator {
 
-    ConfigParser parser();
+    void registerDataType(Function<Object, ItemDataModifier<T>> factory, String... alias);
+
+    Map<Key, Equipment> equipments();
+
+    ConfigParser[] parsers();
 
     Map<Key, TreeSet<LegacyOverridesModel>> legacyItemOverrides();
 
-    Map<Key, TreeMap<Integer, ItemModel>> modernItemOverrides();
+    Map<Key, TreeMap<Integer, ModernItemModel>> modernItemOverrides();
 
-    Collection<EquipmentGeneration> equipmentsToGenerate();
-
-    Map<Key, ItemModel> modernItemModels1_21_4();
+    Map<Key, ModernItemModel> modernItemModels1_21_4();
 
     Map<Key, TreeSet<LegacyOverridesModel>> modernItemModels1_21_2();
 
@@ -52,6 +57,8 @@ public interface ItemManager<T> extends Manageable, ModelGenerator {
     ExternalItemProvider<T> getExternalItemProvider(String name);
 
     boolean registerExternalItemProvider(ExternalItemProvider<T> externalItemProvider);
+
+    Optional<Equipment> getEquipment(Key key);
 
     Optional<CustomItem<T>> getCustomItem(Key key);
 
@@ -86,4 +93,12 @@ public interface ItemManager<T> extends Manageable, ModelGenerator {
     Collection<Suggestion> cachedTotemSuggestions();
 
     boolean isVanillaItem(Key item);
+
+    Item<T> decode(FriendlyByteBuf byteBuf);
+
+    void encode(FriendlyByteBuf byteBuf, Item<T> item);
+
+    Item<T> s2c(Item<T> item, Player player);
+
+    Item<T> c2s(Item<T> item);
 }

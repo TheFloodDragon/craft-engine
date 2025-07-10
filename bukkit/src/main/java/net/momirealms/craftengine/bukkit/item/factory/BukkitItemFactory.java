@@ -1,16 +1,16 @@
 package net.momirealms.craftengine.bukkit.item.factory;
 
 import com.google.gson.JsonElement;
-import com.saicone.rtag.item.ItemTagStream;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.util.ItemTags;
 import net.momirealms.craftengine.core.item.ItemFactory;
 import net.momirealms.craftengine.core.item.ItemWrapper;
-import net.momirealms.craftengine.core.item.JukeboxPlayable;
+import net.momirealms.craftengine.core.item.data.JukeboxPlayable;
 import net.momirealms.craftengine.core.item.setting.EquipmentData;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.sparrow.nbt.Tag;
+import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Objects;
@@ -40,16 +40,17 @@ public abstract class BukkitItemFactory<W extends ItemWrapper<ItemStack>> extend
             case "1.21.4" -> {
                 return new ComponentItemFactory1_21_4(plugin);
             }
-            case "1.21.5", "1.21.6", "1.22", "1.22.1" -> {
+            case "1.21.5", "1.21.6", "1.21.7", "1.22", "1.22.1" -> {
                 return new ComponentItemFactory1_21_5(plugin);
             }
             default -> throw new IllegalStateException("Unsupported server version: " + plugin.serverVersion());
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     protected byte[] toByteArray(W item) {
-        return ItemTagStream.INSTANCE.toBytes(item.getItem());
+        return Bukkit.getUnsafe().serializeItem(item.getItem());
     }
 
     @Override
@@ -66,11 +67,6 @@ public abstract class BukkitItemFactory<W extends ItemWrapper<ItemStack>> extend
     @Override
     protected Key id(W item) {
         return customId(item).orElse(vanillaId(item));
-    }
-
-    @Override
-    protected ItemStack load(W item) {
-        return item.load();
     }
 
     @Override
@@ -115,7 +111,12 @@ public abstract class BukkitItemFactory<W extends ItemWrapper<ItemStack>> extend
     }
 
     @Override
-    protected Tag getNBTComponent(W item, Object type) {
+    public Object getNBTComponent(W item, Object type) {
+        throw new UnsupportedOperationException("This feature is only available on 1.20.5+");
+    }
+
+    @Override
+    protected Tag getSparrowNBTComponent(W item, Object type) {
         throw new UnsupportedOperationException("This feature is only available on 1.20.5+");
     }
 

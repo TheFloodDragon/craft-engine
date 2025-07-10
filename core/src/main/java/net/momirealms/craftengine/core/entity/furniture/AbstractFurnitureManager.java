@@ -86,11 +86,14 @@ public abstract class AbstractFurnitureManager implements FurnitureManager {
         @Override
         public void parseSection(Pack pack, Path path, Key id, Map<String, Object> section) {
             if (byId.containsKey(id)) {
-                throw new LocalizedResourceConfigException("warning.config.furniture.duplicate", path, id);
+                throw new LocalizedResourceConfigException("warning.config.furniture.duplicate");
             }
-
             EnumMap<AnchorType, CustomFurniture.Placement> placements = new EnumMap<>(AnchorType.class);
-            Map<String, Object> placementMap = MiscUtils.castToMap(ResourceConfigUtils.requireNonNullOrThrow(section.get("placement"), "warning.config.furniture.missing_placement"), false);
+            Object placementObj = section.get("placement");
+            Map<String, Object> placementMap = MiscUtils.castToMap(ResourceConfigUtils.requireNonNullOrThrow(placementObj, "warning.config.furniture.missing_placement"), false);
+            if (placementMap.isEmpty()) {
+                throw new LocalizedResourceConfigException("warning.config.furniture.missing_placement");
+            }
             for (Map.Entry<String, Object> entry : placementMap.entrySet()) {
                 // anchor type
                 AnchorType anchorType = AnchorType.valueOf(entry.getKey().toUpperCase(Locale.ENGLISH));
@@ -102,7 +105,7 @@ public abstract class AbstractFurnitureManager implements FurnitureManager {
                 for (Map<String, Object> element : elementConfigs) {
                     FurnitureElement furnitureElement = furnitureElementBuilder()
                             .item(Key.of(ResourceConfigUtils.requireNonEmptyStringOrThrow(element.get("item"), "warning.config.furniture.element.missing_item")))
-                            .applyDyedColor((boolean) element.getOrDefault("apply-dyed-color", true))
+                            .applyDyedColor(ResourceConfigUtils.getAsBoolean(element.getOrDefault("apply-dyed-color", true), "apply-dyed-color"))
                             .billboard(ResourceConfigUtils.getOrDefault(element.get("billboard"), o -> Billboard.valueOf(o.toString().toUpperCase(Locale.ENGLISH)), Billboard.FIXED))
                             .transform(ResourceConfigUtils.getOrDefault(element.get("transform"), o -> ItemDisplayContext.valueOf(o.toString().toUpperCase(Locale.ENGLISH)), ItemDisplayContext.NONE))
                             .scale(MiscUtils.getAsVector3f(element.getOrDefault("scale", "1"), "scale"))
@@ -133,6 +136,7 @@ public abstract class AbstractFurnitureManager implements FurnitureManager {
                 Map<String, Object> ruleSection = MiscUtils.castToMap(placementArguments.get("rules"), true);
                 if (ruleSection != null) {
                     placements.put(anchorType, new CustomFurniture.Placement(
+                            anchorType,
                             elements.toArray(new FurnitureElement[0]),
                             hitboxes.toArray(new HitBox[0]),
                             ResourceConfigUtils.getOrDefault(ruleSection.get("rotation"), o -> RotationRule.valueOf(o.toString().toUpperCase(Locale.ENGLISH)), RotationRule.ANY),
@@ -142,6 +146,7 @@ public abstract class AbstractFurnitureManager implements FurnitureManager {
                     ));
                 } else {
                     placements.put(anchorType, new CustomFurniture.Placement(
+                            anchorType,
                             elements.toArray(new FurnitureElement[0]),
                             hitboxes.toArray(new HitBox[0]),
                             RotationRule.ANY,

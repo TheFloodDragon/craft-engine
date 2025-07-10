@@ -50,7 +50,7 @@ public class ExpressionTemplateArgument implements TemplateArgument {
         }
 
         public Function<EvaluationValue, Object> formatter() {
-            return formatter;
+            return this.formatter;
         }
     }
 

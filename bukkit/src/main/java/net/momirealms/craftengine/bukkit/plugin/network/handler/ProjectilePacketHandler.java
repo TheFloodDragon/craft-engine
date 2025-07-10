@@ -1,11 +1,11 @@
 package net.momirealms.craftengine.bukkit.plugin.network.handler;
 
 import net.momirealms.craftengine.bukkit.entity.data.ItemDisplayEntityData;
+import net.momirealms.craftengine.bukkit.entity.projectile.BukkitCustomProjectile;
 import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.injector.ProtectedFieldVisitor;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MEntityTypes;
-import net.momirealms.craftengine.core.entity.projectile.CustomProjectile;
 import net.momirealms.craftengine.core.entity.projectile.ProjectileMeta;
 import net.momirealms.craftengine.core.item.CustomItem;
 import net.momirealms.craftengine.core.item.Item;
@@ -26,11 +26,11 @@ import java.util.UUID;
 
 public class ProjectilePacketHandler implements EntityPacketHandler {
     private final int entityId;
-    private final CustomProjectile projectile;
+    private final BukkitCustomProjectile projectile;
     private final Object cachedPacket;
     private final List<Object> cachedData;
 
-    public ProjectilePacketHandler(CustomProjectile projectile, int entityId) {
+    public ProjectilePacketHandler(BukkitCustomProjectile projectile, int entityId) {
         this.projectile = projectile;
         this.entityId = entityId;
         this.cachedData = createCustomProjectileEntityDataValues();
@@ -111,7 +111,7 @@ public class ProjectilePacketHandler implements EntityPacketHandler {
         Optional<CustomItem<ItemStack>> customItem = BukkitItemManager.instance().getCustomItem(this.projectile.metadata().item());
         if (customItem.isEmpty()) return itemDisplayValues;
         ProjectileMeta meta = this.projectile.metadata();
-        Item<?> displayedItem = customItem.get().buildItem(ItemBuildContext.EMPTY);
+        Item<ItemStack> displayedItem = customItem.get().buildItem(ItemBuildContext.EMPTY);
         // 我们应当使用新的展示物品的组件覆盖原物品的组件，以完成附魔，附魔光效等组件的继承
         displayedItem = this.projectile.item().mergeCopy(displayedItem);
         ItemDisplayEntityData.InterpolationDelay.addEntityDataIfNotDefaultValue(-1, itemDisplayValues);
@@ -124,8 +124,13 @@ public class ProjectilePacketHandler implements EntityPacketHandler {
         } else {
             ItemDisplayEntityData.InterpolationDuration.addEntityDataIfNotDefaultValue(1, itemDisplayValues);
         }
-        ItemDisplayEntityData.DisplayedItem.addEntityDataIfNotDefaultValue(displayedItem.getLiteralObject(), itemDisplayValues);
+
+        Object literalItem = displayedItem.getLiteralObject();
+        BukkitItemManager.instance().s2c(displayedItem.getItem(), null).ifPresentOrElse(
+                it -> ItemDisplayEntityData.DisplayedItem.addEntityDataIfNotDefaultValue(FastNMS.INSTANCE.field$CraftItemStack$handle(it), itemDisplayValues),
+                () -> ItemDisplayEntityData.DisplayedItem.addEntityDataIfNotDefaultValue(literalItem, itemDisplayValues));
         ItemDisplayEntityData.DisplayType.addEntityDataIfNotDefaultValue(meta.displayType().id(), itemDisplayValues);
+        ItemDisplayEntityData.BillboardConstraints.addEntityDataIfNotDefaultValue(meta.billboard().id(), itemDisplayValues);
         return itemDisplayValues;
     }
 
@@ -138,17 +143,6 @@ public class ProjectilePacketHandler implements EntityPacketHandler {
         boolean onGround = FastNMS.INSTANCE.field$ClientboundMoveEntityPacket$onGround(packet);
         return FastNMS.INSTANCE.constructor$ClientboundMoveEntityPacket$PosRot(
                 entityId, xa, ya, za,
-                MCUtils.packDegrees(-yRot), MCUtils.packDegrees(MCUtils.clamp(-xRot, -90.0F, 90.0F)),
-                onGround
-        );
-    }
-
-    private Object convertCustomProjectileTeleportPacket(Object packet, int entityId) {
-        float xRot = MCUtils.unpackDegrees(FastNMS.INSTANCE.field$ClientboundMoveEntityPacket$xRot(packet));
-        float yRot = MCUtils.unpackDegrees(FastNMS.INSTANCE.field$ClientboundMoveEntityPacket$yRot(packet));
-        boolean onGround = FastNMS.INSTANCE.field$ClientboundMoveEntityPacket$onGround(packet);
-        return FastNMS.INSTANCE.constructor$ClientboundTeleportEntityPacket(
-                entityId, this.projectile.projectile().x(), this.projectile.projectile().y(), this.projectile.projectile().z(),
                 MCUtils.packDegrees(-yRot), MCUtils.packDegrees(MCUtils.clamp(-xRot, -90.0F, 90.0F)),
                 onGround
         );

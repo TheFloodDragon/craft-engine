@@ -1,21 +1,20 @@
 package net.momirealms.craftengine.core.item;
 
+import net.momirealms.craftengine.core.entity.Billboard;
 import net.momirealms.craftengine.core.entity.ItemDisplayContext;
 import net.momirealms.craftengine.core.entity.projectile.ProjectileMeta;
+import net.momirealms.craftengine.core.entity.projectile.ProjectileType;
+import net.momirealms.craftengine.core.item.equipment.ComponentBasedEquipment;
+import net.momirealms.craftengine.core.item.equipment.Equipment;
 import net.momirealms.craftengine.core.item.modifier.EquippableModifier;
 import net.momirealms.craftengine.core.item.modifier.FoodModifier;
 import net.momirealms.craftengine.core.item.modifier.ItemDataModifier;
-import net.momirealms.craftengine.core.item.setting.AnvilRepairItem;
-import net.momirealms.craftengine.core.item.setting.EquipmentData;
-import net.momirealms.craftengine.core.item.setting.FoodData;
-import net.momirealms.craftengine.core.item.setting.Helmet;
-import net.momirealms.craftengine.core.pack.misc.EquipmentGeneration;
+import net.momirealms.craftengine.core.item.setting.*;
+import net.momirealms.craftengine.core.plugin.CraftEngine;
+import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.plugin.locale.LocalizedResourceConfigException;
 import net.momirealms.craftengine.core.sound.SoundData;
-import net.momirealms.craftengine.core.util.Key;
-import net.momirealms.craftengine.core.util.MiscUtils;
-import net.momirealms.craftengine.core.util.ResourceConfigUtils;
-import net.momirealms.craftengine.core.util.VersionHelper;
+import net.momirealms.craftengine.core.util.*;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -26,8 +25,6 @@ import java.util.stream.Collectors;
 public class ItemSettings {
     int fuelTime;
     Set<Key> tags = Set.of();
-    @Nullable
-    EquipmentGeneration equipment;
     boolean canRepair = true;
     List<AnvilRepairItem> anvilRepairItems = List.of();
     boolean renameable = true;
@@ -36,16 +33,40 @@ public class ItemSettings {
     boolean dyeable = true;
     Helmet helmet = null;
     FoodData foodData = null;
+    Key consumeReplacement = null;
+    Key craftRemainder = null;
+    List<DamageSource> invulnerable = List.of();
+    boolean canEnchant = true;
+    float compostProbability= 0.5f;
+    boolean respectRepairableComponent = false;
+    @Nullable
+    ItemEquipment equipment;
 
     private ItemSettings() {}
 
     public <I> List<ItemDataModifier<I>> modifiers() {
         ArrayList<ItemDataModifier<I>> modifiers = new ArrayList<>();
-        if (VersionHelper.isOrAbove1_21_2() && this.equipment != null && this.equipment.modernData() != null) {
-            modifiers.add(new EquippableModifier<>(this.equipment.modernData()));
+        if (this.equipment != null) {
+            EquipmentData data = this.equipment.equipmentData();
+            if (data != null) {
+                modifiers.add(new EquippableModifier<>(data));
+            }
+            if (!this.equipment.clientBoundModel().asBoolean(Config.globalClientboundModel())) {
+                modifiers.addAll(this.equipment.equipment().modifiers());
+            }
         }
         if (VersionHelper.isOrAbove1_20_5() && this.foodData != null) {
             modifiers.add(new FoodModifier<>(this.foodData.nutrition(), this.foodData.saturation(), false));
+        }
+        return modifiers;
+    }
+
+    public <I> List<ItemDataModifier<I>> clientBoundModifiers() {
+        ArrayList<ItemDataModifier<I>> modifiers = new ArrayList<>();
+        if (this.equipment != null) {
+            if (this.equipment.clientBoundModel().asBoolean(Config.globalClientboundModel())) {
+                modifiers.addAll(this.equipment.equipment().modifiers());
+            }
         }
         return modifiers;
     }
@@ -72,6 +93,12 @@ public class ItemSettings {
         newSettings.dyeable = settings.dyeable;
         newSettings.helmet = settings.helmet;
         newSettings.foodData = settings.foodData;
+        newSettings.consumeReplacement = settings.consumeReplacement;
+        newSettings.craftRemainder = settings.craftRemainder;
+        newSettings.invulnerable = settings.invulnerable;
+        newSettings.canEnchant = settings.canEnchant;
+        newSettings.compostProbability = settings.compostProbability;
+        newSettings.respectRepairableComponent = settings.respectRepairableComponent;
         return newSettings;
     }
 
@@ -115,8 +142,16 @@ public class ItemSettings {
         return dyeable;
     }
 
+    public boolean canEnchant() {
+        return canEnchant;
+    }
+
     public List<AnvilRepairItem> repairItems() {
         return anvilRepairItems;
+    }
+
+    public boolean respectRepairableComponent() {
+        return respectRepairableComponent;
     }
 
     @Nullable
@@ -125,13 +160,31 @@ public class ItemSettings {
     }
 
     @Nullable
+    public Key consumeReplacement() {
+        return consumeReplacement;
+    }
+
+    @Nullable
+    public Key craftRemainder() {
+        return craftRemainder;
+    }
+
+    @Nullable
     public Helmet helmet() {
         return helmet;
     }
 
     @Nullable
-    public EquipmentGeneration equipment() {
+    public ItemEquipment equipment() {
         return equipment;
+    }
+
+    public List<DamageSource> invulnerable() {
+        return invulnerable;
+    }
+
+    public float compostProbability() {
+        return compostProbability;
     }
 
     public ItemSettings repairItems(List<AnvilRepairItem> items) {
@@ -139,8 +192,28 @@ public class ItemSettings {
         return this;
     }
 
+    public ItemSettings consumeReplacement(Key key) {
+        this.consumeReplacement = key;
+        return this;
+    }
+
+    public ItemSettings craftRemainder(Key key) {
+        this.craftRemainder = key;
+        return this;
+    }
+
+    public ItemSettings compostProbability(float chance) {
+        this.compostProbability = chance;
+        return this;
+    }
+
     public ItemSettings canRepair(boolean canRepair) {
         this.canRepair = canRepair;
+        return this;
+    }
+
+    public ItemSettings canEnchant(boolean canEnchant) {
+        this.canEnchant = canEnchant;
         return this;
     }
 
@@ -174,7 +247,7 @@ public class ItemSettings {
         return this;
     }
 
-    public ItemSettings equipment(EquipmentGeneration equipment) {
+    public ItemSettings equipment(ItemEquipment equipment) {
         this.equipment = equipment;
         return this;
     }
@@ -186,6 +259,16 @@ public class ItemSettings {
 
     public ItemSettings helmet(Helmet helmet) {
         this.helmet = helmet;
+        return this;
+    }
+
+    public ItemSettings respectRepairableComponent(boolean respectRepairableComponent) {
+        this.respectRepairableComponent = respectRepairableComponent;
+        return this;
+    }
+
+    public ItemSettings invulnerable(List<DamageSource> invulnerable) {
+        this.invulnerable = invulnerable;
         return this;
     }
 
@@ -206,11 +289,15 @@ public class ItemSettings {
 
         static {
             registerFactory("repairable", (value -> {
-                boolean bool = (boolean) value;
+                boolean bool = ResourceConfigUtils.getAsBoolean(value, "repairable");
                 return settings -> settings.canRepair(bool);
             }));
+            registerFactory("enchantable", (value -> {
+                boolean bool = ResourceConfigUtils.getAsBoolean(value, "enchantable");
+                return settings -> settings.canEnchant(bool);
+            }));
             registerFactory("renameable", (value -> {
-                boolean bool = (boolean) value;
+                boolean bool = ResourceConfigUtils.getAsBoolean(value, "renameable");
                 return settings -> settings.renameable(bool);
             }));
             registerFactory("anvil-repair-item", (value -> {
@@ -228,48 +315,80 @@ public class ItemSettings {
                 int intValue = ResourceConfigUtils.getAsInt(value, "fuel-time");
                 return settings -> settings.fuelTime(intValue);
             }));
+            registerFactory("consume-replacement", (value -> settings -> {
+                if (value == null) settings.consumeReplacement(null);
+                else settings.consumeReplacement(Key.of(value.toString()));
+            }));
+            registerFactory("craft-remaining-item", (value -> settings -> {
+                if (value == null) settings.craftRemainder(null);
+                else settings.craftRemainder(Key.of(value.toString()));
+            }));
             registerFactory("tags", (value -> {
                 List<String> tags = MiscUtils.getAsStringList(value);
                 return settings -> settings.tags(tags.stream().map(Key::of).collect(Collectors.toSet()));
             }));
             registerFactory("equippable", (value -> {
                 Map<String, Object> args = MiscUtils.castToMap(value, false);
-                EquipmentData data;
-                if (VersionHelper.isOrAbove1_21_2() && args.containsKey("slot")) data = EquipmentData.fromMap(args);
-                else data = null;
-                EquipmentGeneration equipment = new EquipmentGeneration(
-                        EquipmentGeneration.Layer.fromConfig(args.get("humanoid")),
-                        EquipmentGeneration.Layer.fromConfig(args.get("humanoid-leggings")),
-                        EquipmentGeneration.Layer.fromConfig(args.get("llama-body")),
-                        EquipmentGeneration.Layer.fromConfig(args.get("horse-body")),
-                        EquipmentGeneration.Layer.fromConfig(args.get("wolf-body")),
-                        EquipmentGeneration.Layer.fromConfig(args.get("wings")),
-                        data,
-                        ResourceConfigUtils.getAsInt(args.getOrDefault("trim", -1), "trim")
-                );
-                return settings -> settings.equipment(equipment);
+                EquipmentData data = EquipmentData.fromMap(args);
+                ComponentBasedEquipment componentBasedEquipment = ComponentBasedEquipment.FACTORY.create(data.assetId(), args);
+                ((AbstractItemManager<?>) CraftEngine.instance().itemManager()).addOrMergeEquipment(componentBasedEquipment);
+                ItemEquipment itemEquipment = new ItemEquipment(Tristate.FALSE, data, componentBasedEquipment);
+                return settings -> settings.equipment(itemEquipment);
+            }));
+            registerFactory("equipment", (value -> {
+                Map<String, Object> args = MiscUtils.castToMap(value, false);
+                Tristate clientBoundModel = Tristate.of((Boolean) args.get("client-bound-model"));
+                Key assetId = Key.of(ResourceConfigUtils.requireNonEmptyStringOrThrow(args.get("asset-id"), "warning.config.item.settings.equipment.missing_asset_id"));
+                Optional<Equipment> optionalEquipment = CraftEngine.instance().itemManager().getEquipment(assetId);
+                if (optionalEquipment.isEmpty()) {
+                    throw new LocalizedResourceConfigException("warning.config.item.settings.equipment.invalid_asset_id");
+                }
+                if (VersionHelper.isOrAbove1_21_2() && args.containsKey("slot")) {
+                    if (optionalEquipment.get() instanceof ComponentBasedEquipment) {
+                        EquipmentData data = EquipmentData.fromMap(args);
+                        return settings -> settings.equipment(new ItemEquipment(clientBoundModel, data, optionalEquipment.get()));
+                    } else {
+                        // trim based
+                        Map<String, Object> copiedArgs = new HashMap<>(args);
+                        copiedArgs.put("asset-id", Config.sacrificedVanillaArmorType());
+                        EquipmentData data = EquipmentData.fromMap(copiedArgs);
+                        return settings -> settings.equipment(new ItemEquipment(clientBoundModel, data, optionalEquipment.get()));
+                    }
+                } else {
+                    return settings -> settings.equipment(new ItemEquipment(clientBoundModel, null, optionalEquipment.get()));
+                }
             }));
             registerFactory("can-place", (value -> {
-                boolean bool = (boolean) value;
+                boolean bool = ResourceConfigUtils.getAsBoolean(value, "can-place");
                 return settings -> settings.canPlaceRelatedVanillaBlock(bool);
             }));
             registerFactory("projectile", (value -> {
                 Map<String, Object> args = MiscUtils.castToMap(value, false);
-                Key customTridentItemId = Key.of(Objects.requireNonNull(args.get("item"), "'item should not be null'").toString());
+                Key customTridentItemId = Key.of(ResourceConfigUtils.requireNonEmptyStringOrThrow(args.get("item"), "warning.config.item.settings.projectile.missing_item"));
                 ItemDisplayContext displayType = ItemDisplayContext.valueOf(args.getOrDefault("display-transform", "NONE").toString().toUpperCase(Locale.ENGLISH));
+                Billboard billboard = Billboard.valueOf(args.getOrDefault("billboard", "FIXED").toString().toUpperCase(Locale.ENGLISH));
                 Vector3f translation = MiscUtils.getAsVector3f(args.getOrDefault("translation", "0"), "translation");
                 Vector3f scale = MiscUtils.getAsVector3f(args.getOrDefault("scale", "1"), "scale");
                 Quaternionf rotation = MiscUtils.getAsQuaternionf(ResourceConfigUtils.get(args, "rotation-left", "rotation"), "rotation-left");
-                String type = args.getOrDefault("type", "none").toString();
-                return settings -> settings.projectileMeta(new ProjectileMeta(customTridentItemId, displayType, scale, translation, rotation, type));
+                ProjectileType type = Optional.ofNullable(args.get("type")).map(String::valueOf).map(it -> ProjectileType.valueOf(it.toUpperCase(Locale.ENGLISH))).orElse(null);
+                double range = ResourceConfigUtils.getAsDouble(args.getOrDefault("range", 1), "range");
+                return settings -> settings.projectileMeta(new ProjectileMeta(customTridentItemId, displayType, billboard, scale, translation, rotation, range, type));
             }));
             registerFactory("helmet", (value -> {
                 Map<String, Object> args = MiscUtils.castToMap(value, false);
-                return settings -> settings.helmet(new Helmet(SoundData.create(args.getOrDefault("equip-sound", "minecraft:intentionally_empty"), 1f, 1f)));
+                return settings -> settings.helmet(new Helmet(SoundData.create(args.getOrDefault("equip-sound", "minecraft:intentionally_empty"), SoundData.SoundValue.FIXED_1, SoundData.SoundValue.FIXED_1)));
+            }));
+            registerFactory("compost-probability", (value -> {
+                float chance = ResourceConfigUtils.getAsFloat(value, "compost-probability");
+                return settings -> settings.compostProbability(chance);
             }));
             registerFactory("dyeable", (value -> {
-                boolean bool = (boolean) value;
+                boolean bool = ResourceConfigUtils.getAsBoolean(value, "dyeable");
                 return settings -> settings.dyeable(bool);
+            }));
+            registerFactory("respect-repairable-component", (value -> {
+                boolean bool = ResourceConfigUtils.getAsBoolean(value, "respect-repairable-component");
+                return settings -> settings.respectRepairableComponent(bool);
             }));
             registerFactory("food", (value -> {
                 Map<String, Object> args = MiscUtils.castToMap(value, false);
@@ -278,6 +397,16 @@ public class ItemSettings {
                         ResourceConfigUtils.getAsFloat(args.get("saturation"), "saturation")
                 );
                 return settings -> settings.foodData(data);
+            }));
+            registerFactory("invulnerable", (value -> {
+                List<DamageSource> list = MiscUtils.getAsStringList(value).stream().map(it -> {
+                    DamageSource source = DamageSource.byName(it);
+                    if (source == null) {
+                        throw new LocalizedResourceConfigException("warning.config.item.settings.invulnerable.invalid_damage_source", it, EnumUtils.toString(DamageSource.values()));
+                    }
+                    return source;
+                }).toList();
+                return settings -> settings.invulnerable(list);
             }));
         }
 

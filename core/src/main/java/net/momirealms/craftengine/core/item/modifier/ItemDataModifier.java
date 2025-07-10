@@ -8,8 +8,9 @@ public interface ItemDataModifier<I> {
 
     String name();
 
-    void apply(Item<I> item, ItemBuildContext context);
+    Item<I> apply(Item<I> item, ItemBuildContext context);
 
-    default void prepareNetworkItem(Item<I> item, ItemBuildContext context, CompoundTag networkData) {
+    default Item<I> prepareNetworkItem(Item<I> item, ItemBuildContext context, CompoundTag networkData) {
+        return item;
     }
 }

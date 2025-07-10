@@ -3,17 +3,17 @@ items#misc:
     material: nether_brick
     custom-model-data: 3000
     data:
-      item-name: "<!i><i18n:item.chinese_lantern>"
+      item-name: <!i><i18n:item.chinese_lantern>
     model:
-      type: "minecraft:model"
-      path: "minecraft:item/custom/chinese_lantern"
+      type: minecraft:model
+      path: minecraft:item/custom/chinese_lantern
       generation:
-        parent: "minecraft:block/custom/chinese_lantern"
+        parent: minecraft:block/custom/chinese_lantern
     behavior:
       type: block_item
       block:
         loot:
-          template: "default:loot_table/self"
+          template: default:loot_table/self
         settings:
           template:
             - default:hardness/wool
@@ -29,27 +29,27 @@ items#misc:
           id: 15
           state: note_block:15
           model:
-            path: "minecraft:block/custom/chinese_lantern"
+            path: minecraft:block/custom/chinese_lantern
             generation:
-              parent: "minecraft:block/cube_column"
+              parent: minecraft:block/cube_column
               textures:
-                "end": "minecraft:block/custom/chinese_lantern_top"
-                "side": "minecraft:block/custom/chinese_lantern"
+                end: minecraft:block/custom/chinese_lantern_top
+                side: minecraft:block/custom/chinese_lantern
   default:netherite_anvil:
     material: nether_brick
     custom-model-data: 3001
     data:
-      item-name: "<!i><i18n:item.netherite_anvil>"
+      item-name: <!i><i18n:item.netherite_anvil>
     model:
-      type: "minecraft:model"
-      path: "minecraft:item/custom/netherite_anvil"
+      type: minecraft:model
+      path: minecraft:item/custom/netherite_anvil
       generation:
-        parent: "minecraft:block/custom/netherite_anvil"
+        parent: minecraft:block/custom/netherite_anvil
     behavior:
       type: block_item
       block:
         loot:
-          template: "default:loot_table/self"
+          template: default:loot_table/self
         behavior:
           type: falling_block
           hurt-amount: 4
@@ -62,11 +62,14 @@ items#misc:
               - type: cancel_event
             conditions:
               - type: expression
-                expression: "!<arg:player.is_sneaking>"
+                expression: '!<arg:player.is_sneaking>'
         settings:
           template:
             - default:pickaxe_power/level_4
           overrides:
+            tags:
+              - minecraft:mineable/pickaxe
+              - minecraft:anvil
             sounds:
               break: minecraft:block.anvil.break
               step: minecraft:block.anvil.step
@@ -86,20 +89,20 @@ items#misc:
               default: north
           appearances:
             axisX:
-              state: "minecraft:anvil[facing=east]"
+              state: minecraft:anvil[facing=east]
               model:
-                path: "minecraft:block/custom/netherite_anvil"
+                path: minecraft:block/custom/netherite_anvil
                 y: 90
                 generation:
-                  parent: "minecraft:block/anvil"
+                  parent: minecraft:block/anvil
                   textures:
-                    "top": "minecraft:block/custom/netherite_anvil_top"
-                    "body": "minecraft:block/custom/netherite_anvil"
-                    "particle": "minecraft:block/custom/netherite_anvil"
+                    top: minecraft:block/custom/netherite_anvil_top
+                    body: minecraft:block/custom/netherite_anvil
+                    particle: minecraft:block/custom/netherite_anvil
             axisZ:
-              state: "minecraft:anvil[facing=north]"
+              state: minecraft:anvil[facing=north]
               model:
-                path: "minecraft:block/custom/netherite_anvil"
+                path: minecraft:block/custom/netherite_anvil
           variants:
             facing_clockwise=east:
               appearance: axisX
@@ -117,12 +120,12 @@ items#misc:
     material: nether_brick
     custom-model-data: 3002
     data:
-      item-name: "<!i><i18n:item.gunpowder_block>"
+      item-name: <!i><i18n:item.gunpowder_block>
     model:
-      type: "minecraft:model"
-      path: "minecraft:item/custom/gunpowder_block"
+      type: minecraft:model
+      path: minecraft:item/custom/gunpowder_block
       generation:
-        parent: "minecraft:block/custom/gunpowder_block"
+        parent: minecraft:block/custom/gunpowder_block
     behavior:
       type: block_item
       block:
@@ -131,7 +134,7 @@ items#misc:
             solid-block: default:solid_gunpowder_block
           - type: falling_block
         loot:
-          template: "default:loot_table/self"
+          template: default:loot_table/self
         settings:
           template:
             - default:sound/sand
@@ -145,29 +148,29 @@ items#misc:
           id: 16
           state: note_block:16
           model:
-            path: "minecraft:block/custom/gunpowder_block"
+            path: minecraft:block/custom/gunpowder_block
             generation:
-              parent: "minecraft:block/cube_all"
+              parent: minecraft:block/cube_all
               textures:
-                "all": "minecraft:block/custom/gunpowder_block"
+                all: minecraft:block/custom/gunpowder_block
   default:solid_gunpowder_block:
     material: nether_brick
     custom-model-data: 3003
     data:
-      item-name: "<!i><i18n:item.solid_gunpowder_block>"
+      item-name: <!i><i18n:item.solid_gunpowder_block>
     model:
-      type: "minecraft:model"
-      path: "minecraft:item/custom/solid_gunpowder_block"
+      type: minecraft:model
+      path: minecraft:item/custom/solid_gunpowder_block
       generation:
-        parent: "minecraft:block/custom/solid_gunpowder_block"
+        parent: minecraft:block/custom/solid_gunpowder_block
     behavior:
       type: block_item
       block:
         loot:
-          template: "default:loot_table/self"
+          template: default:loot_table/self
         settings:
           template:
-            - default:sound/sand
+            - default:sound/stone
             - default:pickaxe_power/level_1
             - default:settings/solid_1x1x1
           overrides:
@@ -179,26 +182,26 @@ items#misc:
           id: 17
           state: note_block:17
           model:
-            path: "minecraft:block/custom/solid_gunpowder_block"
+            path: minecraft:block/custom/solid_gunpowder_block
             generation:
-              parent: "minecraft:block/cube_all"
+              parent: minecraft:block/cube_all
               textures:
-                "all": "minecraft:block/custom/solid_gunpowder_block"
+                all: minecraft:block/custom/solid_gunpowder_block
   default:copper_coil:
     material: nether_brick
     custom-model-data: 3004
     data:
-      item-name: "<!i><i18n:item.copper_coil>"
+      item-name: <!i><i18n:item.copper_coil>
     model:
-      type: "minecraft:model"
-      path: "minecraft:item/custom/copper_coil"
+      type: minecraft:model
+      path: minecraft:item/custom/copper_coil
       generation:
-        parent: "minecraft:block/custom/copper_coil"
+        parent: minecraft:block/custom/copper_coil
     behavior:
       type: block_item
       block:
         loot:
-          template: "default:loot_table/self"
+          template: default:loot_table/self
         settings:
           template:
             - default:sound/metal
@@ -220,88 +223,216 @@ items#misc:
               default: false
           appearances:
             off:
-              state: "cactus:0"
+              state: cactus:0
               model:
-                path: "minecraft:block/custom/copper_coil"
+                path: minecraft:block/custom/copper_coil
                 generation:
-                  parent: "minecraft:block/cactus"
+                  parent: minecraft:block/cactus
                   textures:
-                    "particle": "minecraft:block/custom/copper_coil"
-                    "bottom": "minecraft:block/custom/copper_coil"
-                    "top": "minecraft:block/custom/copper_coil"
-                    "side": "minecraft:block/custom/copper_coil_side"
+                    particle: minecraft:block/custom/copper_coil
+                    bottom: minecraft:block/custom/copper_coil
+                    top: minecraft:block/custom/copper_coil
+                    side: minecraft:block/custom/copper_coil_side
             on:
-              state: "cactus:1"
+              state: cactus:1
               model:
-                path: "minecraft:block/custom/copper_coil_on"
+                path: minecraft:block/custom/copper_coil_on
                 generation:
-                  parent: "minecraft:block/cactus"
+                  parent: minecraft:block/cactus
                   textures:
-                    "particle": "minecraft:block/custom/copper_coil_on"
-                    "bottom": "minecraft:block/custom/copper_coil_on"
-                    "top": "minecraft:block/custom/copper_coil_on"
-                    "side": "minecraft:block/custom/copper_coil_on_side"
+                    particle: minecraft:block/custom/copper_coil_on
+                    bottom: minecraft:block/custom/copper_coil_on
+                    top: minecraft:block/custom/copper_coil_on
+                    side: minecraft:block/custom/copper_coil_on_side
           variants:
             lit=false:
-              appearance: "off"
+              appearance: 'off'
               id: 0
             lit=true:
-              appearance: "on"
+              appearance: 'on'
               id: 1
               settings:
                 luminance: 8
+  default:pebble:
+    material: nether_brick
+    custom-model-data: 3005
+    data:
+      item-name: <!i><i18n:item.pebble>
+    model:
+      template: default:model/simplified_generated
+      arguments:
+        path: minecraft:item/custom/pebble
+    behavior:
+      - type: block_item
+        block:
+          settings:
+            template:
+              - default:sound/stone
+              - default:hardness/none
+            overrides:
+              map-color: 11
+              push-reaction: DESTROY
+          behaviors:
+            - type: sturdy_base_block
+              direction: down
+              support-types:
+                - full
+            - type: stackable_block
+              property: pebble
+              items:
+                - default:pebble
+              sounds:
+                stack: minecraft:block.stone.fall
+          loot:
+            pools:
+              - rolls: 1
+                entries:
+                  - type: item
+                    item: default:pebble
+                    functions:
+                      - type: set_count
+                        count: 3
+                        add: false
+                        conditions:
+                          - type: match_block_property
+                            properties:
+                              pebble: 3
+                      - type: set_count
+                        count: 2
+                        add: false
+                        conditions:
+                          - type: match_block_property
+                            properties:
+                              pebble: 2
+                      - type: explosion_decay
+          states:
+            properties:
+              pebble:
+                type: int
+                range: 1~3
+                default: 1
+            appearances:
+              one:
+                state: tripwire:2
+                models:
+                  - path: minecraft:block/custom/pebble_1
+                    weight: 1
+                  - path: minecraft:block/custom/pebble_1
+                    weight: 1
+                    y: 90
+                  - path: minecraft:block/custom/pebble_1
+                    weight: 1
+                    y: 180
+                  - path: minecraft:block/custom/pebble_1
+                    weight: 1
+                    y: 270
+              two:
+                state: tripwire:3
+                models:
+                  - path: minecraft:block/custom/pebble_2
+                    weight: 1
+                  - path: minecraft:block/custom/pebble_2
+                    weight: 1
+                    y: 90
+                  - path: minecraft:block/custom/pebble_2
+                    weight: 1
+                    y: 180
+                  - path: minecraft:block/custom/pebble_2
+                    weight: 1
+                    y: 270
+              three:
+                state: tripwire:4
+                models:
+                  - path: minecraft:block/custom/pebble_3
+                    weight: 1
+                  - path: minecraft:block/custom/pebble_3
+                    weight: 1
+                    y: 90
+                  - path: minecraft:block/custom/pebble_3
+                    weight: 1
+                    y: 180
+                  - path: minecraft:block/custom/pebble_3
+                    weight: 1
+                    y: 270
+            variants:
+              pebble=1:
+                appearance: 'one'
+                id: 2
+              pebble=2:
+                appearance: 'two'
+                id: 3
+              pebble=3:
+                appearance: 'three'
+                id: 4
 recipes#misc:
   default:chinese_lantern:
     type: shaped
     pattern:
-      - "ABA"
-      - "BCB"
-      - "ABA"
+      - ABA
+      - BCB
+      - ABA
     ingredients:
-      A: "#minecraft:planks"
-      B: "minecraft:stick"
-      C: "minecraft:torch"
+      A: '#minecraft:planks'
+      B: minecraft:stick
+      C: minecraft:torch
     result:
       id: default:chinese_lantern
       count: 1
   default:netherite_anvil:
     type: shaped
     pattern:
-      - " B "
-      - "BAB"
-      - " B "
+      - ' B '
+      - BAB
+      - ' B '
     ingredients:
-      A: "minecraft:anvil"
-      B: "minecraft:netherite_ingot"
+      A: minecraft:anvil
+      B: minecraft:netherite_ingot
     result:
       id: default:netherite_anvil
       count: 1
   default:gunpowder_from_block:
     type: shapeless
     ingredients:
-      A: "default:gunpowder_block"
+      A: default:gunpowder_block
     result:
       id: minecraft:gunpowder
       count: 9
   default:gunpowder_block:
     type: shaped
     pattern:
-      - "AAA"
-      - "AAA"
-      - "AAA"
+      - AAA
+      - AAA
+      - AAA
     ingredients:
-      A: "minecraft:gunpowder"
+      A: minecraft:gunpowder
     result:
       id: default:gunpowder_block
       count: 1
   default:copper_coil:
     type: shaped
     pattern:
-      - "AAA"
-      - "A A"
-      - "AAA"
+      - AAA
+      - A A
+      - AAA
     ingredients:
-      A: "minecraft:copper_ingot"
+      A: minecraft:copper_ingot
     result:
       id: default:copper_coil
+      count: 1
+  default:pebble:
+    type: shapeless
+    ingredients:
+      - minecraft:cobblestone
+    result:
+      id: default:pebble
+      count: 4
+  default:cobblestone_from_pebble:
+    type: shaped
+    pattern:
+      - AA
+      - AA
+    ingredients:
+      A: default:pebble
+    result:
+      id: minecraft:cobblestone
       count: 1

@@ -26,19 +26,21 @@ public class RemoveComponentModifier<I> implements ItemDataModifier<I> {
     }
 
     @Override
-    public void apply(Item<I> item, ItemBuildContext context) {
+    public Item<I> apply(Item<I> item, ItemBuildContext context) {
         for (String argument : this.arguments) {
             item.removeComponent(argument);
         }
+        return item;
     }
 
     @Override
-    public void prepareNetworkItem(Item<I> item, ItemBuildContext context, CompoundTag networkData) {
+    public Item<I> prepareNetworkItem(Item<I> item, ItemBuildContext context, CompoundTag networkData) {
         for (String component : this.arguments) {
-            Tag previous = item.getNBTComponent(component);
+            Tag previous = item.getSparrowNBTComponent(component);
             if (previous != null) {
                 networkData.put(component, NetworkItemHandler.pack(NetworkItemHandler.Operation.ADD, previous));
             }
         }
+        return item;
     }
 }

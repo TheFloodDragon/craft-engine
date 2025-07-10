@@ -2,7 +2,7 @@ package net.momirealms.craftengine.core.item.modifier;
 
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.item.ItemBuildContext;
-import net.momirealms.craftengine.core.item.JukeboxPlayable;
+import net.momirealms.craftengine.core.item.data.JukeboxPlayable;
 
 public class JukeboxSongModifier<I> implements ItemDataModifier<I> {
     private final JukeboxPlayable song;
@@ -17,7 +17,8 @@ public class JukeboxSongModifier<I> implements ItemDataModifier<I> {
     }
 
     @Override
-    public void apply(Item<I> item, ItemBuildContext context) {
+    public Item<I> apply(Item<I> item, ItemBuildContext context) {
         item.jukeboxSong(this.song);
+        return item;
     }
 }

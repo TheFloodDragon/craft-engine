@@ -1,8 +1,11 @@
 package net.momirealms.craftengine.bukkit.item.listener;
 
+import io.papermc.paper.event.block.CompostItemEvent;
 import net.momirealms.craftengine.bukkit.api.event.CustomBlockInteractEvent;
-import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
+import net.momirealms.craftengine.bukkit.item.BukkitCustomItem;
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
+import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.bukkit.util.*;
 import net.momirealms.craftengine.bukkit.world.BukkitBlockInWorld;
@@ -15,29 +18,41 @@ import net.momirealms.craftengine.core.item.CustomItem;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.item.context.UseOnContext;
+import net.momirealms.craftengine.core.item.setting.FoodData;
+import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.plugin.context.ContextHolder;
 import net.momirealms.craftengine.core.plugin.context.PlayerOptionalContext;
 import net.momirealms.craftengine.core.plugin.context.event.EventTrigger;
 import net.momirealms.craftengine.core.plugin.context.parameter.DirectContextParameters;
-import net.momirealms.craftengine.core.util.Cancellable;
-import net.momirealms.craftengine.core.util.Direction;
+import net.momirealms.craftengine.core.sound.SoundData;
+import net.momirealms.craftengine.core.sound.SoundSource;
+import net.momirealms.craftengine.core.util.*;
 import net.momirealms.craftengine.core.world.BlockHitResult;
 import net.momirealms.craftengine.core.world.BlockPos;
 import net.momirealms.craftengine.core.world.Vec3d;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Openable;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.inventory.EnchantingInventory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -47,6 +62,28 @@ public class ItemEventListener implements Listener {
 
     public ItemEventListener(BukkitCraftEngine plugin) {
         this.plugin = plugin;
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
+    public void onInteractEntity(PlayerInteractEntityEvent event) {
+        BukkitServerPlayer serverPlayer = this.plugin.adapt(event.getPlayer());
+        if (serverPlayer == null) return;
+        InteractionHand hand = event.getHand() == EquipmentSlot.HAND ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+        Item<ItemStack> itemInHand = serverPlayer.getItemInHand(hand);
+
+        if (itemInHand == null) return;
+        Optional<CustomItem<ItemStack>> optionalCustomItem = itemInHand.getCustomItem();
+        if (optionalCustomItem.isEmpty()) return;
+
+        Cancellable cancellable = Cancellable.of(event::isCancelled, event::setCancelled);
+        PlayerOptionalContext context = PlayerOptionalContext.of(serverPlayer, ContextHolder.builder()
+                .withOptionalParameter(DirectContextParameters.ITEM_IN_HAND, itemInHand)
+                .withParameter(DirectContextParameters.EVENT, cancellable)
+                .withParameter(DirectContextParameters.POSITION, LocationUtils.toWorldPosition(event.getRightClicked().getLocation()))
+                .withParameter(DirectContextParameters.HAND, hand)
+        );
+        CustomItem<ItemStack> customItem = optionalCustomItem.get();
+        customItem.execute(context, EventTrigger.RIGHT_CLICK);
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
@@ -62,6 +99,7 @@ public class ItemEventListener implements Listener {
         }
 
         BukkitServerPlayer serverPlayer = this.plugin.adapt(player);
+        if (serverPlayer == null) return;
         InteractionHand hand = event.getHand() == EquipmentSlot.HAND ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
         // 如果本tick内主手已被处理，则不处理副手
         // 这是因为客户端可能会同时发主副手交互包，但实际上只能处理其中一个
@@ -73,8 +111,7 @@ public class ItemEventListener implements Listener {
         Block block = Objects.requireNonNull(event.getClickedBlock());
         BlockData blockData = block.getBlockData();
         Object blockState = BlockStateUtils.blockDataToBlockState(blockData);
-        ImmutableBlockState immutableBlockState = null;
-        int stateId = BlockStateUtils.blockStateToId(blockState);
+        ImmutableBlockState immutableBlockState = BlockStateUtils.getOptionalCustomBlockState(blockState).orElse(null);
         Item<ItemStack> itemInHand = serverPlayer.getItemInHand(hand);
         Location interactionPoint = event.getInteractionPoint();
 
@@ -87,8 +124,7 @@ public class ItemEventListener implements Listener {
         }
 
         // 处理自定义方块
-        if (!BlockStateUtils.isVanillaBlock(stateId)) {
-            immutableBlockState = BukkitBlockManager.instance().getImmutableBlockStateUnsafe(stateId);
+        if (immutableBlockState != null) {
             // call the event if it's custom
             CustomBlockInteractEvent interactEvent = new CustomBlockInteractEvent(
                     player,
@@ -133,14 +169,45 @@ public class ItemEventListener implements Listener {
 
             if (hitResult != null) {
                 UseOnContext useOnContext = new UseOnContext(serverPlayer, hand, itemInHand, hitResult);
-                if (immutableBlockState.behavior() instanceof AbstractBlockBehavior behavior) {
-                    InteractionResult result = behavior.useOnBlock(useOnContext, immutableBlockState);
-                    if (result == InteractionResult.SUCCESS_AND_CANCEL) {
-                        event.setCancelled(true);
-                        return;
+                boolean hasItem = player.getInventory().getItemInMainHand().getType() != Material.AIR || player.getInventory().getItemInOffHand().getType() != Material.AIR;
+                boolean flag = player.isSneaking() && hasItem;
+                if (!flag) {
+                    if (immutableBlockState.behavior() instanceof AbstractBlockBehavior behavior) {
+                        InteractionResult result = behavior.useOnBlock(useOnContext, immutableBlockState);
+                        if (result.success()) {
+                            serverPlayer.updateLastSuccessfulInteractionTick(serverPlayer.gameTicks());
+                            if (result == InteractionResult.SUCCESS_AND_CANCEL) {
+                                event.setCancelled(true);
+                            }
+                            return;
+                        }
+                        if (result == InteractionResult.TRY_EMPTY_HAND && hand == InteractionHand.MAIN_HAND) {
+                            result = behavior.useWithoutItem(useOnContext, immutableBlockState);
+                            if (result.success()) {
+                                serverPlayer.updateLastSuccessfulInteractionTick(serverPlayer.gameTicks());
+                                if (result == InteractionResult.SUCCESS_AND_CANCEL) {
+                                    event.setCancelled(true);
+                                }
+                                return;
+                            }
+                        }
+                        if (result == InteractionResult.FAIL) {
+                            return;
+                        }
                     }
-                    if (result != InteractionResult.PASS) {
-                        return;
+                }
+            }
+        } else {
+            if (Config.enableSoundSystem() && hitResult != null) {
+                Object blockOwner = FastNMS.INSTANCE.method$BlockState$getBlock(blockState);
+                if (this.plugin.blockManager().isOpenableBlockSoundRemoved(blockOwner)) {
+                    boolean hasItem = player.getInventory().getItemInMainHand().getType() != Material.AIR || player.getInventory().getItemInOffHand().getType() != Material.AIR;
+                    boolean flag = player.isSneaking() && hasItem;
+                    if (!flag) {
+                        if (blockData instanceof Openable openable) {
+                            SoundData soundData = this.plugin.blockManager().getRemovedOpenableBlockSound(blockOwner, !openable.isOpen());
+                            serverPlayer.playSound(soundData.id(), SoundSource.BLOCK, soundData.volume().get(), soundData.pitch().get());
+                        }
                     }
                 }
             }
@@ -230,11 +297,13 @@ public class ItemEventListener implements Listener {
                 // 依次执行物品行为
                 for (ItemBehavior itemBehavior : optionalItemBehaviors.get()) {
                     InteractionResult result = itemBehavior.useOnBlock(useOnContext);
+                    if (result.success()) {
+                        serverPlayer.updateLastSuccessfulInteractionTick(serverPlayer.gameTicks());
+                    }
                     if (result == InteractionResult.SUCCESS_AND_CANCEL) {
                         event.setCancelled(true);
                         return;
                     }
-                    // 非pass的情况直接结束
                     if (result != InteractionResult.PASS) {
                         return;
                     }
@@ -260,7 +329,7 @@ public class ItemEventListener implements Listener {
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     public void onInteractAir(PlayerInteractEvent event) {
         Action action = event.getAction();
         if (action != Action.RIGHT_CLICK_AIR && action != Action.LEFT_CLICK_AIR)
@@ -276,9 +345,9 @@ public class ItemEventListener implements Listener {
         if (itemInHand == null) return;
 
         // todo 真的需要这个吗
-//        if (cancelEventIfHasInteraction(event, serverPlayer, hand)) {
-//            return;
-//        }
+        if (cancelEventIfHasInteraction(event, serverPlayer, hand)) {
+            return;
+        }
 
         Optional<CustomItem<ItemStack>> optionalCustomItem = itemInHand.getCustomItem();
         if (optionalCustomItem.isPresent()) {
@@ -297,6 +366,9 @@ public class ItemEventListener implements Listener {
             if (optionalItemBehaviors.isPresent()) {
                 for (ItemBehavior itemBehavior : optionalItemBehaviors.get()) {
                     InteractionResult result = itemBehavior.use(serverPlayer.world(), serverPlayer, hand);
+                    if (result.success()) {
+                        serverPlayer.updateLastSuccessfulInteractionTick(serverPlayer.gameTicks());
+                    }
                     if (result == InteractionResult.SUCCESS_AND_CANCEL) {
                         event.setCancelled(true);
                         return;
@@ -329,6 +401,36 @@ public class ItemEventListener implements Listener {
         if (event.isCancelled()) {
             return;
         }
+        if (event.getPlayer().getGameMode() != GameMode.CREATIVE) {
+            Key replacement = customItem.settings().consumeReplacement();
+            if (replacement == null) {
+                event.setReplacement(null);
+            } else {
+                ItemStack replacementItem = this.plugin.itemManager().buildItemStack(replacement, this.plugin.adapt(event.getPlayer()));
+                event.setReplacement(replacementItem);
+            }
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
+    public void onFoodLevelChange(FoodLevelChangeEvent event) {
+        if (VersionHelper.isOrAbove1_20_5()) return;
+        if (!(event.getEntity() instanceof Player player)) return;
+        ItemStack consumedItem = event.getItem();
+        if (ItemUtils.isEmpty(consumedItem)) return;
+        Item<ItemStack> wrapped = this.plugin.itemManager().wrap(consumedItem);
+        Optional<CustomItem<ItemStack>> optionalCustomItem = wrapped.getCustomItem();
+        if (optionalCustomItem.isEmpty()) {
+            return;
+        }
+        CustomItem<ItemStack> customItem = optionalCustomItem.get();
+        FoodData foodData = customItem.settings().foodData();
+        if (foodData == null) return;
+        event.setCancelled(true);
+        int oldFoodLevel = player.getFoodLevel();
+        if (foodData.nutrition() != 0) player.setFoodLevel(MCUtils.clamp(oldFoodLevel + foodData.nutrition(), 0, 20));
+        float oldSaturation = player.getSaturation();
+        if (foodData.saturation() != 0) player.setSaturation(MCUtils.clamp(oldSaturation, 0, 10));
     }
 
     private boolean cancelEventIfHasInteraction(PlayerInteractEvent event, BukkitServerPlayer player, InteractionHand hand) {
@@ -342,5 +444,71 @@ public class ItemEventListener implements Listener {
             }
         }
         return false;
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    public void onEntityDamage(EntityDamageEvent event) {
+        if (event.getEntity() instanceof org.bukkit.entity.Item item) {
+            Optional.ofNullable(this.plugin.itemManager().wrap(item.getItemStack()))
+                    .flatMap(Item::getCustomItem)
+                    .ifPresent(it -> {
+                        if (it.settings().invulnerable().contains(DamageCauseUtils.fromBukkit(event.getCause()))) {
+                            event.setCancelled(true);
+                        }
+                    });
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    public void onEnchant(PrepareItemEnchantEvent event) {
+        ItemStack itemToEnchant = event.getItem();
+        Item<ItemStack> wrapped = this.plugin.itemManager().wrap(itemToEnchant);
+        Optional<CustomItem<ItemStack>> optionalCustomItem = wrapped.getCustomItem();
+        if (optionalCustomItem.isEmpty()) return;
+        CustomItem<ItemStack> customItem = optionalCustomItem.get();
+        if (!customItem.settings().canEnchant()) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onCompost(CompostItemEvent event) {
+        ItemStack itemToCompost = event.getItem();
+        Item<ItemStack> wrapped = this.plugin.itemManager().wrap(itemToCompost);
+        Optional<CustomItem<ItemStack>> optionalCustomItem = wrapped.getCustomItem();
+        if (optionalCustomItem.isEmpty()) return;
+        event.setWillRaiseLevel(RandomUtils.generateRandomFloat(0, 1) < optionalCustomItem.get().settings().compostProbability());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (!(event.getInventory() instanceof EnchantingInventory inventory)) return;
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        ItemStack lazuli = inventory.getSecondary();
+        if (lazuli != null) return;
+        ItemStack item = inventory.getItem();
+        if (item == null) return;
+        Item<ItemStack> wrapped = this.plugin.itemManager().wrap(item);
+        if (wrapped == null) return;
+        Optional<CustomItem<ItemStack>> optionalCustomItem = wrapped.getCustomItem();
+        if (optionalCustomItem.isEmpty()) return;
+        BukkitCustomItem customItem = (BukkitCustomItem) optionalCustomItem.get();
+        if (customItem.clientItem() == FastNMS.INSTANCE.method$ItemStack$getItem(wrapped.getLiteralObject())) return;
+        BukkitServerPlayer serverPlayer = this.plugin.adapt(player);
+        if (serverPlayer == null) return;
+        this.plugin.scheduler().sync().runDelayed(() -> {
+            Object container = FastNMS.INSTANCE.field$Player$containerMenu(serverPlayer.serverPlayer());
+            if (!CoreReflections.clazz$EnchantmentMenu.isInstance(container)) return;
+            Object secondSlotItem = FastNMS.INSTANCE.method$Slot$getItem(FastNMS.INSTANCE.method$AbstractContainerMenu$getSlot(container, 1));
+            if (secondSlotItem == null || FastNMS.INSTANCE.method$ItemStack$isEmpty(secondSlotItem)) return;
+            Object[] dataSlots = FastNMS.INSTANCE.field$AbstractContainerMenu$dataSlots(container).toArray();
+            List<Object> packets = new ArrayList<>(dataSlots.length);
+            for (int i = 0; i < dataSlots.length; i++) {
+                Object dataSlot = dataSlots[i];
+                int data = FastNMS.INSTANCE.method$DataSlot$get(dataSlot);
+                packets.add(FastNMS.INSTANCE.constructor$ClientboundContainerSetDataPacket(FastNMS.INSTANCE.field$AbstractContainerMenu$containerId(container), i, data));
+            }
+            serverPlayer.sendPackets(packets, false);
+        });
     }
 }

@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractFontManager implements FontManager {
     private final CraftEngine plugin;
-                // namespace:font font
+    // namespace:font font
     private final Map<Key, Font> fonts = new HashMap<>();
     // namespace:id emoji
     private final Map<Key, Emoji> emojis = new HashMap<>();

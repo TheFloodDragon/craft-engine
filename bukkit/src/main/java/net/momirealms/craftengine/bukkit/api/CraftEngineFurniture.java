@@ -52,7 +52,7 @@ public final class CraftEngineFurniture {
     public static BukkitFurniture place(Location location, Key furnitureId) {
         CustomFurniture furniture = byId(furnitureId);
         if (furniture == null) return null;
-        return place(location, furnitureId, furniture.getAnyPlacement());
+        return place(location, furnitureId, furniture.getAnyAnchorType());
     }
 
     /**

@@ -316,6 +316,11 @@ public class AdventureHelper {
         return true;
     }
 
+    public static String resolvePlainStringTags(String raw, TagResolver... resolvers) {
+        Component resultComponent = AdventureHelper.customMiniMessage().deserialize(raw, resolvers);
+        return AdventureHelper.plainTextContent(resultComponent);
+    }
+
     public static Component replaceText(Component text, Map<String, Component> replacements) {
         String patternString = replacements.keySet().stream()
                 .map(Pattern::quote)

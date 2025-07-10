@@ -20,6 +20,10 @@ public class Color {
         this(r, g, b, DEFAULT_ALPHA);
     }
 
+    public int toDecimal() {
+        return DEFAULT_ALPHA << 24 | (r << 16) | (g << 8) | b;
+    }
+
     public static Color fromString(String[] strings) {
         if (strings.length == 3) {
             return new Color(Byte.parseByte(strings[0]), Byte.parseByte(strings[1]), Byte.parseByte(strings[2]));

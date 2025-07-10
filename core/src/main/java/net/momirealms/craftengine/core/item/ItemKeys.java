@@ -4,6 +4,7 @@ import net.momirealms.craftengine.core.util.Key;
 
 public class ItemKeys {
     public static final Key AIR = Key.of("minecraft:air");
+    public static final Key FLINT_AND_STEEL = Key.of("minecraft:flint_and_steel");
     public static final Key STONE = Key.of("minecraft:stone");
     public static final Key TRIDENT = Key.of("minecraft:trident");
     public static final Key SHIELD = Key.of("minecraft:shield");
@@ -31,6 +32,7 @@ public class ItemKeys {
     public static final Key TOTEM_OF_UNDYING = Key.of("minecraft:totem_of_undying");
     public static final Key BARRIER = Key.of("minecraft:barrier");
     public static final Key CACTUS = Key.of("minecraft:cactus");
+    public static final Key REDSTONE = Key.of("minecraft:redstone");
 
     public static final Key[] AXES = new Key[] {
             WOODEN_AXE, STONE_AXE, IRON_AXE, GOLDEN_AXE, DIAMOND_AXE, NETHERITE_AXE

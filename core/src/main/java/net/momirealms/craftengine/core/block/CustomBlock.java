@@ -37,6 +37,8 @@ public interface CustomBlock {
 
     ImmutableBlockState getStateForPlacement(BlockPlaceContext context);
 
+    void setPlacedBy(BlockPlaceContext context, ImmutableBlockState state);
+
     interface Builder {
 
         Builder events(Map<EventTrigger, List<Function<PlayerOptionalContext>>> events);
@@ -51,7 +53,7 @@ public interface CustomBlock {
 
         Builder settings(BlockSettings settings);
 
-        Builder variantMapper(Map<String, VariantState> variantMapper);
+        Builder variantMapper(Map<String, BlockStateVariant> variantMapper);
 
         @NotNull CustomBlock build();
     }

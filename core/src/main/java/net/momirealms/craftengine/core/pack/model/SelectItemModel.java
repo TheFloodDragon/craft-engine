@@ -1,12 +1,16 @@
 package net.momirealms.craftengine.core.pack.model;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import net.momirealms.craftengine.core.pack.model.generation.ModelGeneration;
 import net.momirealms.craftengine.core.pack.model.select.SelectProperties;
 import net.momirealms.craftengine.core.pack.model.select.SelectProperty;
+import net.momirealms.craftengine.core.pack.revision.Revision;
 import net.momirealms.craftengine.core.plugin.locale.LocalizedResourceConfigException;
 import net.momirealms.craftengine.core.util.Key;
+import net.momirealms.craftengine.core.util.MinecraftVersion;
 import net.momirealms.craftengine.core.util.MiscUtils;
 import org.incendo.cloud.type.Either;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +23,7 @@ import java.util.Map;
 
 public class SelectItemModel implements ItemModel {
     public static final Factory FACTORY = new Factory();
+    public static final Reader READER = new Reader();
     private final SelectProperty property;
     private final Map<Either<String, List<String>>, ItemModel> whenMap;
     private final ItemModel fallBack;
@@ -32,28 +37,28 @@ public class SelectItemModel implements ItemModel {
     }
 
     public SelectProperty property() {
-        return property;
+        return this.property;
     }
 
     public Map<Either<String, List<String>>, ItemModel> whenMap() {
-        return whenMap;
+        return this.whenMap;
     }
 
     public ItemModel fallBack() {
-        return fallBack;
+        return this.fallBack;
     }
 
     @Override
-    public JsonObject get() {
+    public JsonObject apply(MinecraftVersion version) {
         JsonObject json = new JsonObject();
         json.addProperty("type", type().toString());
-        property.accept(json);
+        this.property.accept(json);
         JsonArray array = new JsonArray();
         json.add("cases", array);
-        for (Map.Entry<Either<String, List<String>>, ItemModel> entry : whenMap.entrySet()) {
+        for (Map.Entry<Either<String, List<String>>, ItemModel> entry : this.whenMap.entrySet()) {
             JsonObject item = new JsonObject();
             ItemModel itemModel = entry.getValue();
-            item.add("model", itemModel.get());
+            item.add("model", itemModel.apply(version));
             Either<String, List<String>> either = entry.getKey();
             if (either.primary().isPresent()) {
                 item.addProperty("when", either.primary().get());
@@ -67,8 +72,8 @@ public class SelectItemModel implements ItemModel {
             }
             array.add(item);
         }
-        if (fallBack != null) {
-            json.add("fallback", fallBack.get());
+        if (this.fallBack != null) {
+            json.add("fallback", this.fallBack.apply(version));
         }
         return json;
     }
@@ -79,12 +84,24 @@ public class SelectItemModel implements ItemModel {
     }
 
     @Override
+    public List<Revision> revisions() {
+        List<Revision> versions = new ArrayList<>();
+        if (this.fallBack != null) {
+            versions.addAll(this.fallBack.revisions());
+        }
+        for (ItemModel itemModel : this.whenMap.values()) {
+            versions.addAll(itemModel.revisions());
+        }
+        return versions;
+    }
+
+    @Override
     public List<ModelGeneration> modelsToGenerate() {
         List<ModelGeneration> models = new ArrayList<>(4);
-        if (fallBack != null) {
-            models.addAll(fallBack.modelsToGenerate());
+        if (this.fallBack != null) {
+            models.addAll(this.fallBack.modelsToGenerate());
         }
-        for (ItemModel itemModel : whenMap.values()) {
+        for (ItemModel itemModel : this.whenMap.values()) {
             models.addAll(itemModel.modelsToGenerate());
         }
         return models;
@@ -130,6 +147,40 @@ public class SelectItemModel implements ItemModel {
             } else {
                 throw new LocalizedResourceConfigException("warning.config.item.model.select.missing_cases");
             }
+        }
+    }
+
+    public static class Reader implements ItemModelReader {
+
+        @Override
+        public ItemModel read(JsonObject json) {
+            JsonArray cases = json.getAsJsonArray("cases");
+            if (cases == null) {
+                throw new IllegalArgumentException("cases is expected to be a JsonArray");
+            }
+            Map<Either<String, List<String>>, ItemModel> whenMap = new HashMap<>(cases.size());
+            for (JsonElement e : cases) {
+                if (e instanceof JsonObject caseObj) {
+                    ItemModel model = ItemModels.fromJson(caseObj.getAsJsonObject("model"));
+                    JsonElement whenObj = caseObj.get("when");
+                    Either<String, List<String>> either;
+                    if (whenObj instanceof JsonArray array) {
+                        List<String> whens = new ArrayList<>(array.size());
+                        for (JsonElement o : array) {
+                            whens.add(o.getAsString());
+                        }
+                        either = Either.ofFallback(whens);
+                    } else if (whenObj instanceof JsonPrimitive primitive) {
+                        either = Either.ofPrimary(primitive.getAsString());
+                    } else {
+                        throw new IllegalArgumentException("when is expected to be either JsonPrimitive or JsonArray");
+                    }
+                    whenMap.put(either, model);
+                } else {
+                    throw new IllegalArgumentException("case is expected to be a JsonObject");
+                }
+            }
+            return new SelectItemModel(SelectProperties.fromJson(json), whenMap, json.has("fallback") ? ItemModels.fromJson(json.getAsJsonObject("fallback")) : null);
         }
     }
 }

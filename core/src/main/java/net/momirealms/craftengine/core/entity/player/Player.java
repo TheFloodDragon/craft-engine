@@ -5,6 +5,7 @@ import net.momirealms.craftengine.core.entity.AbstractEntity;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.plugin.context.CooldownData;
 import net.momirealms.craftengine.core.plugin.network.NetWorkUser;
+import net.momirealms.craftengine.core.sound.SoundSource;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.world.BlockPos;
 import org.jetbrains.annotations.Nullable;
@@ -81,7 +82,13 @@ public abstract class Player extends AbstractEntity implements NetWorkUser {
         playSound(sound, 1f, 1f);
     }
 
-    public abstract void playSound(Key sound, float volume, float pitch);
+    public void playSound(Key sound, float volume, float pitch) {
+        playSound(sound, SoundSource.MASTER, volume, pitch);
+    }
+
+    public abstract void playSound(Key sound, SoundSource source, float volume, float pitch);
+
+    public abstract void playSound(Key sound, BlockPos pos, SoundSource source, float volume, float pitch);
 
     public abstract void giveItem(Item<?> item);
 

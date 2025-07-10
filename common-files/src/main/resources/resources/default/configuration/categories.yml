@@ -1,17 +1,17 @@
 categories:
   default:default:
     priority: 1
-    name: "<!i><white><i18n:category.default.name></white>"
+    name: <!i><white><i18n:category.default.name></white>
     lore:
-      - "<!i><gray><i18n:category.default.lore>"
+      - <!i><gray><i18n:category.default.lore>
     icon: default:topaz
     list:
-      - "#default:palm_tree"
-      - "#default:topaz"
-      - "#default:furniture"
-      - "#default:misc"
+      - '#default:palm_tree'
+      - '#default:topaz'
+      - '#default:furniture'
+      - '#default:misc'
   default:palm_tree:
-    name: "<!i><green><i18n:category.palm_tree></green>"
+    name: <!i><green><i18n:category.palm_tree></green>
     hidden: true
     icon: default:palm_log
     list:
@@ -22,8 +22,14 @@ categories:
       - default:palm_wood
       - default:stripped_palm_wood
       - default:palm_planks
+      - default:palm_trapdoor
+      - default:palm_door
+      - default:palm_fence_gate
+      - default:palm_slab
+      - default:palm_stairs
+      - default:palm_pressure_plate
   default:topaz:
-    name: "<!i><#FF8C00><i18n:category.topaz></#FF8C00>"
+    name: <!i><#FF8C00><i18n:category.topaz></#FF8C00>
     hidden: true
     icon: default:topaz
     list:
@@ -44,7 +50,7 @@ categories:
       - default:topaz_leggings
       - default:topaz_boots
   default:furniture:
-    name: "<!i><#FFD700><i18n:category.furniture></#FFD700>"
+    name: <!i><#FFD700><i18n:category.furniture></#FFD700>
     hidden: true
     icon: default:table_lamp
     list:
@@ -52,7 +58,7 @@ categories:
       - default:table_lamp
       - default:wooden_chair
   default:misc:
-    name: "<!i><gray><i18n:category.misc></gray>"
+    name: <!i><gray><i18n:category.misc></gray>
     hidden: true
     icon: default:chinese_lantern
     list:
@@ -69,3 +75,5 @@ categories:
       - minecraft:air
       - default:copper_coil
       - default:flame_elytra
+      - default:cap
+      - default:pebble

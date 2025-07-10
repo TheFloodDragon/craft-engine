@@ -1,6 +1,7 @@
 package net.momirealms.craftengine.core.util;
 
 import com.google.common.collect.Maps;
+import com.mojang.datafixers.util.Either;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufInputStream;
@@ -10,6 +11,7 @@ import io.netty.handler.codec.EncoderException;
 import io.netty.util.ByteProcessor;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import net.momirealms.craftengine.core.registry.Registry;
 import net.momirealms.craftengine.core.world.BlockPos;
 import net.momirealms.sparrow.nbt.NBT;
 import net.momirealms.sparrow.nbt.Tag;
@@ -58,14 +60,26 @@ public class FriendlyByteBuf extends ByteBuf {
     public <T> void writeCollection(Collection<T> collection, Writer<T> writer) {
         this.writeVarInt(collection.size());
 
-        for(T t0 : collection) {
+        for (T t0 : collection) {
             writer.accept(this, t0);
         }
-
     }
 
     public BlockPos readBlockPos() {
         return BlockPos.of(this.readLong());
+    }
+
+    public OptionalInt readOptionalVarInt() {
+        int i = this.readVarInt();
+        return i == 0 ? OptionalInt.empty() : OptionalInt.of(i - 1);
+    }
+
+    public void writeOptionalVarInt(OptionalInt optionalInt) {
+        if (optionalInt.isPresent()) {
+            this.writeVarInt(optionalInt.getAsInt() + 1);
+        } else {
+            this.writeVarInt(0);
+        }
     }
 
     public int readContainerId() {
@@ -331,6 +345,11 @@ public class FriendlyByteBuf extends ByteBuf {
         return byteArray;
     }
 
+    public <T> T readById(Registry<T> registry) {
+        int id = this.readVarInt();
+        return registry.getValue(id);
+    }
+
     public int readVarInt() {
         int value = 0;
         int shift = 0;
@@ -376,6 +395,49 @@ public class FriendlyByteBuf extends ByteBuf {
         }
         this.writeByte(value & 127);
         return this;
+    }
+
+    public <T> Either<Integer, T> readHolder(Reader<T> reader) {
+        int id = this.readVarInt();
+        if (id == 0) {
+            return Either.right(reader.apply(this));
+        } else {
+            return Either.left(id - 1);
+        }
+    }
+
+    public <T> void writeHolder(Either<Integer, T> holder, Writer<T> writer) {
+        holder.ifLeft(i -> writeVarInt(i + 1)).ifRight(t -> {
+            writeVarInt(0);
+            writer.accept(this, t);
+        });
+    }
+
+    public Either<List<Integer>, Key> readHolderSet() {
+        int id = this.readVarInt();
+        if (id == 0) {
+            return Either.right(readKey());
+        } else {
+            List<Integer> list = new ArrayList<>();
+            for (int i = 0; i < id - 1; ++i) {
+                list.add(readVarInt());
+            }
+            return Either.left(list);
+        }
+    }
+
+    public void writeHolderSet(Either<List<Integer>, Key> holderSet) {
+        holderSet.ifLeft(
+            ints -> {
+                writeVarInt(ints.size() + 1);
+                for (Integer anInt : ints) {
+                    writeVarInt(anInt);
+                }
+            }
+        ).ifRight(key -> {
+            writeVarInt(0);
+            writeKey(key);
+        });
     }
 
     public FriendlyByteBuf writeVarLong(long value) {

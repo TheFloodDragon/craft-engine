@@ -5,5 +5,5 @@ images:
     font: minecraft:icons
     file: minecraft:font/image/icons.png
     chars:
-     - '\ub000\ub001'
-     - '\ub002\ub003'
+      - \ub000\ub001
+      - \ub002\ub003

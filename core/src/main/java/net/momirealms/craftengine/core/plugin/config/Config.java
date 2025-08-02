@@ -20,10 +20,7 @@ import net.momirealms.craftengine.core.plugin.PluginProperties;
 import net.momirealms.craftengine.core.plugin.locale.LocalizedResourceConfigException;
 import net.momirealms.craftengine.core.plugin.locale.TranslationManager;
 import net.momirealms.craftengine.core.plugin.logger.filter.DisconnectLogFilter;
-import net.momirealms.craftengine.core.util.AdventureHelper;
-import net.momirealms.craftengine.core.util.Key;
-import net.momirealms.craftengine.core.util.MinecraftVersion;
-import net.momirealms.craftengine.core.util.MiscUtils;
+import net.momirealms.craftengine.core.util.*;
 import net.momirealms.craftengine.core.world.InjectionTarget;
 import net.momirealms.craftengine.core.world.chunk.storage.CompressionMethod;
 
@@ -129,6 +126,7 @@ public class Config {
     protected boolean recipe$enable;
     protected boolean recipe$disable_vanilla_recipes$all;
     protected Set<Key> recipe$disable_vanilla_recipes$list;
+    protected List<String> recipe$ingredient_sources;
 
     protected boolean image$illegal_characters_filter$command;
     protected boolean image$illegal_characters_filter$chat;
@@ -149,6 +147,7 @@ public class Config {
     protected boolean image$intercept_packets$player_info;
     protected boolean image$intercept_packets$set_score;
     protected boolean image$intercept_packets$item;
+    protected boolean image$intercept_packets$advancement;
 
     protected boolean item$client_bound_model;
     protected boolean item$non_italic_tag;
@@ -252,8 +251,11 @@ public class Config {
         resource_pack$override_uniform_font = config.getBoolean("resource-pack.override-uniform-font", false);
         resource_pack$generate_mod_assets = config.getBoolean("resource-pack.generate-mod-assets", false);
         resource_pack$remove_tinted_leaves_particle = config.getBoolean("resource-pack.remove-tinted-leaves-particle", true);
-        resource_pack$supported_version$min = getVersion(config.get("resource-pack.supported-version.min", "1.20").toString());
+        resource_pack$supported_version$min = getVersion(config.get("resource-pack.supported-version.min", "SERVER").toString());
         resource_pack$supported_version$max = getVersion(config.get("resource-pack.supported-version.max", "LATEST").toString());
+        if (resource_pack$supported_version$min.isAbove(resource_pack$supported_version$max)) {
+            resource_pack$supported_version$min = resource_pack$supported_version$max;
+        }
         resource_pack$merge_external_folders = config.getStringList("resource-pack.merge-external-folders");
         resource_pack$merge_external_zips = config.getStringList("resource-pack.merge-external-zip-files");
         resource_pack$exclude_file_extensions = new HashSet<>(config.getStringList("resource-pack.exclude-file-extensions"));
@@ -370,6 +372,7 @@ public class Config {
         recipe$enable = config.getBoolean("recipe.enable", true);
         recipe$disable_vanilla_recipes$all = config.getBoolean("recipe.disable-vanilla-recipes.all", false);
         recipe$disable_vanilla_recipes$list = config.getStringList("recipe.disable-vanilla-recipes.list").stream().map(Key::of).collect(Collectors.toSet());
+        recipe$ingredient_sources = config.getStringList("recipe.ingredient-sources");
 
         // image
         image$illegal_characters_filter$anvil = config.getBoolean("image.illegal-characters-filter.anvil", true);
@@ -391,6 +394,7 @@ public class Config {
         image$intercept_packets$player_info = config.getBoolean("image.intercept-packets.player-info", true);
         image$intercept_packets$set_score = config.getBoolean("image.intercept-packets.set-score", true);
         image$intercept_packets$item = config.getBoolean("image.intercept-packets.item", true);
+        image$intercept_packets$advancement = config.getBoolean("image.intercept-packets.advancement", true);
 
         // emoji
         emoji$chat = config.getBoolean("emoji.chat", true);
@@ -404,6 +408,9 @@ public class Config {
     private static MinecraftVersion getVersion(String version) {
         if (version.equalsIgnoreCase("LATEST")) {
             return new MinecraftVersion(PluginProperties.getValue("latest-version"));
+        }
+        if (version.equalsIgnoreCase("SERVER")) {
+            return VersionHelper.MINECRAFT_VERSION;
         }
         return MinecraftVersion.parse(version);
     }
@@ -740,6 +747,10 @@ public class Config {
         return instance.image$intercept_packets$item;
     }
 
+    public static boolean interceptAdvancement() {
+        return instance.image$intercept_packets$advancement;
+    }
+
     public static boolean predictBreaking() {
         return instance.block$predict_breaking;
     }
@@ -818,6 +829,14 @@ public class Config {
 
     public static boolean globalClientboundModel() {
         return instance.item$client_bound_model;
+    }
+
+    public static List<String> recipeIngredientSources() {
+        return instance.recipe$ingredient_sources;
+    }
+
+    public void setObf(boolean enable) {
+        this.resource_pack$protection$obfuscation$enable = enable;
     }
 
     public YamlDocument loadOrCreateYamlData(String fileName) {

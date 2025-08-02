@@ -11,6 +11,7 @@ import io.netty.handler.codec.EncoderException;
 import io.netty.util.ByteProcessor;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.core.registry.Registry;
 import net.momirealms.craftengine.core.world.BlockPos;
 import net.momirealms.sparrow.nbt.NBT;
@@ -21,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
@@ -28,6 +30,7 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -46,22 +49,60 @@ public class FriendlyByteBuf extends ByteBuf {
         return source;
     }
 
+    public Component readComponent() {
+        if (VersionHelper.isOrAbove1_20_3()) {
+            return AdventureHelper.nbtToComponent(this.readNbt(false));
+        } else {
+            return AdventureHelper.jsonToComponent(this.readUtf());
+        }
+    }
+
+    public void writeComponent(Component component) {
+        if (VersionHelper.isOrAbove1_20_3()) {
+            this.writeNbt(AdventureHelper.componentToNbt(component), false);
+        } else {
+            this.writeUtf(AdventureHelper.componentToJson(component));
+        }
+    }
+
+    public Instant readInstant() {
+        return Instant.ofEpochMilli(this.readLong());
+    }
+
+    public void writeInstant(Instant instant) {
+        this.writeLong(instant.toEpochMilli());
+    }
+
     public <T, C extends Collection<T>> C readCollection(IntFunction<C> collectionFactory, Reader<T> reader) {
         int i = this.readVarInt();
-        C c0 = (C)(collectionFactory.apply(i));
-
+        C collection = collectionFactory.apply(i);
         for(int j = 0; j < i; ++j) {
-            c0.add(reader.apply(this));
+            collection.add(reader.apply(this));
         }
-
-        return c0;
+        return collection;
     }
 
     public <T> void writeCollection(Collection<T> collection, Writer<T> writer) {
         this.writeVarInt(collection.size());
+        for (T t : collection) {
+            writer.accept(this, t);
+        }
+    }
 
-        for (T t0 : collection) {
-            writer.accept(this, t0);
+    @SuppressWarnings("unchecked")
+    public <T> T[] readArray(Reader<T> reader, Class<T> type) {
+        int i = this.readVarInt();
+        T[] array = (T[]) Array.newInstance(type, i);
+        for(int j = 0; j < i; ++j) {
+            array[j] = reader.apply(this);
+        }
+        return array;
+    }
+
+    public <T> void writeArray(T[] array, Writer<T> writer) {
+        this.writeVarInt(array.length);
+        for(T t : array) {
+            writer.accept(this, t);
         }
     }
 
@@ -348,6 +389,10 @@ public class FriendlyByteBuf extends ByteBuf {
     public <T> T readById(Registry<T> registry) {
         int id = this.readVarInt();
         return registry.getValue(id);
+    }
+
+    public <T> void writeById(Registry<T> registry, T value) {
+        this.writeVarInt(registry.getId(value));
     }
 
     public int readVarInt() {

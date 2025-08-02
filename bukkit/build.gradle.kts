@@ -1,5 +1,5 @@
 plugins {
-    id("com.gradleup.shadow") version "9.0.0-beta13"
+    id("com.gradleup.shadow") version "9.0.0-rc2"
     id("maven-publish")
 }
 
@@ -98,6 +98,7 @@ tasks {
         relocate("com.ezylang.evalex", "net.momirealms.craftengine.libraries.evalex")
         relocate("com.google.common.jimfs", "net.momirealms.craftengine.libraries.jimfs")
         relocate("org.apache.commons", "net.momirealms.craftengine.libraries.commons")
+        relocate("io.leangen.geantyref", "net.momirealms.craftengine.libraries.geantyref")
     }
 }
 

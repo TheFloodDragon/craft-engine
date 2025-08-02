@@ -2290,12 +2290,26 @@ public final class CoreReflections {
 
     public static final Constructor<?> constructor$SmithingTransformRecipe = requireNonNull(
             VersionHelper.isOrAbove1_21_5()
-                    ? ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, Optional.class, clazz$Ingredient, Optional.class, clazz$TransmuteResult)
-                    : VersionHelper.isOrAbove1_21_2()
-                    ? ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, Optional.class, Optional.class, Optional.class, clazz$ItemStack)
-                    : VersionHelper.isOrAbove1_20_2()
-                    ? ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, clazz$Ingredient, clazz$Ingredient, clazz$Ingredient, clazz$ItemStack)
-                    : ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, clazz$ResourceLocation, clazz$Ingredient, clazz$Ingredient, clazz$Ingredient, clazz$ItemStack)
+            ? ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, Optional.class, clazz$Ingredient, Optional.class, clazz$TransmuteResult)
+            : VersionHelper.isOrAbove1_21_2()
+            ? ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, Optional.class, Optional.class, Optional.class, clazz$ItemStack)
+            : VersionHelper.isOrAbove1_20_2()
+            ? ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, clazz$Ingredient, clazz$Ingredient, clazz$Ingredient, clazz$ItemStack)
+            : ReflectionUtils.getConstructor(clazz$SmithingTransformRecipe, clazz$ResourceLocation, clazz$Ingredient, clazz$Ingredient, clazz$Ingredient, clazz$ItemStack)
+    );
+
+    public static final Class<?> clazz$SmithingTrimRecipe = requireNonNull(
+            ReflectionUtils.getClazz(BukkitReflectionUtils.assembleMCClass("world.item.crafting.SmithingTrimRecipe"))
+    );
+
+    public static final Constructor<?> constructor$SmithingTrimRecipe = requireNonNull(
+            VersionHelper.isOrAbove1_21_5() ?
+            ReflectionUtils.getConstructor(clazz$SmithingTrimRecipe, clazz$Ingredient, clazz$Ingredient, clazz$Ingredient, clazz$Holder) :
+            VersionHelper.isOrAbove1_21_2() ?
+            ReflectionUtils.getConstructor(clazz$SmithingTrimRecipe, Optional.class, Optional.class, Optional.class) :
+            VersionHelper.isOrAbove1_20_2() ?
+            ReflectionUtils.getConstructor(clazz$SmithingTrimRecipe, clazz$Ingredient, clazz$Ingredient, clazz$Ingredient) :
+            ReflectionUtils.getConstructor(clazz$SmithingTrimRecipe, clazz$ResourceLocation, clazz$Ingredient, clazz$Ingredient, clazz$Ingredient)
     );
 
     public static final Method method$RecipeManager$addRecipe = requireNonNull(
@@ -3732,7 +3746,7 @@ public final class CoreReflections {
             .orElse( null);
 
     public static final Field field$ServerCommonPacketListenerImpl$closed = MiscUtils.requireNonNullIf(
-            ReflectionUtils.getDeclaredField(clazz$ServerCommonPacketListenerImpl, boolean.class, VersionHelper.isOrAbove1_21_6() ? 1 : 2),
+            ReflectionUtils.getDeclaredField(clazz$ServerCommonPacketListenerImpl, "closed", "n"),
             VersionHelper.isOrAbove1_20_5()
     );
 
@@ -3763,5 +3777,193 @@ public final class CoreReflections {
                     VersionHelper.isOrAbove1_20_3() ? clazz$BlockState : void.class,
                     clazz$Level, clazz$BlockPos, clazz$BlockState, clazz$Player
             )
+    );
+
+    public static final Class<?> clazz$BlockItem = requireNonNull(
+            BukkitReflectionUtils.findReobfOrMojmapClass(
+                    "world.item.ItemBlock",
+                    "world.item.BlockItem"
+            )
+    );
+
+    public static final Class<?> clazz$ArmorTrim = requireNonNull(
+            ReflectionUtils.getClazz(
+                    VersionHelper.isOrAbove1_21_2() ?
+                    BukkitReflectionUtils.assembleMCClass("world.item.equipment.trim.ArmorTrim") :
+                    BukkitReflectionUtils.assembleMCClass("world.item.armortrim.ArmorTrim")
+            )
+    );
+
+    public static final Field field$ArmorTrim$CODEC = requireNonNull(
+            ReflectionUtils.getDeclaredField(clazz$ArmorTrim, Codec.class, 0)
+    );
+
+    public static final Codec<?> instance$ArmorTrim$CODEC;
+
+    static {
+        try {
+            instance$ArmorTrim$CODEC = (Codec<?>) field$ArmorTrim$CODEC.get(null);
+        } catch (ReflectiveOperationException e) {
+            throw new ReflectionInitException("Failed to initialize ArmorTrim CODEC", e);
+        }
+    }
+
+    public static final Method method$ArmorTrim$setTrim = ReflectionUtils.getStaticMethod(
+            clazz$ArmorTrim, boolean.class, clazz$RegistryAccess, clazz$ItemStack, clazz$ArmorTrim
+    );
+
+    public static final Method method$ArmorTrim$getTrim =
+            VersionHelper.isOrAbove1_20_2() ?
+            ReflectionUtils.getStaticMethod(clazz$ArmorTrim, Optional.class, clazz$RegistryAccess, clazz$ItemStack, boolean.class) :
+            ReflectionUtils.getStaticMethod(clazz$ArmorTrim, Optional.class, clazz$RegistryAccess, clazz$ItemStack);
+
+    public static final Method method$BlockBehaviour$spawnAfterBreak = requireNonNull(
+            ReflectionUtils.getDeclaredMethod(
+                    clazz$BlockBehaviour, void.class, clazz$BlockState, clazz$ServerLevel, clazz$BlockPos, clazz$ItemStack, boolean.class
+            )
+    );
+
+    // 1.20~1.21.4
+    public static final Method method$BlockBehaviour$onRemove = MiscUtils.requireNonNullIf(
+            ReflectionUtils.getDeclaredMethod(
+                    clazz$BlockBehaviour, void.class, clazz$BlockState, clazz$Level, clazz$BlockPos, clazz$BlockState, boolean.class
+            ),
+            !VersionHelper.isOrAbove1_21_5()
+    );
+    public static final Object instance$CollisionContext$empty;
+
+    static {
+        try {
+            instance$CollisionContext$empty = requireNonNull(method$CollisionContext$empty.invoke(null));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // 1.21.6+
+    public static final Method method$CollisionContext$placementContext = MiscUtils.requireNonNullIf(ReflectionUtils.getStaticMethod(
+            clazz$CollisionContext, clazz$CollisionContext, clazz$Player
+    ), VersionHelper.isOrAbove1_21_6());
+
+    public static final Constructor<?> constructor$BlockHitResult = requireNonNull(
+            ReflectionUtils.getConstructor(
+                    CoreReflections.clazz$BlockHitResult, CoreReflections.clazz$Vec3, CoreReflections.clazz$Direction, CoreReflections.clazz$BlockPos, boolean.class
+            )
+    );
+
+    public static final Class<?> clazz$HashOps = MiscUtils.requireNonNullIf(
+            ReflectionUtils.getClazz(BukkitReflectionUtils.assembleMCClass("util.HashOps")),
+            VersionHelper.isOrAbove1_21_5()
+    );
+
+    public static final Field field$HashOps$CRC32C_INSTANCE = Optional.ofNullable(clazz$HashOps)
+            .map(it -> ReflectionUtils.getDeclaredField(it, it, 0))
+            .orElse(null);
+
+    public static final Object instance$HashOps$CRC32C_INSTANCE;
+
+    static {
+        try {
+            if (VersionHelper.isOrAbove1_21_5()) {
+                instance$HashOps$CRC32C_INSTANCE = field$HashOps$CRC32C_INSTANCE.get(null);
+            } else {
+                instance$HashOps$CRC32C_INSTANCE = null;
+            }
+        } catch (ReflectiveOperationException e) {
+            throw new ReflectionInitException("Failed to initialize HashOps", e);
+        }
+    }
+
+    public static final Class<?> clazz$SnowLayerBlock = requireNonNull(
+            BukkitReflectionUtils.findReobfOrMojmapClass(
+                    "world.level.block.BlockSnow",
+                    "world.level.block.SnowLayerBlock"
+            )
+    );
+
+    public static final Field field$SnowLayerBlock$LAYERS = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$SnowLayerBlock, clazz$IntegerProperty, 0
+            )
+    );
+
+    public static final Object instance$SnowLayerBlock$LAYERS;
+
+    static {
+        try {
+            instance$SnowLayerBlock$LAYERS = field$SnowLayerBlock$LAYERS.get(null);
+        } catch (IllegalAccessException e) {
+            throw new ReflectionInitException("Failed to initialize SnowLayerBlock$LAYERS", e);
+        }
+    }
+
+    public static final Class<?> clazz$DyeItem = requireNonNull(
+            BukkitReflectionUtils.findReobfOrMojmapClass(
+                    "world.item.ItemDye",
+                    "world.item.DyeItem"
+            )
+    );
+
+    public static final Method method$Recipe$matches = requireNonNull(
+            VersionHelper.isOrAbove1_21() ?
+            ReflectionUtils.getMethod(clazz$Recipe, boolean.class, clazz$RecipeInput, clazz$Level) :
+            ReflectionUtils.getMethod(clazz$Recipe, boolean.class, clazz$Container, clazz$Level)
+    );
+
+    public static final Method method$Recipe$assemble = requireNonNull(
+            VersionHelper.isOrAbove1_21() ?
+            ReflectionUtils.getMethod(clazz$Recipe, clazz$ItemStack, clazz$RecipeInput, clazz$HolderLookup$Provider) :
+            VersionHelper.isOrAbove1_20_5() ?
+            ReflectionUtils.getMethod(clazz$Recipe, clazz$ItemStack, clazz$Container, clazz$HolderLookup$Provider) :
+            ReflectionUtils.getMethod(clazz$Recipe, clazz$ItemStack, clazz$Container, clazz$RegistryAccess)
+    );
+
+    public static final Class<?> clazz$CraftingBookCategory = requireNonNull(
+            BukkitReflectionUtils.findReobfOrMojmapClass(
+                    "world.item.crafting.CraftingBookCategory",
+                    "world.item.crafting.CraftingBookCategory"
+            )
+    );
+
+    public static final Method method$CraftingBookCategory$values = requireNonNull(
+            ReflectionUtils.getStaticMethod(clazz$CraftingBookCategory, clazz$CraftingBookCategory.arrayType())
+    );
+
+    public static final Object instance$CraftingBookCategory$BUILDING;
+    public static final Object instance$CraftingBookCategory$REDSTONE;
+    public static final Object instance$CraftingBookCategory$EQUIPMENT;
+    public static final Object instance$CraftingBookCategory$MISC;
+
+    static {
+        try {
+            Object[] values = (Object[]) method$CraftingBookCategory$values.invoke(null);
+            instance$CraftingBookCategory$BUILDING = values[0];
+            instance$CraftingBookCategory$REDSTONE = values[1];
+            instance$CraftingBookCategory$EQUIPMENT = values[2];
+            instance$CraftingBookCategory$MISC = values[3];
+        } catch (ReflectiveOperationException e) {
+            throw new ReflectionInitException("Failed to initialize CraftingBookCategory", e);
+        }
+    }
+
+    public static final Class<?> clazz$CraftingInput = MiscUtils.requireNonNullIf(
+            BukkitReflectionUtils.findReobfOrMojmapClass(
+                    "world.item.crafting.CraftingInput",
+                    "world.item.crafting.CraftingInput"
+            ), VersionHelper.isOrAbove1_21()
+    );
+
+    public static final Class<?> clazz$CraftingContainer = requireNonNull(
+            BukkitReflectionUtils.findReobfOrMojmapClass(
+                    "world.inventory.InventoryCrafting",
+                    "world.inventory.CraftingContainer"
+            )
+    );
+
+    public static final Class<?> clazz$DyeableLeatherItem = MiscUtils.requireNonNullIf(
+            BukkitReflectionUtils.findReobfOrMojmapClass(
+                    "world.item.IDyeable",
+                    "world.item.DyeableLeatherItem"
+            ), !VersionHelper.isOrAbove1_20_5()
     );
 }

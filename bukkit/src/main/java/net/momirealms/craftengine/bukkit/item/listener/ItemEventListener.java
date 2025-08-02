@@ -36,6 +36,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Openable;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -66,14 +67,22 @@ public class ItemEventListener implements Listener {
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
     public void onInteractEntity(PlayerInteractEntityEvent event) {
-        BukkitServerPlayer serverPlayer = this.plugin.adapt(event.getPlayer());
+        Player player = event.getPlayer();
+        Entity entity = event.getRightClicked();
+        BukkitServerPlayer serverPlayer = this.plugin.adapt(player);
         if (serverPlayer == null) return;
+
         InteractionHand hand = event.getHand() == EquipmentSlot.HAND ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+        // prevent duplicated interact air events
+        serverPlayer.updateLastInteractEntityTick(hand);
+
         Item<ItemStack> itemInHand = serverPlayer.getItemInHand(hand);
 
-        if (itemInHand == null) return;
+        if (ItemUtils.isEmpty(itemInHand)) return;
         Optional<CustomItem<ItemStack>> optionalCustomItem = itemInHand.getCustomItem();
         if (optionalCustomItem.isEmpty()) return;
+        // 如果目标实体与手中物品可以产生交互，那么忽略
+        if (InteractUtils.isEntityInteractable(player, entity, itemInHand)) return;
 
         Cancellable cancellable = Cancellable.of(event::isCancelled, event::setCancelled);
         PlayerOptionalContext context = PlayerOptionalContext.of(serverPlayer, ContextHolder.builder()
@@ -158,7 +167,7 @@ public class ItemEventListener implements Listener {
                     .withParameter(DirectContextParameters.HAND, hand)
                     .withParameter(DirectContextParameters.EVENT, dummy)
                     .withParameter(DirectContextParameters.POSITION, LocationUtils.toWorldPosition(block.getLocation()))
-                    .withOptionalParameter(DirectContextParameters.ITEM_IN_HAND, itemInHand)
+                    .withOptionalParameter(DirectContextParameters.ITEM_IN_HAND, ItemUtils.isEmpty(itemInHand) ? null : itemInHand)
             );
             if (action.isRightClick()) customBlock.execute(context, EventTrigger.RIGHT_CLICK);
             else customBlock.execute(context, EventTrigger.LEFT_CLICK);
@@ -213,8 +222,8 @@ public class ItemEventListener implements Listener {
             }
         }
 
-        Optional<CustomItem<ItemStack>> optionalCustomItem = itemInHand == null ? Optional.empty() : itemInHand.getCustomItem();
-        boolean hasItem = itemInHand != null;
+        boolean hasItem = !itemInHand.isEmpty();
+        Optional<CustomItem<ItemStack>> optionalCustomItem = hasItem ? itemInHand.getCustomItem() : Optional.empty();
         boolean hasCustomItem = optionalCustomItem.isPresent();
 
         // interact block with items
@@ -263,25 +272,7 @@ public class ItemEventListener implements Listener {
                 }
             }
 
-            // execute item right click functions
-            if (hasCustomItem) {
-                Cancellable dummy = Cancellable.dummy();
-                PlayerOptionalContext context = PlayerOptionalContext.of(serverPlayer, ContextHolder.builder()
-                        .withParameter(DirectContextParameters.BLOCK, new BukkitBlockInWorld(block))
-                        .withOptionalParameter(DirectContextParameters.CUSTOM_BLOCK_STATE, immutableBlockState)
-                        .withOptionalParameter(DirectContextParameters.ITEM_IN_HAND, itemInHand)
-                        .withParameter(DirectContextParameters.POSITION, LocationUtils.toWorldPosition(block.getLocation()))
-                        .withParameter(DirectContextParameters.HAND, hand)
-                        .withParameter(DirectContextParameters.EVENT, dummy)
-                );
-                CustomItem<ItemStack> customItem = optionalCustomItem.get();
-                customItem.execute(context, EventTrigger.RIGHT_CLICK);
-                if (dummy.isCancelled()) {
-                    event.setCancelled(true);
-                    return;
-                }
-            }
-
+            // 优先检查物品行为，再执行自定义事件
             // 检查其他的物品行为，物品行为理论只在交互时处理
             Optional<List<ItemBehavior>> optionalItemBehaviors = itemInHand.getItemBehavior();
             // 物品类型是否包含自定义物品行为，行为不一定来自于自定义物品，部分原版物品也包含了新的行为
@@ -309,8 +300,31 @@ public class ItemEventListener implements Listener {
                     }
                 }
             }
+
+            // 执行物品右键事件
+            if (hasCustomItem) {
+                // 要求服务端侧这个方块不可交互，或玩家处于潜行状态
+                if (serverPlayer.isSecondaryUseActive() || !InteractUtils.isInteractable(player, blockData, hitResult, itemInHand)) {
+                    Cancellable dummy = Cancellable.dummy();
+                    PlayerOptionalContext context = PlayerOptionalContext.of(serverPlayer, ContextHolder.builder()
+                            .withParameter(DirectContextParameters.BLOCK, new BukkitBlockInWorld(block))
+                            .withOptionalParameter(DirectContextParameters.CUSTOM_BLOCK_STATE, immutableBlockState)
+                            .withOptionalParameter(DirectContextParameters.ITEM_IN_HAND, itemInHand)
+                            .withParameter(DirectContextParameters.POSITION, LocationUtils.toWorldPosition(block.getLocation()))
+                            .withParameter(DirectContextParameters.HAND, hand)
+                            .withParameter(DirectContextParameters.EVENT, dummy)
+                    );
+                    CustomItem<ItemStack> customItem = optionalCustomItem.get();
+                    customItem.execute(context, EventTrigger.RIGHT_CLICK);
+                    if (dummy.isCancelled()) {
+                        event.setCancelled(true);
+                        return;
+                    }
+                }
+            }
         }
 
+        // 执行物品左键事件
         if (hasCustomItem && action == Action.LEFT_CLICK_BLOCK) {
             Cancellable dummy = Cancellable.dummy();
             PlayerOptionalContext context = PlayerOptionalContext.of(serverPlayer, ContextHolder.builder()
@@ -340,11 +354,16 @@ public class ItemEventListener implements Listener {
             return;
         // Gets the item in hand
         InteractionHand hand = event.getHand() == EquipmentSlot.HAND ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+        // prevents duplicated events
+        if (serverPlayer.lastInteractEntityCheck(hand)) {
+            return;
+        }
+
         Item<ItemStack> itemInHand = serverPlayer.getItemInHand(hand);
         // should never be null
-        if (itemInHand == null) return;
+        if (ItemUtils.isEmpty(itemInHand)) return;
 
-        // todo 真的需要这个吗
+        // TODO 有必要存在吗？
         if (cancelEventIfHasInteraction(event, serverPlayer, hand)) {
             return;
         }
@@ -384,7 +403,7 @@ public class ItemEventListener implements Listener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onConsumeItem(PlayerItemConsumeEvent event) {
         ItemStack consumedItem = event.getItem();
-        if (ItemUtils.isEmpty(consumedItem)) return;
+        if (ItemStackUtils.isEmpty(consumedItem)) return;
         Item<ItemStack> wrapped = this.plugin.itemManager().wrap(consumedItem);
         Optional<CustomItem<ItemStack>> optionalCustomItem = wrapped.getCustomItem();
         if (optionalCustomItem.isEmpty()) {
@@ -417,7 +436,7 @@ public class ItemEventListener implements Listener {
         if (VersionHelper.isOrAbove1_20_5()) return;
         if (!(event.getEntity() instanceof Player player)) return;
         ItemStack consumedItem = event.getItem();
-        if (ItemUtils.isEmpty(consumedItem)) return;
+        if (ItemStackUtils.isEmpty(consumedItem)) return;
         Item<ItemStack> wrapped = this.plugin.itemManager().wrap(consumedItem);
         Optional<CustomItem<ItemStack>> optionalCustomItem = wrapped.getCustomItem();
         if (optionalCustomItem.isEmpty()) {
@@ -449,7 +468,7 @@ public class ItemEventListener implements Listener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onEntityDamage(EntityDamageEvent event) {
         if (event.getEntity() instanceof org.bukkit.entity.Item item) {
-            Optional.ofNullable(this.plugin.itemManager().wrap(item.getItemStack()))
+            Optional.of(this.plugin.itemManager().wrap(item.getItemStack()))
                     .flatMap(Item::getCustomItem)
                     .ifPresent(it -> {
                         if (it.settings().invulnerable().contains(DamageCauseUtils.fromBukkit(event.getCause()))) {
@@ -459,6 +478,7 @@ public class ItemEventListener implements Listener {
         }
     }
 
+    // 禁止附魔
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onEnchant(PrepareItemEnchantEvent event) {
         ItemStack itemToEnchant = event.getItem();
@@ -471,6 +491,7 @@ public class ItemEventListener implements Listener {
         }
     }
 
+    // 自定义堆肥改了
     @EventHandler(ignoreCancelled = true)
     public void onCompost(CompostItemEvent event) {
         ItemStack itemToCompost = event.getItem();
@@ -480,6 +501,7 @@ public class ItemEventListener implements Listener {
         event.setWillRaiseLevel(RandomUtils.generateRandomFloat(0, 1) < optionalCustomItem.get().settings().compostProbability());
     }
 
+    // 用于附魔台纠正
     @EventHandler(ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getInventory() instanceof EnchantingInventory inventory)) return;
@@ -487,9 +509,9 @@ public class ItemEventListener implements Listener {
         ItemStack lazuli = inventory.getSecondary();
         if (lazuli != null) return;
         ItemStack item = inventory.getItem();
-        if (item == null) return;
+        if (ItemStackUtils.isEmpty(item)) return;
         Item<ItemStack> wrapped = this.plugin.itemManager().wrap(item);
-        if (wrapped == null) return;
+        if (ItemUtils.isEmpty(wrapped)) return;
         Optional<CustomItem<ItemStack>> optionalCustomItem = wrapped.getCustomItem();
         if (optionalCustomItem.isEmpty()) return;
         BukkitCustomItem customItem = (BukkitCustomItem) optionalCustomItem.get();

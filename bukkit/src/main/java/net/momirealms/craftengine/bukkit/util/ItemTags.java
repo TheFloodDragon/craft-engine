@@ -1,6 +1,6 @@
 package net.momirealms.craftengine.bukkit.util;
 
-import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
+import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MRegistries;
 import net.momirealms.craftengine.core.util.Key;
 
@@ -12,21 +12,16 @@ public class ItemTags {
 
     public static final Key AXES = Key.of("minecraft:axes");
     public static final Key SWORDS = Key.of("minecraft:swords");
+    public static final Key DYEABLE = Key.of("minecraft:dyeable");
 
     private ItemTags() {}
 
     public static Object getOrCreate(Key key) {
         Object value = CACHE.get(key);
         if (value == null) {
-            try {
-                value = CoreReflections.method$TagKey$create.invoke(null, MRegistries.ITEM, KeyUtils.toResourceLocation(key));
-                CACHE.put(key, value);
-                return value;
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to create block tag: " + key, e);
-            }
-        } else {
-            return value;
+            value = FastNMS.INSTANCE.method$TagKey$create(MRegistries.ITEM, KeyUtils.toResourceLocation(key));
+            CACHE.put(key, value);
         }
+        return value;
     }
 }

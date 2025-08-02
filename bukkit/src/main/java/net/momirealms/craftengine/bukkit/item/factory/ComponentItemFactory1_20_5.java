@@ -10,25 +10,30 @@ import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MBuiltInReg
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MRegistryOps;
 import net.momirealms.craftengine.bukkit.util.EnchantmentUtils;
 import net.momirealms.craftengine.bukkit.util.KeyUtils;
+import net.momirealms.craftengine.core.attribute.AttributeModifier;
+import net.momirealms.craftengine.core.item.ComponentKeys;
 import net.momirealms.craftengine.core.item.data.Enchantment;
 import net.momirealms.craftengine.core.item.data.FireworkExplosion;
 import net.momirealms.craftengine.core.item.data.Trim;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
-import net.momirealms.craftengine.core.util.Key;
-import net.momirealms.craftengine.core.util.MiscUtils;
+import net.momirealms.craftengine.core.util.*;
 import net.momirealms.sparrow.nbt.CompoundTag;
+import net.momirealms.sparrow.nbt.ListTag;
 import net.momirealms.sparrow.nbt.Tag;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemWrapper> {
 
     public ComponentItemFactory1_20_5(CraftEngine plugin) {
         super(plugin);
+    }
+
+    @Override
+    protected boolean isEmpty(ComponentItemWrapper item) {
+        return item.getItem().isEmpty();
     }
 
     @Override
@@ -67,8 +72,29 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
         return currentObj;
     }
 
+    @SuppressWarnings("DuplicatedCode")
     @Override
-    protected Tag getNBTTag(ComponentItemWrapper item, Object... path) {
+    protected Object getExactTag(ComponentItemWrapper item, Object... path) {
+        Object customData = getExactComponent(item, ComponentTypes.CUSTOM_DATA);
+        if (customData == null) return null;
+        Object currentTag = FastNMS.INSTANCE.method$CustomData$getUnsafe(customData);
+        for (int i = 0; i < path.length; i++) {
+            Object pathSegment = path[i];
+            if (pathSegment == null) return null;
+            currentTag = FastNMS.INSTANCE.method$CompoundTag$get(currentTag, path[i].toString());
+            if (currentTag == null) return null;
+            if (i == path.length - 1) {
+                return currentTag;
+            }
+            if (!CoreReflections.clazz$CompoundTag.isInstance(currentTag)) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    protected Tag getTag(ComponentItemWrapper item, Object... path) {
         CompoundTag rootTag = (CompoundTag) item.getSparrowNBTComponent(ComponentTypes.CUSTOM_DATA).orElse(null);
         if (rootTag == null) return null;
         Tag currentTag = rootTag;
@@ -102,7 +128,7 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
             valueTag = MRegistryOps.JAVA.convertTo(MRegistryOps.SPARROW_NBT, value);
         }
 
-        CompoundTag rootTag = (CompoundTag) item.getSparrowNBTComponent(ComponentTypes.CUSTOM_DATA).orElse(new CompoundTag());
+        CompoundTag rootTag = (CompoundTag) item.getSparrowNBTComponent(ComponentTypes.CUSTOM_DATA).orElseGet(CompoundTag::new);
 
         if (path == null || path.length == 0) {
             if (valueTag instanceof CompoundTag) {
@@ -135,7 +161,7 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
 
     @Override
     protected boolean hasTag(ComponentItemWrapper item, Object... path) {
-        return getNBTTag(item, path) != null;
+        return getTag(item, path) != null;
     }
 
     @Override
@@ -214,6 +240,11 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
     @Override
     protected Object getExactComponent(ComponentItemWrapper item, Object type) {
         return item.getComponentExact(type);
+    }
+
+    @Override
+    protected void setExactComponent(ComponentItemWrapper item, Object type, Object value) {
+        item.setComponentExact(type, value);
     }
 
     @Override
@@ -355,23 +386,23 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
     }
 
     @Override
-    protected Optional<Integer> dyedColor(ComponentItemWrapper item) {
+    protected Optional<Color> dyedColor(ComponentItemWrapper item) {
         if (!item.hasComponent(ComponentTypes.DYED_COLOR)) return Optional.empty();
         Object javaObj = getJavaComponent(item, ComponentTypes.DYED_COLOR);
         if (javaObj instanceof Integer integer) {
-            return Optional.of(integer);
+            return Optional.of(Color.fromDecimal(integer));
         } else if (javaObj instanceof Map<?, ?> map) {
-            return Optional.of((int) map.get("rgb"));
+            return Optional.of(Color.fromDecimal((int) map.get("rgb")));
         }
         return Optional.empty();
     }
 
     @Override
-    protected void dyedColor(ComponentItemWrapper item, Integer color) {
+    protected void dyedColor(ComponentItemWrapper item, Color color) {
         if (color == null) {
             item.resetComponent(ComponentTypes.DYED_COLOR);
         } else {
-            item.setJavaComponent(ComponentTypes.DYED_COLOR, color);
+            item.setJavaComponent(ComponentTypes.DYED_COLOR, color.color());
         }
     }
 
@@ -470,8 +501,8 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
             item.resetComponent(ComponentTypes.TRIM);
         } else {
             item.setJavaComponent(ComponentTypes.TRIM, Map.of(
-                    "pattern", trim.pattern(),
-                    "material", trim.material()
+                    "pattern", trim.pattern().asString(),
+                    "material", trim.material().asString()
             ));
         }
     }
@@ -484,7 +515,7 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
         }
         @SuppressWarnings("unchecked")
         Map<String, String> trimMap = (Map<String, String>) trim.get();
-        return Optional.of(new Trim(trimMap.get("pattern"), trimMap.get("material")));
+        return Optional.of(new Trim(Key.of(trimMap.get("pattern")), Key.of(trimMap.get("material"))));
     }
 
     @SuppressWarnings("unchecked")
@@ -554,5 +585,27 @@ public class ComponentItemFactory1_20_5 extends BukkitItemFactory<ComponentItemW
         Object itemStack1 = item.getLiteralObject();
         Object itemStack2 = FastNMS.INSTANCE.method$ItemStack$transmuteCopy(itemStack1, newItem, amount);
         return new ComponentItemWrapper(FastNMS.INSTANCE.method$CraftItemStack$asCraftMirror(itemStack2));
+    }
+
+    @Override
+    protected void attributeModifiers(ComponentItemWrapper item, List<AttributeModifier> modifierList) {
+        CompoundTag compoundTag = (CompoundTag) item.getSparrowNBTComponent(ComponentKeys.ATTRIBUTE_MODIFIERS).orElseGet(CompoundTag::new);
+        ListTag modifiers = new ListTag();
+        compoundTag.put("modifiers", modifiers);
+        for (AttributeModifier modifier : modifierList) {
+            CompoundTag modifierTag = new CompoundTag();
+            modifierTag.putString("type", modifier.type());
+            modifierTag.putString("slot", modifier.slot().name().toLowerCase(Locale.ENGLISH));
+            if (VersionHelper.isOrAbove1_21()) {
+                modifierTag.putString("id", modifier.id().toString());
+            } else {
+                modifierTag.putIntArray("uuid", UUIDUtils.uuidToIntArray(UUID.nameUUIDFromBytes(modifier.id().toString().getBytes(StandardCharsets.UTF_8))));
+                modifierTag.putString("name", modifier.id().toString());
+            }
+            modifierTag.putDouble("amount", modifier.amount());
+            modifierTag.putString("operation", modifier.operation().id());
+            modifiers.add(modifierTag);
+        }
+        item.setSparrowNBTComponent(ComponentKeys.ATTRIBUTE_MODIFIERS, compoundTag);
     }
 }

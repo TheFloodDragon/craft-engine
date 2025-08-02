@@ -13,4 +13,9 @@ public abstract class CustomCraftingTableRecipe<T> extends AbstractGroupedRecipe
     public CraftingRecipeCategory category() {
         return category;
     }
+
+    @Override
+    public RecipeType type() {
+        return RecipeType.CRAFTING;
+    }
 }

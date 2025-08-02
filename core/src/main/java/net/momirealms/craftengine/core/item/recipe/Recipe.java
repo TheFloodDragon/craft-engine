@@ -11,14 +11,14 @@ public interface Recipe<T> {
 
     boolean matches(RecipeInput input);
 
-    T result(ItemBuildContext context);
-
-    CustomRecipeResult<T> result();
+    T assemble(RecipeInput input, ItemBuildContext context);
 
     List<Ingredient<T>> ingredientsInUse();
 
     @NotNull
-    Key type();
+    Key serializerType();
+
+    RecipeType type();
 
     Key id();
 }

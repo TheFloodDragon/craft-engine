@@ -2,13 +2,16 @@ package net.momirealms.craftengine.core.item;
 
 import com.google.gson.JsonElement;
 import net.kyori.adventure.text.Component;
+import net.momirealms.craftengine.core.attribute.AttributeModifier;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.item.data.Enchantment;
 import net.momirealms.craftengine.core.item.data.FireworkExplosion;
 import net.momirealms.craftengine.core.item.data.JukeboxPlayable;
 import net.momirealms.craftengine.core.item.data.Trim;
 import net.momirealms.craftengine.core.item.setting.EquipmentData;
+import net.momirealms.craftengine.core.util.Color;
 import net.momirealms.craftengine.core.util.Key;
+import net.momirealms.craftengine.core.util.UniqueKey;
 import net.momirealms.sparrow.nbt.Tag;
 
 import java.util.List;
@@ -21,6 +24,11 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     AbstractItem(ItemFactory<W, I> factory, W item) {
         this.factory = factory;
         this.item = item;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return this.factory.isEmpty(this.item);
     }
 
     @Override
@@ -101,13 +109,13 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     }
 
     @Override
-    public Item<I> dyedColor(Integer data) {
+    public Item<I> dyedColor(Color data) {
         this.factory.dyedColor(this.item, data);
         return this;
     }
 
     @Override
-    public Optional<Integer> dyedColor() {
+    public Optional<Color> dyedColor() {
         return this.factory.dyedColor(this.item);
     }
 
@@ -151,6 +159,11 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     @Override
     public Key vanillaId() {
         return this.factory.vanillaId(this.item);
+    }
+
+    @Override
+    public UniqueKey recipeIngredientId() {
+        return this.factory.recipeIngredientID(this.item);
     }
 
     @Override
@@ -242,6 +255,12 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     }
 
     @Override
+    public Item<I> attributeModifiers(List<AttributeModifier> modifiers) {
+        this.factory.attributeModifiers(this.item, modifiers);
+        return this;
+    }
+
+    @Override
     public Item<I> unbreakable(boolean unbreakable) {
         this.factory.unbreakable(this.item, unbreakable);
         return this;
@@ -320,8 +339,13 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     }
 
     @Override
-    public Tag getNBTTag(Object... path) {
-        return this.factory.getNBTTag(this.item, path);
+    public Tag getTag(Object... path) {
+        return this.factory.getTag(this.item, path);
+    }
+
+    @Override
+    public Object getExactTag(Object... path) {
+        return this.factory.getExactTag(this.item, path);
     }
 
     @Override
@@ -353,6 +377,11 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     @Override
     public Object getExactComponent(Object type) {
         return this.factory.getExactComponent(this.item, type);
+    }
+
+    @Override
+    public void setExactComponent(Object type, Object value) {
+        this.factory.setExactComponent(this.item, type, value);
     }
 
     @Override

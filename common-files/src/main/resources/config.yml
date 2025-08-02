@@ -57,8 +57,12 @@ resource-pack:
     enable: true
   # Define the name of the overlay folders
   overlay-format: "ce_overlay_{version}"
+  # Allowed values:
+  # - 1.20.1, 1.21, 1.21.8, etc.
+  # - LATEST: the latest client version
+  # - SERVER: the current server version
   supported-version:
-    min: "1.20"
+    min: SERVER
     max: LATEST
   # Remove 1.21.5+ tinted_leaves particles
   remove-tinted-leaves-particle: true
@@ -84,8 +88,6 @@ resource-pack:
         ip: "localhost"
         port: 8163
         protocol: "http"
-        # The optional URL must be complete and include a trailing slash / at the end.
-        #url: "http://localhost:8163/"
         deny-non-minecraft-request: true
         one-time-token: true
         rate-limit:
@@ -221,7 +223,7 @@ image:
   intercept-packets:
     system-chat: true
     tab-list: true     # Tab list header and footer
-    player-info: true  # User list in tab
+    player-info: true  # Player list in tab
     set-score: true
     actionbar: true
     title: true
@@ -233,6 +235,7 @@ image:
     armor-stand: true   # Legacy Holograms
     text-display: true  # Modern Holograms
     item: true
+    advancement: true
   # Defines Unicode characters used for <shift:xxx> positioning
   # - Must match the font defined in resource packs
   # - Do NOT modify unless you understand text rendering mechanics
@@ -295,6 +298,8 @@ recipe:
     # Selective recipe disabling (safer alternative to 'all: true')
     # Example: ["minecraft:wooden_sword", "minecraft:stone_hoe"]
     list: []
+  # You can use items from other plugins by adding the supported plugin names here
+  ingredient-sources: []
 
 gui:
   browser:
@@ -351,6 +356,8 @@ gui:
         title: "<white><shift:-11><image:internal:stonecutting_recipe>"
       smithing-transform:
         title: "<white><shift:-11><image:internal:smithing_transform_recipe>"
+      brewing:
+        title: "<white><shift:-11><image:internal:brewing_recipe>"
 
 performance:
   # Maximum chain update depth when fixing client visuals
@@ -375,12 +382,12 @@ chunk-system:
   # Settings for injection
   injection:
     # Requires a restart to apply
-    # SECTION: Inject the LevelChunkSection (Faster & Experimental) since 0.0.53
+    # SECTION: Inject the LevelChunkSection
     # PALETTE: Inject the PalettedContainer
-    target: PALETTE
+    target: SECTION
     # Enables faster injection method
     # Note: May not work with certain server forks that alter chunk class structure (In most cases it won't conflict)
-    use-fast-method: false
+    use-fast-method: true
   # Auto-convert custom blocks -> vanilla blocks when unloading chunks
   #
   # - When ENABLED (true):

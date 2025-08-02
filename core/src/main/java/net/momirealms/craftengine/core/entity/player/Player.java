@@ -8,7 +8,7 @@ import net.momirealms.craftengine.core.plugin.network.NetWorkUser;
 import net.momirealms.craftengine.core.sound.SoundSource;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.world.BlockPos;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -17,7 +17,7 @@ public abstract class Player extends AbstractEntity implements NetWorkUser {
 
     public abstract boolean isSecondaryUseActive();
 
-    @Nullable
+    @NotNull
     public abstract Item<?> getItemInHand(InteractionHand hand);
 
     @Override
@@ -27,6 +27,8 @@ public abstract class Player extends AbstractEntity implements NetWorkUser {
     public abstract Object serverPlayer();
 
     public abstract void sendPackets(List<Object> packet, boolean immediately);
+
+    public abstract void sendPackets(List<Object> packet, boolean immediately, Runnable sendListener);
 
     public abstract float getDestroyProgress(Object blockState, BlockPos pos);
 
@@ -67,6 +69,10 @@ public abstract class Player extends AbstractEntity implements NetWorkUser {
     public abstract boolean updateLastSuccessfulInteractionTick(int tick);
 
     public abstract int lastSuccessfulInteractionTick();
+
+    public abstract void updateLastInteractEntityTick(@NotNull InteractionHand hand);
+
+    public abstract boolean lastInteractEntityCheck(@NotNull InteractionHand hand);
 
     public abstract int gameTicks();
 

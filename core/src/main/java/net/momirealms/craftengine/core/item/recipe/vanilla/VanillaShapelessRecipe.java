@@ -1,7 +1,7 @@
 package net.momirealms.craftengine.core.item.recipe.vanilla;
 
 import net.momirealms.craftengine.core.item.recipe.CraftingRecipeCategory;
-import net.momirealms.craftengine.core.item.recipe.RecipeTypes;
+import net.momirealms.craftengine.core.item.recipe.RecipeSerializers;
 import net.momirealms.craftengine.core.util.Key;
 
 import java.util.List;
@@ -20,6 +20,6 @@ public class VanillaShapelessRecipe extends VanillaCraftingRecipe {
 
     @Override
     public Key type() {
-        return RecipeTypes.SHAPELESS;
+        return RecipeSerializers.SHAPELESS;
     }
 }

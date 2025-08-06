@@ -9,8 +9,8 @@
   <a href="https://deepwiki.com/Xiao-MoMi/craft-engine">
     <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
   </a>
-  <a href="https://mo-mi.gitbook.io/xiaomomi-plugins/craftengine" alt="GitBook">
-    <img src="https://img.shields.io/badge/📙-User Manual-D2691E" alt="Gitbook"/>
+  <a href="https://xiao-momi.github.io/craft-engine-wiki/" alt="doc">
+    <img src="https://img.shields.io/badge/📙-User Manual-D2691E" alt="doc"/>
   </a>
 </p>
 

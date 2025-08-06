@@ -2849,10 +2849,6 @@ public final class CoreReflections {
             ReflectionUtils.getClazz(BukkitReflectionUtils.assembleMCClass("server.MinecraftServer"))
     );
 
-    public static final Method method$MinecraftServer$getServer = requireNonNull(
-            ReflectionUtils.getMethod(clazz$MinecraftServer, new String[] { "getServer" })
-    );
-
     public static final Field field$MinecraftServer$registries = requireNonNull(
             ReflectionUtils.getDeclaredField(clazz$MinecraftServer, clazz$LayeredRegistryAccess, 0)
     );
@@ -3759,11 +3755,14 @@ public final class CoreReflections {
                 methodHandle$ServerConfigurationPacketListenerImpl$finishCurrentTask =
                         ReflectionUtils.unreflectMethod(method$ServerConfigurationPacketListenerImpl$finishCurrentTask)
                                 .asType(MethodType.methodType(void.class, Object.class, Object.class));
+            } else {
+                methodHandle$ServerConfigurationPacketListenerImpl$finishCurrentTask = null;
+            }
+            if (VersionHelper.isOrAbove1_20_5()) {
                 methodHandle$ServerCommonPacketListenerImpl$closedSetter =
                         ReflectionUtils.unreflectSetter(field$ServerCommonPacketListenerImpl$closed)
                                 .asType(MethodType.methodType(void.class, Object.class, boolean.class));
             } else {
-                methodHandle$ServerConfigurationPacketListenerImpl$finishCurrentTask = null;
                 methodHandle$ServerCommonPacketListenerImpl$closedSetter = null;
             }
         } catch (ReflectiveOperationException e) {
@@ -3965,5 +3964,12 @@ public final class CoreReflections {
                     "world.item.IDyeable",
                     "world.item.DyeableLeatherItem"
             ), !VersionHelper.isOrAbove1_20_5()
+    );
+
+    public static final Class<?> clazz$LootPoolEntryType = requireNonNull(
+            BukkitReflectionUtils.findReobfOrMojmapClass(
+                    "world.level.storage.loot.entries.LootEntryType",
+                    "world.level.storage.loot.entries.LootPoolEntryType"
+            )
     );
 }

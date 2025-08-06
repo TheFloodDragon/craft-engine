@@ -137,43 +137,31 @@ public abstract class AbstractItemManager<I> extends AbstractModelGenerator impl
         Key id = customItem.id();
         if (this.customItems.containsKey(id)) return false;
         this.customItems.put(id, customItem);
-        // cache command suggestions
-        this.cachedSuggestions.add(Suggestion.suggestion(id.toString()));
-        // totem animations
-        if (VersionHelper.isOrAbove1_21_2()) {
-            this.cachedTotemSuggestions.add(Suggestion.suggestion(id.toString()));
-        } else if (customItem.material().equals(ItemKeys.TOTEM_OF_UNDYING)) {
-            this.cachedTotemSuggestions.add(Suggestion.suggestion(id.toString()));
-        }
-        // tags
-        Set<Key> tags = customItem.settings().tags();
-        for (Key tag : tags) {
-            this.customItemTags.computeIfAbsent(tag, k -> new ArrayList<>()).add(customItem.uniqueId());
+        if (!customItem.isVanillaItem()) {
+            // cache command suggestions
+            this.cachedSuggestions.add(Suggestion.suggestion(id.toString()));
+            // totem animations
+            if (VersionHelper.isOrAbove1_21_2()) {
+                this.cachedTotemSuggestions.add(Suggestion.suggestion(id.toString()));
+            } else if (customItem.material().equals(ItemKeys.TOTEM_OF_UNDYING)) {
+                this.cachedTotemSuggestions.add(Suggestion.suggestion(id.toString()));
+            }
+            // tags
+            Set<Key> tags = customItem.settings().tags();
+            for (Key tag : tags) {
+                this.customItemTags.computeIfAbsent(tag, k -> new ArrayList<>()).add(customItem.uniqueId());
+            }
         }
         return true;
     }
 
     @Override
-    public List<UniqueKey> tagToItems(Key tag) {
-        List<UniqueKey> items = new ArrayList<>();
-        List<UniqueKey> holders = VANILLA_ITEM_TAGS.get(tag);
-        if (holders != null) {
-            items.addAll(holders);
-        }
-        List<UniqueKey> customItems = this.customItemTags.get(tag);
-        if (customItems != null) {
-            items.addAll(customItems);
-        }
-        return items;
-    }
-
-    @Override
-    public List<UniqueKey> tagToVanillaItems(Key tag) {
+    public List<UniqueKey> vanillaItemIdsByTag(Key tag) {
         return Collections.unmodifiableList(VANILLA_ITEM_TAGS.getOrDefault(tag, List.of()));
     }
 
     @Override
-    public List<UniqueKey> tagToCustomItems(Key tag) {
+    public List<UniqueKey> customItemIdsByTag(Key tag) {
         return Collections.unmodifiableList(this.customItemTags.getOrDefault(tag, List.of()));
     }
 
@@ -415,6 +403,7 @@ public abstract class AbstractItemManager<I> extends AbstractModelGenerator impl
 
             // 构建自定义物品
             CustomItem<I> customItem = itemBuilder
+                    .isVanillaItem(isVanillaItem)
                     .behaviors(behaviors)
                     .settings(settings)
                     .events(eventTriggerListMap)

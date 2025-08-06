@@ -23,31 +23,34 @@ public final class RecipeSerializers {
     public static final Key BREWING = Key.of("minecraft:brewing");
 
     static {
-        register(SHAPED, CustomShapedRecipe.FACTORY);
-        register(SHAPELESS, CustomShapelessRecipe.FACTORY);
-        register(SMELTING, CustomSmeltingRecipe.FACTORY);
-        register(SMOKING, CustomSmokingRecipe.FACTORY);
-        register(BLASTING, CustomBlastingRecipe.FACTORY);
-        register(CAMPFIRE_COOKING, CustomCampfireRecipe.FACTORY);
-        register(STONECUTTING, CustomStoneCuttingRecipe.FACTORY);
-        register(SMITHING_TRANSFORM, CustomSmithingTransformRecipe.FACTORY);
-        register(SMITHING_TRIM, CustomSmithingTrimRecipe.FACTORY);
-        register(BREWING, CustomBrewingRecipe.FACTORY);
+        register(SHAPED, CustomShapedRecipe.SERIALIZER);
+        register(Key.of("crafting_shaped"), CustomShapedRecipe.SERIALIZER);
+        register(SHAPELESS, CustomShapelessRecipe.SERIALIZER);
+        register(Key.of("crafting_shapeless"), CustomShapelessRecipe.SERIALIZER);
+        register(SMELTING, CustomSmeltingRecipe.SERIALIZER);
+        register(SMOKING, CustomSmokingRecipe.SERIALIZER);
+        register(BLASTING, CustomBlastingRecipe.SERIALIZER);
+        register(CAMPFIRE_COOKING, CustomCampfireRecipe.SERIALIZER);
+        register(STONECUTTING, CustomStoneCuttingRecipe.SERIALIZER);
+        register(SMITHING_TRANSFORM, CustomSmithingTransformRecipe.SERIALIZER);
+        register(SMITHING_TRIM, CustomSmithingTrimRecipe.SERIALIZER);
+        register(BREWING, CustomBrewingRecipe.SERIALIZER);
     }
 
-    public static <T> void register(Key key, RecipeFactory<T> factory) {
-        ((WritableRegistry<RecipeFactory<?>>) BuiltInRegistries.RECIPE_FACTORY)
-                .register(ResourceKey.create(Registries.RECIPE_FACTORY.location(), key), factory);
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static <T, R extends Recipe<T>> void register(Key key, RecipeSerializer<T, R> serializer) {
+        WritableRegistry<RecipeSerializer<T, R>> registry = (WritableRegistry) BuiltInRegistries.RECIPE_SERIALIZER;
+        registry.register(ResourceKey.create(Registries.RECIPE_FACTORY.location(), key), serializer);
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> Recipe<T> fromMap(Key id, Map<String, Object> map) {
+    public static <T, R extends Recipe<T>> Recipe<T> fromMap(Key id, Map<String, Object> map) {
         String type = ResourceConfigUtils.requireNonEmptyStringOrThrow(map.get("type"), "warning.config.recipe.missing_type");
         Key key = Key.withDefaultNamespace(type, "minecraft");
-        RecipeFactory<T> factory = (RecipeFactory<T>) BuiltInRegistries.RECIPE_FACTORY.getValue(key);
+        RecipeSerializer<T, R> factory = (RecipeSerializer<T, R>) BuiltInRegistries.RECIPE_SERIALIZER.getValue(key);
         if (factory == null) {
             throw new LocalizedResourceConfigException("warning.config.recipe.invalid_type", type);
         }
-        return factory.create(id, map);
+        return factory.readMap(id, map);
     }
 }

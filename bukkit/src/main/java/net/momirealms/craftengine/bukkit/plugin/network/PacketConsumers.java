@@ -7,6 +7,7 @@ import com.mojang.datafixers.util.Either;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMaps;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.kyori.adventure.text.Component;
@@ -2237,63 +2238,23 @@ public class PacketConsumers {
         }
     };
 
-    public static final BiConsumer<NetWorkUser, ByteBufPacketEvent> CONTAINER_CLICK_1_21_5 = (user, event) -> {
+    // 因为不能走编码器只能替换对象
+    public static final TriConsumer<NetWorkUser, NMSPacketEvent, Object> CONTAINER_CLICK_1_21_5 = (user, event, packet) -> {
         try {
-            FriendlyByteBuf buf = event.getBuffer();
-            boolean changed = false;
-            Object friendlyBuf = FastNMS.INSTANCE.constructor$FriendlyByteBuf(buf);
-            Object inventory = FastNMS.INSTANCE.method$Player$getInventory(user.serverPlayer());
-            int containerId = buf.readContainerId();
-            int stateId = buf.readVarInt();
-            short slotNum = buf.readShort();
-            byte buttonNum = buf.readByte();
-            int clickType = buf.readVarInt();
-            int i = buf.readVarInt();
-            Int2ObjectMap<Object> changedSlots = new Int2ObjectOpenHashMap<>(i);
-            for (int j = 0; j < i; ++j) {
-                int k = buf.readShort();
-                Object hashedStack = FastNMS.INSTANCE.method$StreamDecoder$decode(NetworkReflections.instance$HashedStack$STREAM_CODEC, friendlyBuf);
-                Object serverSideItemStack = FastNMS.INSTANCE.method$Container$getItem(inventory, k);
-                Optional<ItemStack> optional = BukkitItemManager.instance().s2c(FastNMS.INSTANCE.method$CraftItemStack$asCraftMirror(serverSideItemStack).clone(), ((net.momirealms.craftengine.core.entity.player.Player) user));
-                if (optional.isPresent()) {
-                    Object clientSideItemStack = FastNMS.INSTANCE.field$CraftItemStack$handle(optional.get());
-                    boolean isSync = FastNMS.INSTANCE.method$HashedStack$matches(hashedStack, clientSideItemStack, BukkitItemManager.instance().decoratedHashOpsGenerator());
-                    if (isSync) {
-                        changed = true;
-                        hashedStack = FastNMS.INSTANCE.method$HashedStack$create(serverSideItemStack, BukkitItemManager.instance().decoratedHashOpsGenerator());
-                    }
-                }
-                changedSlots.put(k, hashedStack);
+            var player = (net.momirealms.craftengine.core.entity.player.Player) user;
+            int containerId = FastNMS.INSTANCE.field$ServerboundContainerClickPacket$containerId(packet);
+            int stateId = FastNMS.INSTANCE.field$ServerboundContainerClickPacket$stateId(packet);
+            short slotNum = FastNMS.INSTANCE.field$ServerboundContainerClickPacket$slotNum(packet);
+            byte buttonNum = FastNMS.INSTANCE.field$ServerboundContainerClickPacket$buttonNum(packet);
+            Object clickType = FastNMS.INSTANCE.field$ServerboundContainerClickPacket$clickType(packet);
+            @SuppressWarnings("unchecked")
+            Int2ObjectMap<Object> changedSlots = FastNMS.INSTANCE.field$ServerboundContainerClickPacket$changedSlots(packet);
+            Int2ObjectMap<Object> newChangedSlots = new Int2ObjectOpenHashMap<>(changedSlots.size());
+            for (Int2ObjectMap.Entry<Object> entry : changedSlots.int2ObjectEntrySet()) {
+                newChangedSlots.put(entry.getIntKey(), FastNMS.INSTANCE.constructor$InjectedHashedStack(entry.getValue(), player));
             }
-            Object carriedHashedStack = FastNMS.INSTANCE.method$StreamDecoder$decode(NetworkReflections.instance$HashedStack$STREAM_CODEC, friendlyBuf);
-            Object containerMenu = FastNMS.INSTANCE.field$Player$containerMenu(user.serverPlayer());
-            Object serverSideCarriedItemStack = FastNMS.INSTANCE.method$AbstractContainerMenu$getCarried(containerMenu);
-            Optional<ItemStack> optional = BukkitItemManager.instance().s2c(FastNMS.INSTANCE.method$CraftItemStack$asCraftMirror(serverSideCarriedItemStack).clone(), ((net.momirealms.craftengine.core.entity.player.Player) user));
-            if (optional.isPresent()) {
-                Object clientSideCarriedItemStack = FastNMS.INSTANCE.field$CraftItemStack$handle(optional.get());
-                boolean isSync = FastNMS.INSTANCE.method$HashedStack$matches(carriedHashedStack, clientSideCarriedItemStack, BukkitItemManager.instance().decoratedHashOpsGenerator());
-                if (isSync) {
-                    changed = true;
-                    carriedHashedStack = FastNMS.INSTANCE.method$HashedStack$create(serverSideCarriedItemStack, BukkitItemManager.instance().decoratedHashOpsGenerator());
-                }
-            }
-            if (changed) {
-                event.setChanged(true);
-                buf.clear();
-                buf.writeVarInt(event.packetID());
-                buf.writeContainerId(containerId);
-                buf.writeVarInt(stateId);
-                buf.writeShort(slotNum);
-                buf.writeByte(buttonNum);
-                buf.writeVarInt(clickType);
-                buf.writeVarInt(changedSlots.size());
-                Object newFriendlyBuf = FastNMS.INSTANCE.constructor$FriendlyByteBuf(buf);
-                changedSlots.forEach((k, v) -> {
-                    buf.writeShort(k);
-                    FastNMS.INSTANCE.method$StreamEncoder$encode(NetworkReflections.instance$HashedStack$STREAM_CODEC, newFriendlyBuf, v);
-                });
-                FastNMS.INSTANCE.method$StreamEncoder$encode(NetworkReflections.instance$HashedStack$STREAM_CODEC, newFriendlyBuf, carriedHashedStack);
-            }
+            Object carriedItem = FastNMS.INSTANCE.constructor$InjectedHashedStack(FastNMS.INSTANCE.field$ServerboundContainerClickPacket$carriedItem(packet), player);
+            event.replacePacket(FastNMS.INSTANCE.constructor$ServerboundContainerClickPacket(containerId, stateId, slotNum, buttonNum, clickType, Int2ObjectMaps.unmodifiable(newChangedSlots), carriedItem));
         } catch (Exception e) {
             CraftEngine.instance().logger().warn("Failed to handle ServerboundContainerClickPacket", e);
         }

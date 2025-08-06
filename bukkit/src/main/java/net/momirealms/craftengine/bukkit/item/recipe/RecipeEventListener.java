@@ -4,12 +4,9 @@ import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
 import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.item.ComponentTypes;
-import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
-import net.momirealms.craftengine.bukkit.plugin.injector.RecipeInjector;
 import net.momirealms.craftengine.bukkit.plugin.reflection.bukkit.CraftBukkitReflections;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
-import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MRecipeTypes;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.bukkit.util.ComponentUtils;
 import net.momirealms.craftengine.bukkit.util.InventoryUtils;
@@ -28,21 +25,14 @@ import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.plugin.context.ContextHolder;
 import net.momirealms.craftengine.core.util.*;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.block.Campfire;
-import org.bukkit.block.Furnace;
-import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.*;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.inventory.ClickType;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.*;
 import org.bukkit.inventory.view.AnvilView;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,7 +64,7 @@ public class RecipeEventListener implements Listener {
                 ItemStack item = event.getCurrentItem();
                 if (ItemStackUtils.isEmpty(item)) return;
                 if (ItemStackUtils.isEmpty(fuelStack)) {
-                    SingleItemInput<ItemStack> input = new SingleItemInput<>(getUniqueIdItem(item));
+                    SingleItemInput<ItemStack> input = new SingleItemInput<>(ItemStackUtils.getUniqueIdItem(item));
                     RecipeType recipeType;
                     if (furnaceInventory.getType() == InventoryType.FURNACE) {
                         recipeType = RecipeType.SMELTING;
@@ -258,166 +248,9 @@ public class RecipeEventListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    public void onFurnaceInventoryOpen(InventoryOpenEvent event) {
-        if (!Config.enableRecipeSystem()) return;
-        if (!(event.getInventory() instanceof FurnaceInventory furnaceInventory)) {
-            return;
-        }
-        Furnace furnace = furnaceInventory.getHolder();
-        try {
-            Object blockEntity = CraftBukkitReflections.field$CraftBlockEntityState$tileEntity.get(furnace);
-            RecipeInjector.injectCookingBlockEntity(blockEntity);
-        } catch (Exception e) {
-            this.plugin.logger().warn("Failed to inject cooking block entity", e);
-        }
-    }
-
-    // for 1.20.1-1.21.1
-    @EventHandler(ignoreCancelled = true)
-    public void onBlockIgnite(BlockIgniteEvent event) {
-        if (!Config.enableRecipeSystem()) return;
-        if (VersionHelper.isOrAbove1_21_2()) return;
-        Block block = event.getBlock();
-        Material material = block.getType();
-        if (material == Material.CAMPFIRE) {
-            if (block.getState() instanceof Campfire campfire) {
-                try {
-                    Object blockEntity = CraftBukkitReflections.field$CraftBlockEntityState$tileEntity.get(campfire);
-                    RecipeInjector.injectCookingBlockEntity(blockEntity);
-                } catch (Exception e) {
-                    this.plugin.logger().warn("Failed to inject cooking block entity", e);
-                }
-            }
-        }
-    }
-
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    public void onPlaceBlock(BlockPlaceEvent event) {
-        if (!Config.enableRecipeSystem()) return;
-        Block block = event.getBlock();
-        Material material = block.getType();
-        if (material == Material.FURNACE || material == Material.BLAST_FURNACE || material == Material.SMOKER) {
-            if (block.getState() instanceof Furnace furnace) {
-                try {
-                    Object blockEntity = CraftBukkitReflections.field$CraftBlockEntityState$tileEntity.get(furnace);
-                    RecipeInjector.injectCookingBlockEntity(blockEntity);
-                } catch (Exception e) {
-                    plugin.logger().warn("Failed to inject cooking block entity", e);
-                }
-            }
-        } else if (!VersionHelper.isOrAbove1_21_2() && material == Material.CAMPFIRE) {
-            if (block.getState() instanceof Campfire campfire) {
-                try {
-                    Object blockEntity = CraftBukkitReflections.field$CraftBlockEntityState$tileEntity.get(campfire);
-                    RecipeInjector.injectCookingBlockEntity(blockEntity);
-                } catch (Exception e) {
-                    this.plugin.logger().warn("Failed to inject cooking block entity", e);
-                }
-            }
-        }
-    }
-
-    // for 1.21.2+
-    @EventHandler(ignoreCancelled = true)
-    public void onPutItemOnCampfire(PlayerInteractEvent event) {
-        if (!Config.enableRecipeSystem()) return;
-        if (!VersionHelper.isOrAbove1_21_2()) return;
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-        Block clicked = event.getClickedBlock();
-        if (clicked == null) return;
-        Material type = clicked.getType();
-        if (type != Material.CAMPFIRE && type != Material.SOUL_CAMPFIRE) return;
-        if (clicked.getState() instanceof Campfire campfire) {
-            try {
-                Object blockEntity = CraftBukkitReflections.field$CraftBlockEntityState$tileEntity.get(campfire);
-                RecipeInjector.injectCookingBlockEntity(blockEntity);
-            } catch (Exception e) {
-                this.plugin.logger().warn("Failed to inject cooking block entity", e);
-            }
-        }
-
-        ItemStack itemStack = event.getItem();
-        if (ItemStackUtils.isEmpty(itemStack)) return;
-        try {
-            @SuppressWarnings("unchecked")
-            Optional<Object> optionalMCRecipe = FastNMS.INSTANCE.method$RecipeManager$getRecipeFor(
-                    BukkitRecipeManager.minecraftRecipeManager(),
-                    MRecipeTypes.CAMPFIRE_COOKING,
-                    CoreReflections.constructor$SingleRecipeInput.newInstance(FastNMS.INSTANCE.method$CraftItemStack$asNMSCopy(itemStack)),
-                    FastNMS.INSTANCE.field$CraftWorld$ServerLevel(event.getPlayer().getWorld()),
-                    null
-            );
-            if (optionalMCRecipe.isEmpty()) {
-                return;
-            }
-            SingleItemInput<ItemStack> input = new SingleItemInput<>(getUniqueIdItem(itemStack));
-            CustomCampfireRecipe<ItemStack> ceRecipe = (CustomCampfireRecipe<ItemStack>) this.recipeManager.recipeByInput(RecipeType.CAMPFIRE_COOKING, input);
-            if (ceRecipe == null) {
-                event.setCancelled(true);
-            }
-        } catch (Exception e) {
-            this.plugin.logger().warn("Failed to handle interact campfire", e);
-        }
-    }
-
-    // for 1.21.2+
-    @SuppressWarnings("UnstableApiUsage")
-    @EventHandler(ignoreCancelled = true)
-    public void onCampfireCook(CampfireStartEvent event) {
-        if (!Config.enableRecipeSystem()) return;
-        if (!VersionHelper.isOrAbove1_21_2()) return;
-        CampfireRecipe recipe = event.getRecipe();
-        Key recipeId = new Key(recipe.getKey().namespace(), recipe.getKey().value());
-
-        boolean isCustom = this.recipeManager.isCustomRecipe(recipeId);
-        if (!isCustom) {
-            return;
-        }
-
-        ItemStack itemStack = event.getSource();
-        SingleItemInput<ItemStack> input = new SingleItemInput<>(getUniqueIdItem(itemStack));
-        CustomCampfireRecipe<ItemStack> ceRecipe = (CustomCampfireRecipe<ItemStack>) this.recipeManager.recipeByInput(RecipeType.CAMPFIRE_COOKING, input);
-        if (ceRecipe == null) {
-            event.setTotalCookTime(Integer.MAX_VALUE);
-            return;
-        }
-
-        event.setTotalCookTime(ceRecipe.cookingTime());
-    }
-
-    // for 1.21.2+
-    @EventHandler(ignoreCancelled = true)
-    public void onCampfireCook(BlockCookEvent event) {
-        if (!Config.enableRecipeSystem()) return;
-        if (!VersionHelper.isOrAbove1_21_2()) return;
-        Material type = event.getBlock().getType();
-        if (type != Material.CAMPFIRE && type != Material.SOUL_CAMPFIRE) return;
-        CampfireRecipe recipe = (CampfireRecipe) event.getRecipe();
-        if (recipe == null) return;
-
-        Key recipeId = new Key(recipe.getKey().namespace(), recipe.getKey().value());
-
-        boolean isCustom = this.recipeManager.isCustomRecipe(recipeId);
-        if (!isCustom) {
-            return;
-        }
-
-        ItemStack itemStack = event.getSource();
-        SingleItemInput<ItemStack> input = new SingleItemInput<>(getUniqueIdItem(itemStack));
-        CustomCampfireRecipe<ItemStack> ceRecipe = (CustomCampfireRecipe<ItemStack>) this.recipeManager.recipeByInput(RecipeType.CAMPFIRE_COOKING, input);
-        if (ceRecipe == null) {
-            event.setCancelled(true);
-            return;
-        }
-
-        event.setResult(ceRecipe.result(ItemBuildContext.EMPTY));
-    }
-
     // Paper only
     @EventHandler
     public void onPrepareResult(PrepareResultEvent event) {
-//        if (!ConfigManager.enableRecipeSystem()) return;
         if (event.getInventory() instanceof CartographyInventory cartographyInventory) {
             if (ItemStackUtils.hasCustomItem(cartographyInventory.getStorageContents())) {
                 event.setResult(new ItemStack(Material.AIR));
@@ -535,7 +368,7 @@ public class RecipeEventListener implements Listener {
                         repairItem = item;
                         break;
                     }
-                    if (wrappedFirst.is(tag)) {
+                    if (wrappedFirst.hasItemTag(tag)) {
                         repairItem = item;
                         break;
                     }
@@ -745,98 +578,35 @@ public class RecipeEventListener implements Listener {
         return new Pair<>(first, second);
     }
 
-    // 不是完美的解决方案，仍然需要更多的探讨
-    // TODO 生成类代理掉ResultSlot，并注入menu的slots对象，修改掉onTake方法
-    // TODO 对于耐久度降低的配方，应该注册special recipe？
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
-    public void onCraft(CraftItemEvent event) {
-        org.bukkit.inventory.Recipe recipe = event.getRecipe();
-        if (!(recipe instanceof ShapelessRecipe) && !(recipe instanceof ShapedRecipe)) return;
-        HumanEntity humanEntity = event.getWhoClicked();
-        if (!(humanEntity instanceof Player player)) return;
-        CraftingInventory inventory = event.getInventory();
-        ItemStack result = inventory.getResult();
-        if (result == null) return;
-        ItemStack[] usedItems = inventory.getMatrix();
-        ItemStack[] replacements = new ItemStack[usedItems.length];
-        boolean hasReplacement = false;
-        for (int i = 0; i < usedItems.length; i++) {
-            ItemStack usedItem = usedItems[i];
-            if (ItemStackUtils.isEmpty(usedItem)) continue;
-            if (usedItem.getAmount() != 1) continue;
-            Item<ItemStack> wrapped = BukkitItemManager.instance().wrap(usedItem);
-            if (ItemUtils.isEmpty(wrapped)) continue;
-            Optional<CustomItem<ItemStack>> optionalCustomItem = wrapped.getCustomItem();
-            if (optionalCustomItem.isPresent()) {
-                CustomItem<ItemStack> customItem = optionalCustomItem.get();
-                Key remainingItem = customItem.settings().craftRemainder();
-                if (remainingItem != null) {
-                    replacements[i] = BukkitItemManager.instance().buildItemStack(remainingItem, this.plugin.adapt(player));
-                    hasReplacement = true;
-                }
-            }
-        }
-        if (!hasReplacement) return;
-        Runnable delayedTask = () -> {
-            for (int i = 0; i < replacements.length; i++) {
-                if (replacements[i] == null) continue;
-                inventory.setItem(i + 1, replacements[i]);
-            }
-        };
-        if (VersionHelper.isFolia()) {
-            player.getScheduler().run(this.plugin.javaPlugin(), (t) -> delayedTask.run(), () -> {});
-        } else {
-            this.plugin.scheduler().sync().runDelayed(delayedTask);
-        }
-    }
-
     @EventHandler(ignoreCancelled = true)
     public void onCraftingRecipe(PrepareItemCraftEvent event) {
         if (!Config.enableRecipeSystem()) return;
         org.bukkit.inventory.Recipe recipe = event.getRecipe();
-
-        // we only handle shaped and shapeless recipes
-        boolean shapeless = recipe instanceof ShapelessRecipe;
-        boolean shaped = recipe instanceof ShapedRecipe;
-        if (!shaped && !shapeless) return;
-
-        CraftingRecipe craftingRecipe = (CraftingRecipe) recipe;
+        if (!(recipe instanceof CraftingRecipe craftingRecipe)) return;
         Key recipeId = Key.of(craftingRecipe.getKey().namespace(), craftingRecipe.getKey().value());
-
-        boolean isCustom = this.recipeManager.isCustomRecipe(recipeId);
-        // Maybe it's recipe from other plugins, then we ignore it
-        if (!isCustom) {
+        Optional<Recipe<ItemStack>> optionalRecipe = this.recipeManager.recipeById(recipeId);
+        // 也许是其他插件注册的配方，直接无视
+        if (optionalRecipe.isEmpty()) {
             return;
         }
-
         CraftingInventory inventory = event.getInventory();
+        if (!(optionalRecipe.get() instanceof CustomCraftingTableRecipe<ItemStack> craftingTableRecipe)) {
+            inventory.setResult(null);
+            return;
+        }
         CraftingInput<ItemStack> input = getCraftingInput(inventory);
         if (input == null) return;
-
         Player player = InventoryUtils.getPlayerFromInventoryEvent(event);
         BukkitServerPlayer serverPlayer = this.plugin.adapt(player);
-
-        Recipe<ItemStack> ceRecipe = this.recipeManager.recipeByInput(RecipeType.CRAFTING, input, recipeId);
-        if (ceRecipe != null) {
-            inventory.setResult(ceRecipe.assemble(input, new ItemBuildContext(serverPlayer, ContextHolder.EMPTY)));
-            serverPlayer.setLastUsedRecipe(ceRecipe.id());
-            if (!ceRecipe.id().equals(recipeId)) {
-                correctCraftingRecipeUsed(inventory, ceRecipe);
-            }
-            return;
-        }
-        // clear result if not met
-        inventory.setResult(null);
+        inventory.setResult(craftingTableRecipe.assemble(input, new ItemBuildContext(serverPlayer, ContextHolder.EMPTY)));
     }
 
     private CraftingInput<ItemStack> getCraftingInput(CraftingInventory inventory) {
         ItemStack[] ingredients = inventory.getMatrix();
-
         List<UniqueIdItem<ItemStack>> uniqueIdItems = new ArrayList<>();
         for (ItemStack itemStack : ingredients) {
-            uniqueIdItems.add(getUniqueIdItem(itemStack));
+            uniqueIdItems.add(ItemStackUtils.getUniqueIdItem(itemStack));
         }
-
         CraftingInput<ItemStack> input;
         if (ingredients.length == 9) {
             input = CraftingInput.of(3, 3, uniqueIdItems);
@@ -846,17 +616,6 @@ public class RecipeEventListener implements Listener {
             return null;
         }
         return input;
-    }
-
-    private void correctCraftingRecipeUsed(CraftingInventory inventory, Recipe<ItemStack> recipe) {
-        Object holderOrRecipe = this.recipeManager.nmsRecipeHolderByRecipe(recipe);
-        if (holderOrRecipe == null) {
-            return;
-        }
-        Object resultInventory = FastNMS.INSTANCE.method$CraftInventoryCrafting$getResultInventory(inventory);
-        FastNMS.INSTANCE.method$ResultContainer$setRecipeUsed(resultInventory, holderOrRecipe);
-        Object matrixInventory = FastNMS.INSTANCE.method$CraftInventoryCrafting$getMatrixInventory(inventory);
-        FastNMS.INSTANCE.method$CraftingContainer$setCurrentRecipe(matrixInventory, holderOrRecipe);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -880,30 +639,21 @@ public class RecipeEventListener implements Listener {
         }
 
         Key recipeId = Key.of(recipe.getKey().namespace(), recipe.getKey().value());
-        boolean isCustom = this.recipeManager.isCustomRecipe(recipeId);
-        // Maybe it's recipe from other plugins, then we ignore it
-        if (!isCustom) {
+        Optional<Recipe<ItemStack>> optionalRecipe = this.recipeManager.recipeById(recipeId);
+        if (optionalRecipe.isEmpty()) {
             return;
         }
-
-        SmithingInput<ItemStack> input = new SmithingInput<>(
-                getUniqueIdItem(inventory.getInputEquipment()),
-                getUniqueIdItem(inventory.getInputTemplate()),
-                getUniqueIdItem(inventory.getInputMineral())
-        );
-
-        Recipe<ItemStack> ceRecipe = this.recipeManager.recipeByInput(RecipeType.SMITHING, input, recipeId);
-        if (ceRecipe == null) {
+        if (!(optionalRecipe.get() instanceof CustomSmithingTrimRecipe<ItemStack> smithingTrimRecipe)) {
             event.setResult(null);
             return;
         }
-
-        Player player = InventoryUtils.getPlayerFromInventoryEvent(event);
-        CustomSmithingTrimRecipe<ItemStack> trimRecipe = (CustomSmithingTrimRecipe<ItemStack>) ceRecipe;
-        ItemStack result = trimRecipe.assemble(input, new ItemBuildContext(this.plugin.adapt(player), ContextHolder.EMPTY));
-        event.setResult(result);
-        if (!ceRecipe.id().equals(recipeId)) {
-            correctSmithingRecipeUsed(inventory, ceRecipe);
+        SmithingInput<ItemStack> input = getSmithingInput(inventory);
+        if (smithingTrimRecipe.matches(input)) {
+            Player player = InventoryUtils.getPlayerFromInventoryEvent(event);
+            ItemStack result = smithingTrimRecipe.assemble(getSmithingInput(inventory), new ItemBuildContext(this.plugin.adapt(player), ContextHolder.EMPTY));
+            event.setResult(result);
+        } else {
+            event.setResult(null);
         }
     }
 
@@ -912,59 +662,30 @@ public class RecipeEventListener implements Listener {
         if (!Config.enableRecipeSystem()) return;
         SmithingInventory inventory = event.getInventory();
         if (!(inventory.getRecipe() instanceof SmithingTransformRecipe recipe)) return;
-
         Key recipeId = Key.of(recipe.getKey().namespace(), recipe.getKey().value());
-        boolean isCustom = this.recipeManager.isCustomRecipe(recipeId);
-        // Maybe it's recipe from other plugins, then we ignore it
-        if (!isCustom) {
+        Optional<Recipe<ItemStack>> optionalRecipe = this.recipeManager.recipeById(recipeId);
+        if (optionalRecipe.isEmpty()) {
             return;
         }
-
-        ItemStack base = inventory.getInputEquipment();
-        ItemStack template = inventory.getInputTemplate();
-        ItemStack addition = inventory.getInputMineral();
-
-        SmithingInput<ItemStack> input = new SmithingInput<>(
-                getUniqueIdItem(base),
-                getUniqueIdItem(template),
-                getUniqueIdItem(addition)
-        );
-
-        Recipe<ItemStack> ceRecipe = this.recipeManager.recipeByInput(RecipeType.SMITHING, input, recipeId);
-        if (ceRecipe == null) {
+        if (!(optionalRecipe.get() instanceof CustomSmithingTransformRecipe<ItemStack> smithingTransformRecipe)) {
             event.setResult(null);
             return;
         }
-
-        Player player = InventoryUtils.getPlayerFromInventoryEvent(event);
-
-        CustomSmithingTransformRecipe<ItemStack> transformRecipe = (CustomSmithingTransformRecipe<ItemStack>) ceRecipe;
-        ItemStack processed = transformRecipe.assemble(input, new ItemBuildContext(this.plugin.adapt(player), ContextHolder.EMPTY));
-        event.setResult(processed);
-        if (!ceRecipe.id().equals(recipeId)) {
-            correctSmithingRecipeUsed(inventory, ceRecipe);
-        }
-    }
-
-    private void correctSmithingRecipeUsed(SmithingInventory inventory, Recipe<ItemStack> recipe) {
-        Object holderOrRecipe = this.recipeManager.nmsRecipeHolderByRecipe(recipe);
-        if (holderOrRecipe == null) {
-            return;
-        }
-        try {
-            Object resultInventory = CraftBukkitReflections.field$CraftResultInventory$resultInventory.get(inventory);
-            CoreReflections.field$ResultContainer$recipeUsed.set(resultInventory, holderOrRecipe);
-        } catch (ReflectiveOperationException e) {
-            this.plugin.logger().warn("Failed to correct used recipe", e);
-        }
-    }
-
-    private UniqueIdItem<ItemStack> getUniqueIdItem(@Nullable ItemStack itemStack) {
-        if (ItemStackUtils.isEmpty(itemStack)) {
-            return this.itemManager.uniqueEmptyItem();
+        SmithingInput<ItemStack> input = getSmithingInput(inventory);
+        if (smithingTransformRecipe.matches(input)) {
+            Player player = InventoryUtils.getPlayerFromInventoryEvent(event);
+            ItemStack processed = smithingTransformRecipe.assemble(input, new ItemBuildContext(this.plugin.adapt(player), ContextHolder.EMPTY));
+            event.setResult(processed);
         } else {
-            Item<ItemStack> wrappedItem = this.itemManager.wrap(itemStack);
-            return new UniqueIdItem<>(wrappedItem.recipeIngredientId(), wrappedItem);
+            event.setResult(null);
         }
+    }
+
+    private SmithingInput<ItemStack> getSmithingInput(SmithingInventory inventory) {
+        return new SmithingInput<>(
+                ItemStackUtils.getUniqueIdItem(inventory.getInputEquipment()),
+                ItemStackUtils.getUniqueIdItem(inventory.getInputTemplate()),
+                ItemStackUtils.getUniqueIdItem(inventory.getInputMineral())
+        );
     }
 }

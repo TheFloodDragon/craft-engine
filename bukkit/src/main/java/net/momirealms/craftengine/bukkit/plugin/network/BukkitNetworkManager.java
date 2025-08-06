@@ -128,7 +128,7 @@ public class BukkitNetworkManager implements NetworkManager, Listener, PluginMes
         this.plugin.javaPlugin().getServer().getMessenger().registerOutgoingPluginChannel(this.plugin.javaPlugin(), MOD_CHANNEL);
         // Inject server channel
         try {
-            Object server = CoreReflections.method$MinecraftServer$getServer.invoke(null);
+            Object server = FastNMS.INSTANCE.method$MinecraftServer$getServer();
             Object serverConnection = CoreReflections.field$MinecraftServer$connection.get(server);
             @SuppressWarnings("unchecked")
             List<ChannelFuture> channels = (List<ChannelFuture>) CoreReflections.field$ServerConnectionListener$channels.get(serverConnection);
@@ -169,6 +169,7 @@ public class BukkitNetworkManager implements NetworkManager, Listener, PluginMes
         registerNMSPacketConsumer(PacketConsumers.FINISH_CONFIGURATION, NetworkReflections.clazz$ClientboundFinishConfigurationPacket);
         registerNMSPacketConsumer(PacketConsumers.LOGIN_FINISHED, NetworkReflections.clazz$ClientboundLoginFinishedPacket);
         registerNMSPacketConsumer(PacketConsumers.UPDATE_TAGS, NetworkReflections.clazz$ClientboundUpdateTagsPacket);
+        registerNMSPacketConsumer(PacketConsumers.CONTAINER_CLICK_1_21_5, VersionHelper.isOrAbove1_21_5() ? NetworkReflections.clazz$ServerboundContainerClickPacket : null);
         registerS2CByteBufPacketConsumer(PacketConsumers.LEVEL_CHUNK_WITH_LIGHT, this.packetIds.clientboundLevelChunkWithLightPacket());
         registerS2CByteBufPacketConsumer(PacketConsumers.SECTION_BLOCK_UPDATE, this.packetIds.clientboundSectionBlocksUpdatePacket());
         registerS2CByteBufPacketConsumer(PacketConsumers.BLOCK_UPDATE, this.packetIds.clientboundBlockUpdatePacket());
@@ -198,7 +199,7 @@ public class BukkitNetworkManager implements NetworkManager, Listener, PluginMes
         registerS2CByteBufPacketConsumer(PacketConsumers.SET_EQUIPMENT, this.packetIds.clientboundSetEquipmentPacket());
         registerS2CByteBufPacketConsumer(PacketConsumers.SET_PLAYER_INVENTORY_1_21_2, this.packetIds.clientboundSetPlayerInventoryPacket());
         registerC2SByteBufPacketConsumer(PacketConsumers.SET_CREATIVE_MODE_SLOT, this.packetIds.serverboundSetCreativeModeSlotPacket());
-        registerC2SByteBufPacketConsumer(VersionHelper.isOrAbove1_21_5() ? PacketConsumers.CONTAINER_CLICK_1_21_5 : PacketConsumers.CONTAINER_CLICK_1_20, this.packetIds.serverboundContainerClickPacket());
+        registerC2SByteBufPacketConsumer(PacketConsumers.CONTAINER_CLICK_1_20, VersionHelper.isOrAbove1_21_5() ? -1 : this.packetIds.serverboundContainerClickPacket());
         registerC2SByteBufPacketConsumer(PacketConsumers.INTERACT_ENTITY, this.packetIds.serverboundInteractPacket());
     }
 

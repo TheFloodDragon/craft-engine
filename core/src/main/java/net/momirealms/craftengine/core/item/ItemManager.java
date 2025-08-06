@@ -3,6 +3,7 @@ package net.momirealms.craftengine.core.item;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.item.equipment.Equipment;
+import net.momirealms.craftengine.core.item.recipe.DatapackRecipeResult;
 import net.momirealms.craftengine.core.item.recipe.UniqueIdItem;
 import net.momirealms.craftengine.core.pack.model.LegacyOverridesModel;
 import net.momirealms.craftengine.core.pack.model.ModernItemModel;
@@ -53,10 +54,6 @@ public interface ItemManager<T> extends Manageable, ModelGenerator {
 
     Collection<Key> items();
 
-    Key itemId(T itemStack);
-
-    Key customItemId(T itemStack);
-
     ExternalItemSource<T> getExternalItemSource(String name);
 
     boolean registerExternalItemSource(ExternalItemSource<T> externalItemSource);
@@ -81,11 +78,16 @@ public interface ItemManager<T> extends Manageable, ModelGenerator {
 
     boolean addCustomItem(CustomItem<T> customItem);
 
-    List<UniqueKey> tagToItems(Key tag);
+    default List<UniqueKey> itemIdsByTag(Key tag) {
+        List<UniqueKey> items = new ArrayList<>();
+        items.addAll(vanillaItemIdsByTag(tag));
+        items.addAll(customItemIdsByTag(tag));
+        return items;
+    }
 
-    List<UniqueKey> tagToVanillaItems(Key tag);
+    List<UniqueKey> vanillaItemIdsByTag(Key tag);
 
-    List<UniqueKey> tagToCustomItems(Key tag);
+    List<UniqueKey> customItemIdsByTag(Key tag);
 
     int fuelTime(T itemStack);
 
@@ -108,4 +110,6 @@ public interface ItemManager<T> extends Manageable, ModelGenerator {
     UniqueIdItem<T> uniqueEmptyItem();
 
     Item<T> applyTrim(Item<T> base, Item<T> addition, Item<T> template, Key pattern);
+
+    Item<T> build(DatapackRecipeResult result);
 }

@@ -21,4 +21,8 @@ public interface Recipe<T> {
     RecipeType type();
 
     Key id();
+
+    default boolean showNotification() {
+        return true;
+    }
 }

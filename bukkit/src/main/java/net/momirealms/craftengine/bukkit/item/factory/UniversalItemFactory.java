@@ -68,11 +68,6 @@ public class UniversalItemFactory extends BukkitItemFactory<LegacyItemWrapper> {
     }
 
     @Override
-    protected boolean isEmpty(LegacyItemWrapper item) {
-        return item.getItem().isEmpty();
-    }
-
-    @Override
     protected Optional<Key> customId(LegacyItemWrapper item) {
         Object id = item.getJavaTag(IdModifier.CRAFT_ENGINE_ID);
         if (id == null) return Optional.empty();

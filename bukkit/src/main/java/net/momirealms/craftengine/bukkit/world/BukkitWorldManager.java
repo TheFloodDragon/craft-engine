@@ -2,7 +2,6 @@ package net.momirealms.craftengine.bukkit.world;
 
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
-import net.momirealms.craftengine.bukkit.plugin.injector.RecipeInjector;
 import net.momirealms.craftengine.bukkit.plugin.injector.WorldStorageInjector;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
@@ -401,13 +400,6 @@ public class BukkitWorldManager implements WorldManager, Listener {
                         int finalI = i;
                         WorldStorageInjector.injectLevelChunkSection(section, ceSection, ceChunk, new SectionPos(pos.x, ceChunk.sectionY(i), pos.z),
                                 (injected) -> sections[finalI] = injected);
-                    }
-                }
-                if (Config.enableRecipeSystem()) {
-                    @SuppressWarnings("unchecked")
-                    Map<Object, Object> blockEntities = (Map<Object, Object>) FastNMS.INSTANCE.field$ChunkAccess$blockEntities(levelChunk);
-                    for (Object blockEntity : blockEntities.values()) {
-                        RecipeInjector.injectCookingBlockEntity(blockEntity);
                     }
                 }
             } catch (ReflectiveOperationException e) {

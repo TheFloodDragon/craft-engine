@@ -13,6 +13,8 @@ import net.momirealms.craftengine.core.util.Color;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.UniqueKey;
 import net.momirealms.sparrow.nbt.Tag;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -152,17 +154,17 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     }
 
     @Override
-    public Key id() {
+    public @NotNull Key id() {
         return this.factory.id(this.item);
     }
 
     @Override
-    public Key vanillaId() {
+    public @NotNull Key vanillaId() {
         return this.factory.vanillaId(this.item);
     }
 
     @Override
-    public UniqueKey recipeIngredientId() {
+    public @Nullable UniqueKey recipeIngredientId() {
         return this.factory.recipeIngredientID(this.item);
     }
 
@@ -441,8 +443,8 @@ public class AbstractItem<W extends ItemWrapper<I>, I> implements Item<I> {
     }
 
     @Override
-    public boolean is(Key itemTag) {
-        return this.factory.is(this.item, itemTag);
+    public boolean hasItemTag(Key itemTag) {
+        return this.factory.hasItemTag(this.item, itemTag);
     }
 
     @Override

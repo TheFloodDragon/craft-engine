@@ -14,6 +14,8 @@ import net.momirealms.craftengine.core.util.Color;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.UniqueKey;
 import net.momirealms.sparrow.nbt.Tag;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
@@ -37,10 +39,13 @@ public interface Item<I> {
 
     boolean isBlockItem();
 
+    @NotNull
     Key id();
 
+    @NotNull
     Key vanillaId();
 
+    @Nullable
     UniqueKey recipeIngredientId();
 
     Optional<Key> customId();
@@ -190,7 +195,7 @@ public interface Item<I> {
 
     Item<I> copyWithCount(int count);
 
-    boolean is(Key itemTag);
+    boolean hasItemTag(Key itemTag);
 
     Object getLiteralObject();
 

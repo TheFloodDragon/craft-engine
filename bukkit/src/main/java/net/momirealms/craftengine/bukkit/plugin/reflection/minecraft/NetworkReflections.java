@@ -1646,4 +1646,13 @@ public final class NetworkReflections {
     public static final Constructor<?> constructor$UnknownPayload = Optional.ofNullable(clazz$UnknownPayload)
             .map(ReflectionUtils::getTheOnlyConstructor)
             .orElse(null);
+
+    // 1.21.5+
+    public static final Class<?> clazz$HashedStack$ActualItem = MiscUtils.requireNonNullIf(
+            BukkitReflectionUtils.findReobfOrMojmapClass(
+                    "network.HashedStack$a",
+                    "network.HashedStack$ActualItem"
+            ),
+            VersionHelper.isOrAbove1_21_5()
+    );
 }

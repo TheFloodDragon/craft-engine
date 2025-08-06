@@ -1,4 +1,4 @@
-package net.momirealms.craftengine.core.item.recipe.vanilla.reader;
+package net.momirealms.craftengine.core.item.recipe.reader;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -12,7 +12,7 @@ import java.util.Map;
 public class VanillaRecipeReader1_21_2 extends VanillaRecipeReader1_20_5 {
 
     @Override
-    protected List<String> readSingleIngredient(JsonElement json) {
+    public List<String> singleIngredient(JsonElement json) {
         if (json.isJsonPrimitive()) {
             return List.of(json.getAsString());
         } else {
@@ -26,7 +26,7 @@ public class VanillaRecipeReader1_21_2 extends VanillaRecipeReader1_20_5 {
     }
 
     @Override
-    protected Map<Character, List<String>> readShapedIngredientMap(JsonObject json) {
+    public Map<Character, List<String>> shapedIngredientMap(JsonObject json) {
         Map<Character, List<String>> ingredients = new HashMap<>();
         for (Map.Entry<String, JsonElement> entry : json.entrySet()) {
             char c = entry.getKey().charAt(0);
@@ -44,7 +44,7 @@ public class VanillaRecipeReader1_21_2 extends VanillaRecipeReader1_20_5 {
     }
 
     @Override
-    protected List<List<String>> readShapelessIngredients(JsonArray json) {
+    public List<List<String>> shapelessIngredients(JsonArray json) {
         List<List<String>> ingredients = new ArrayList<>();
         for (JsonElement element : json) {
             if (element.isJsonPrimitive()) {

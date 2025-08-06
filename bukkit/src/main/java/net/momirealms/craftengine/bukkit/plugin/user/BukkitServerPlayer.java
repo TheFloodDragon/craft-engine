@@ -93,8 +93,6 @@ public class BukkitServerPlayer extends Player {
     // for client visual sync
     private int resentSoundTick;
     private int resentSwingTick;
-    // cache used recipe
-    private Key lastUsedRecipe = null;
     // has fabric client mod or not
     private boolean hasClientMod = false;
     // cache if player can break blocks
@@ -640,7 +638,7 @@ public class BukkitServerPlayer extends Player {
                     if (canInstabuild() && (itemMaterial == Material.DEBUG_STICK
                             || itemMaterial == Material.TRIDENT
                             || (VersionHelper.isOrAbove1_20_5() && itemMaterial == MaterialUtils.MACE)
-                            || item.is(ItemTags.SWORDS))) {
+                            || item.hasItemTag(ItemTags.SWORDS))) {
                         return;
                     }
                 }
@@ -883,14 +881,6 @@ public class BukkitServerPlayer extends Player {
 
     public boolean shouldResendSwing() {
         return resentSwingTick == gameTicks();
-    }
-
-    public Key lastUsedRecipe() {
-        return lastUsedRecipe;
-    }
-
-    public void setLastUsedRecipe(Key lastUsedRecipe) {
-        this.lastUsedRecipe = lastUsedRecipe;
     }
 
     public boolean clientModEnabled() {

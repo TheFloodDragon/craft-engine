@@ -12,7 +12,7 @@ repositories {
     maven("https://repo.viaversion.com") // via
     maven("https://repo.skriptlang.org/releases/") // skript
     maven("https://nexus.neetgames.com/repository/maven-releases/") // mcmmo
-    maven("https://repo.dmulloy2.net/repository/public/") // mcmmo required
+    maven("https://repo.bg-software.com/repository/dependencies/") // mcmmo required
     maven("https://repo.auxilor.io/repository/maven-public/") // eco
 }
 
@@ -53,7 +53,7 @@ dependencies {
     // MythicMobs
     compileOnly("io.lumine:Mythic-Dist:5.9.0")
     // McMMO
-    compileOnly("com.gmail.nossr50.mcMMO:mcMMO:2.2.038")
+    compileOnly("com.gmail.nossr50.mcMMO:mcMMO:2.2.042")
     // MMOCore
     compileOnly("net.Indyuce:MMOCore-API:1.12.1-SNAPSHOT")
     // JobsReborn

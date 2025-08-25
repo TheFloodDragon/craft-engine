@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class BlockStateUtils {
+public final class BlockStateUtils {
     public static final IdentityHashMap<Object, Object> CLIENT_SIDE_NOTE_BLOCKS = new IdentityHashMap<>();
     private static int vanillaStateSize;
     private static boolean hasInit;

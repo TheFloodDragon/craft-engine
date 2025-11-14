@@ -17,6 +17,8 @@ import net.momirealms.craftengine.core.pack.AbstractPackManager;
 import net.momirealms.craftengine.core.pack.conflict.resolution.ResolutionConditional;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.PluginProperties;
+import net.momirealms.craftengine.core.plugin.context.number.NumberProvider;
+import net.momirealms.craftengine.core.plugin.context.number.NumberProviders;
 import net.momirealms.craftengine.core.plugin.locale.LocalizedResourceConfigException;
 import net.momirealms.craftengine.core.plugin.locale.TranslationManager;
 import net.momirealms.craftengine.core.plugin.logger.filter.DisconnectLogFilter;
@@ -44,6 +46,7 @@ public class Config {
     protected boolean checkUpdate;
     protected boolean metrics;
     protected boolean filterConfigurationPhaseDisconnect;
+    protected Locale forcedLocale;
 
     protected boolean debug$common;
     protected boolean debug$packet;
@@ -58,31 +61,48 @@ public class Config {
     protected List<String> resource_pack$merge_external_folders;
     protected List<String> resource_pack$merge_external_zips;
     protected Set<String> resource_pack$exclude_file_extensions;
+    protected Path resource_pack$path;
 
     protected boolean resource_pack$protection$crash_tools$method_1;
     protected boolean resource_pack$protection$crash_tools$method_2;
     protected boolean resource_pack$protection$crash_tools$method_3;
+    protected boolean resource_pack$protection$crash_tools$method_4;
+    protected boolean resource_pack$protection$crash_tools$method_5;
+    protected boolean resource_pack$protection$crash_tools$method_6;
+    protected boolean resource_pack$protection$crash_tools$method_7;
+    protected boolean resource_pack$protection$crash_tools$method_8;
+    protected boolean resource_pack$protection$crash_tools$method_9;
 
-    protected boolean resource_pack$validate$enable;
+    protected boolean resource_pack$validation$enable;
+    protected boolean resource_pack$validation$fix_atlas;
     protected boolean resource_pack$exclude_core_shaders;
 
     protected boolean resource_pack$protection$obfuscation$enable;
     protected long resource_pack$protection$obfuscation$seed;
-    protected boolean resource_pack$protection$obfuscation$fake_directory;
-    protected boolean resource_pack$protection$obfuscation$escape_unicode;
-    protected boolean resource_pack$protection$obfuscation$break_json;
-    protected boolean resource_pack$protection$obfuscation$resource_location$enable;
-    protected int resource_pack$protection$obfuscation$resource_location$random_namespace$length;
-    protected int resource_pack$protection$obfuscation$resource_location$random_namespace$amount;
-    protected String resource_pack$protection$obfuscation$resource_location$random_path$source;
-    protected int resource_pack$protection$obfuscation$resource_location$random_path$depth;
-    protected boolean resource_pack$protection$obfuscation$resource_location$random_path$anti_unzip;
-    protected int resource_pack$protection$obfuscation$resource_location$random_atlas$images_per_canvas;
-    protected boolean resource_pack$protection$obfuscation$resource_location$random_atlas$use_double;
-    protected List<String> resource_pack$protection$obfuscation$resource_location$bypass_textures;
-    protected List<String> resource_pack$protection$obfuscation$resource_location$bypass_models;
-    protected List<String> resource_pack$protection$obfuscation$resource_location$bypass_sounds;
-    protected List<String> resource_pack$protection$obfuscation$resource_location$bypass_equipments;
+    protected boolean resource_pack$protection$fake_directory;
+    protected boolean resource_pack$protection$escape_json;
+    protected boolean resource_pack$protection$break_texture;
+    protected boolean resource_pack$protection$obfuscation$path$anti_unzip;
+    protected boolean resource_pack$protection$incorrect_crc;
+    protected boolean resource_pack$protection$fake_file_size;
+    protected NumberProvider resource_pack$protection$obfuscation$namespace$length;
+    protected int resource_pack$protection$obfuscation$namespace$amount;
+    protected String resource_pack$protection$obfuscation$path$source;
+    protected NumberProvider resource_pack$protection$obfuscation$path$depth;
+    protected NumberProvider resource_pack$protection$obfuscation$path$length;
+    protected int resource_pack$protection$obfuscation$atlas$images_per_canvas;
+    protected String resource_pack$protection$obfuscation$atlas$prefix;
+    protected List<String> resource_pack$protection$obfuscation$bypass_textures;
+    protected List<String> resource_pack$protection$obfuscation$bypass_models;
+    protected List<String> resource_pack$protection$obfuscation$bypass_sounds;
+    protected List<String> resource_pack$protection$obfuscation$bypass_equipments;
+
+    protected boolean resource_pack$optimization$enable;
+    protected boolean resource_pack$optimization$texture$enable;
+    protected Set<String> resource_pack$optimization$texture$exlude;
+    protected int resource_pack$optimization$texture$zopfli_iterations;
+    protected boolean resource_pack$optimization$json$enable;
+    protected Set<String> resource_pack$optimization$json$exclude;
 
     protected MinecraftVersion resource_pack$supported_version$min;
     protected MinecraftVersion resource_pack$supported_version$max;
@@ -93,17 +113,19 @@ public class Config {
     protected boolean resource_pack$delivery$send_on_join;
     protected boolean resource_pack$delivery$resend_on_upload;
     protected boolean resource_pack$delivery$auto_upload;
+    protected boolean resource_pack$delivery$strict_player_uuid_validation;
     protected Path resource_pack$delivery$file_to_upload;
     protected Component resource_pack$send$prompt;
 
     protected boolean light_system$force_update_light;
+    protected boolean light_system$async_update;
     protected boolean light_system$enable;
 
     protected int chunk_system$compression_method;
     protected boolean chunk_system$restore_vanilla_blocks_on_chunk_unload;
     protected boolean chunk_system$restore_custom_blocks_on_chunk_load;
     protected boolean chunk_system$sync_custom_blocks_on_chunk_load;
-    protected boolean chunk_system$cache_system;
+    protected boolean chunk_system$cache_system = true;
     protected boolean chunk_system$injection$use_fast_method;
     protected boolean chunk_system$injection$target;
     protected boolean chunk_system$process_invalid_furniture$enable;
@@ -120,6 +142,10 @@ public class Config {
     protected boolean block$predict_breaking;
     protected int block$predict_breaking_interval;
     protected double block$extended_interaction_range;
+    protected boolean block$chunk_relighter;
+    protected Key block$deceive_bukkit_material$default;
+    protected Map<Integer, Key> block$deceive_bukkit_material$overrides;
+    protected int block$serverside_blocks = -1;
 
     protected boolean recipe$enable;
     protected boolean recipe$disable_vanilla_recipes$all;
@@ -131,21 +157,26 @@ public class Config {
     protected boolean image$illegal_characters_filter$anvil;
     protected boolean image$illegal_characters_filter$sign;
     protected boolean image$illegal_characters_filter$book;
-    protected boolean image$intercept_packets$system_chat;
-    protected boolean image$intercept_packets$tab_list;
-    protected boolean image$intercept_packets$actionbar;
-    protected boolean image$intercept_packets$title;
-    protected boolean image$intercept_packets$bossbar;
-    protected boolean image$intercept_packets$container;
-    protected boolean image$intercept_packets$team;
-    protected boolean image$intercept_packets$scoreboard;
-    protected boolean image$intercept_packets$entity_name;
-    protected boolean image$intercept_packets$text_display;
-    protected boolean image$intercept_packets$armor_stand;
-    protected boolean image$intercept_packets$player_info;
-    protected boolean image$intercept_packets$set_score;
-    protected boolean image$intercept_packets$item;
-    protected boolean image$intercept_packets$advancement;
+    protected int image$codepoint_starting_value$default;
+    protected Map<Key, Integer> image$codepoint_starting_value$overrides;
+
+    protected boolean network$intercept_packets$system_chat;
+    protected boolean network$intercept_packets$tab_list;
+    protected boolean network$intercept_packets$actionbar;
+    protected boolean network$intercept_packets$title;
+    protected boolean network$intercept_packets$bossbar;
+    protected boolean network$intercept_packets$container;
+    protected boolean network$intercept_packets$team;
+    protected boolean network$intercept_packets$scoreboard;
+    protected boolean network$intercept_packets$entity_name;
+    protected boolean network$intercept_packets$text_display;
+    protected boolean network$intercept_packets$armor_stand;
+    protected boolean network$intercept_packets$player_info;
+    protected boolean network$intercept_packets$set_score;
+    protected boolean network$intercept_packets$item;
+    protected boolean network$intercept_packets$advancement;
+    protected boolean network$intercept_packets$player_chat;
+    protected boolean network$disable_item_operations;
 
     protected boolean item$client_bound_model;
     protected boolean item$non_italic_tag;
@@ -153,6 +184,10 @@ public class Config {
     protected boolean item$update_triggers$click_in_inventory;
     protected boolean item$update_triggers$drop;
     protected boolean item$update_triggers$pick_up;
+    protected int item$custom_model_data_starting_value$default;
+    protected Map<Key, Integer> item$custom_model_data_starting_value$overrides;
+    protected boolean item$always_use_item_model;
+    protected String item$default_material = "";
 
     protected String equipment$sacrificed_vanilla_armor$type;
     protected Key equipment$sacrificed_vanilla_armor$asset_id;
@@ -172,7 +207,7 @@ public class Config {
         instance = this;
     }
 
-    public void load() {
+    public boolean updateConfigCache() {
         // 文件不存在，则保存
         if (!Files.exists(this.configFilePath)) {
             this.plugin.saveResource("config.yml");
@@ -190,13 +225,20 @@ public class Config {
                         this.updateConfigVersion(configFileBytes);
                     }
                 }
-                // 加载配置文件
-                this.loadSettings();
                 this.lastModified = lastModified;
                 this.size = size;
+                return true;
             }
         } catch (IOException e) {
-            this.plugin.logger().severe("Failed to load config.yml", e);
+            this.plugin.logger().severe("Failed to update config.yml", e);
+        }
+        return false;
+    }
+
+    public void load() {
+        boolean isUpdated = updateConfigCache();
+        if (isUpdated) {
+            loadFullSettings();
         }
     }
 
@@ -224,6 +266,10 @@ public class Config {
                             .builder()
                             .setVersioning(new BasicVersioning("config-version"))
                             .addIgnoredRoute(PluginProperties.getValue("config"), "resource-pack.delivery.hosting", '.')
+                            .addIgnoredRoute(PluginProperties.getValue("config"), "chunk-system.process-invalid-blocks.convert", '.')
+                            .addIgnoredRoute(PluginProperties.getValue("config"), "chunk-system.process-invalid-furniture.convert", '.')
+                            .addIgnoredRoute(PluginProperties.getValue("config"), "item.custom-model-data-starting-value.overrides", '.')
+                            .addIgnoredRoute(PluginProperties.getValue("config"), "block.deceive-bukkit-material.overrides", '.')
                             .build());
         }
         try {
@@ -233,9 +279,15 @@ public class Config {
         }
     }
 
-    private void loadSettings() {
+    public void loadForcedLocale() {
         YamlDocument config = settings();
-        plugin.translationManager().forcedLocale(TranslationManager.parseLocale(config.getString("forced-locale", "")));
+        forcedLocale = TranslationManager.parseLocale(config.getString("forced-locale", ""));
+    }
+
+    @SuppressWarnings("DuplicatedCode")
+    public void loadFullSettings() {
+        YamlDocument config = settings();
+        forcedLocale = TranslationManager.parseLocale(config.getString("forced-locale", ""));
 
         // basics
         metrics = config.getBoolean("metrics", false);
@@ -251,11 +303,12 @@ public class Config {
         debug$resource_pack = config.getBoolean("debug.resource-pack", false);
 
         // resource pack
+        resource_pack$path = resolvePath(config.getString("resource-pack.path", "./generated/resource_pack.zip"));
         resource_pack$override_uniform_font = config.getBoolean("resource-pack.override-uniform-font", false);
         resource_pack$generate_mod_assets = config.getBoolean("resource-pack.generate-mod-assets", false);
         resource_pack$remove_tinted_leaves_particle = config.getBoolean("resource-pack.remove-tinted-leaves-particle", true);
-        resource_pack$supported_version$min = getVersion(config.get("resource-pack.supported-version.min", "SERVER").toString());
-        resource_pack$supported_version$max = getVersion(config.get("resource-pack.supported-version.max", "LATEST").toString());
+        resource_pack$supported_version$min = getVersion(config.get("resource-pack.supported-version.min", "server").toString());
+        resource_pack$supported_version$max = getVersion(config.get("resource-pack.supported-version.max", "latest").toString());
         if (resource_pack$supported_version$min.isAbove(resource_pack$supported_version$max)) {
             resource_pack$supported_version$min = resource_pack$supported_version$max;
         }
@@ -267,29 +320,51 @@ public class Config {
         resource_pack$delivery$kick_if_declined = config.getBoolean("resource-pack.delivery.kick-if-declined", true);
         resource_pack$delivery$kick_if_failed_to_apply = config.getBoolean("resource-pack.delivery.kick-if-failed-to-apply", true);
         resource_pack$delivery$auto_upload = config.getBoolean("resource-pack.delivery.auto-upload", true);
+        resource_pack$delivery$strict_player_uuid_validation = config.getBoolean("resource-pack.delivery.strict-player-uuid-validation", true);
         resource_pack$delivery$file_to_upload = resolvePath(config.getString("resource-pack.delivery.file-to-upload", "./generated/resource_pack.zip"));
         resource_pack$send$prompt = AdventureHelper.miniMessage().deserialize(config.getString("resource-pack.delivery.prompt", "<yellow>To fully experience our server, please accept our custom resource pack.</yellow>"));
         resource_pack$protection$crash_tools$method_1 = config.getBoolean("resource-pack.protection.crash-tools.method-1", false);
         resource_pack$protection$crash_tools$method_2 = config.getBoolean("resource-pack.protection.crash-tools.method-2", false);
         resource_pack$protection$crash_tools$method_3 = config.getBoolean("resource-pack.protection.crash-tools.method-3", false);
-        resource_pack$protection$obfuscation$enable = config.getBoolean("resource-pack.protection.obfuscation.enable", false);
+        resource_pack$protection$crash_tools$method_4 = config.getBoolean("resource-pack.protection.crash-tools.method-4", false);
+        resource_pack$protection$crash_tools$method_5 = config.getBoolean("resource-pack.protection.crash-tools.method-5", false);
+        resource_pack$protection$crash_tools$method_6 = config.getBoolean("resource-pack.protection.crash-tools.method-6", false);
+        resource_pack$protection$crash_tools$method_7 = config.getBoolean("resource-pack.protection.crash-tools.method-7", false);
+        resource_pack$protection$crash_tools$method_8 = config.getBoolean("resource-pack.protection.crash-tools.method-8", false);
+        resource_pack$protection$crash_tools$method_9 = config.getBoolean("resource-pack.protection.crash-tools.method-9", false);
+        resource_pack$protection$obfuscation$enable = VersionHelper.PREMIUM && config.getBoolean("resource-pack.protection.obfuscation.enable", false);
         resource_pack$protection$obfuscation$seed = config.getLong("resource-pack.protection.obfuscation.seed", 0L);
-        resource_pack$protection$obfuscation$fake_directory = config.getBoolean("resource-pack.protection.obfuscation.fake-directory", false);
-        resource_pack$protection$obfuscation$escape_unicode = config.getBoolean("resource-pack.protection.obfuscation.escape-unicode", false);
-        resource_pack$protection$obfuscation$break_json = config.getBoolean("resource-pack.protection.obfuscation.break-json", false);
-        resource_pack$protection$obfuscation$resource_location$enable = config.getBoolean("resource-pack.protection.obfuscation.resource-location.enable", false);
-        resource_pack$protection$obfuscation$resource_location$random_namespace$amount = config.getInt("resource-pack.protection.obfuscation.resource-location.random-namespace.amount", 32);
-        resource_pack$protection$obfuscation$resource_location$random_namespace$length = config.getInt("resource-pack.protection.obfuscation.resource-location.random-namespace.length", 8);
-        resource_pack$protection$obfuscation$resource_location$random_path$depth = config.getInt("resource-pack.protection.obfuscation.resource-location.random-path.depth", 16);
-        resource_pack$protection$obfuscation$resource_location$random_path$source = config.getString("resource-pack.protection.obfuscation.resource-location.random-path.source", "obf");
-        resource_pack$protection$obfuscation$resource_location$random_path$anti_unzip = config.getBoolean("resource-pack.protection.obfuscation.resource-location.random-path.anti-unzip", false);
-        resource_pack$protection$obfuscation$resource_location$random_atlas$images_per_canvas = config.getInt("resource-pack.protection.obfuscation.resource-location.random-atlas.images-per-canvas", 16);
-        resource_pack$protection$obfuscation$resource_location$random_atlas$use_double = config.getBoolean("resource-pack.protection.obfuscation.resource-location.random-atlas.use-double", true);
-        resource_pack$protection$obfuscation$resource_location$bypass_textures = config.getStringList("resource-pack.protection.obfuscation.resource-location.bypass-textures");
-        resource_pack$protection$obfuscation$resource_location$bypass_models = config.getStringList("resource-pack.protection.obfuscation.resource-location.bypass-models");
-        resource_pack$protection$obfuscation$resource_location$bypass_sounds = config.getStringList("resource-pack.protection.obfuscation.resource-location.bypass-sounds");
-        resource_pack$protection$obfuscation$resource_location$bypass_equipments = config.getStringList("resource-pack.protection.obfuscation.resource-location.bypass-equipments");
-        resource_pack$validate$enable = config.getBoolean("resource-pack.validate.enable", true);
+        resource_pack$protection$fake_directory = config.getBoolean("resource-pack.protection.fake-directory", false);
+        resource_pack$protection$escape_json = config.getBoolean("resource-pack.protection.escape-json", false);
+        resource_pack$protection$break_texture = config.getBoolean("resource-pack.protection.break-texture", false);
+        resource_pack$protection$incorrect_crc = config.getBoolean("resource-pack.protection.incorrect-crc", false);
+        resource_pack$protection$fake_file_size = config.getBoolean("resource-pack.protection.fake-file-size", false);
+        resource_pack$protection$obfuscation$namespace$amount = config.getInt("resource-pack.protection.obfuscation.namespace.amount", 32);
+        resource_pack$protection$obfuscation$namespace$length = NumberProviders.fromObject(config.get("resource-pack.protection.obfuscation.namespace.length", 2));
+        resource_pack$protection$obfuscation$path$depth = NumberProviders.fromObject(config.get("resource-pack.protection.obfuscation.path.depth", 4));
+        resource_pack$protection$obfuscation$path$length = NumberProviders.fromObject(config.get("resource-pack.protection.obfuscation.path.length", 2));
+        resource_pack$protection$obfuscation$path$source = config.getString("resource-pack.protection.obfuscation.path.source", "obf");
+        resource_pack$protection$obfuscation$path$anti_unzip = config.getBoolean("resource-pack.protection.obfuscation.path.anti-unzip", false);
+        resource_pack$protection$obfuscation$atlas$images_per_canvas = config.getInt("resource-pack.protection.obfuscation.atlas.images-per-canvas", 256);
+        resource_pack$protection$obfuscation$atlas$prefix = config.getString("resource-pack.protection.obfuscation.atlas.prefix", "atlas");
+        resource_pack$protection$obfuscation$bypass_textures = config.getStringList("resource-pack.protection.obfuscation.bypass-textures");
+        resource_pack$protection$obfuscation$bypass_models = config.getStringList("resource-pack.protection.obfuscation.bypass-models");
+        resource_pack$protection$obfuscation$bypass_sounds = config.getStringList("resource-pack.protection.obfuscation.bypass-sounds");
+        resource_pack$protection$obfuscation$bypass_equipments = config.getStringList("resource-pack.protection.obfuscation.bypass-equipments");
+        resource_pack$optimization$enable = config.getBoolean("resource-pack.optimization.enable", false);
+        resource_pack$optimization$texture$enable = config.getBoolean("resource-pack.optimization.texture.enable", true);
+        resource_pack$optimization$texture$zopfli_iterations = config.getInt("resource-pack.optimization.texture.zopfli-iterations", 0);
+        resource_pack$optimization$texture$exlude = config.getStringList("resource-pack.optimization.texture.exclude").stream().map(p -> {
+            if (!p.endsWith(".png")) return p + ".png";
+            return p;
+        }).collect(Collectors.toSet());
+        resource_pack$optimization$json$enable = config.getBoolean("resource-pack.optimization.json.enable", true);
+        resource_pack$optimization$json$exclude = config.getStringList("resource-pack.optimization.json.exclude").stream().map(p -> {
+            if (!p.endsWith(".json") && !p.endsWith(".mcmeta")) return p + ".json";
+            return p;
+        }).collect(Collectors.toSet());
+        resource_pack$validation$enable = config.getBoolean("resource-pack.validation.enable", true);
+        resource_pack$validation$fix_atlas = config.getBoolean("resource-pack.validation.fix-atlas", true);
         resource_pack$exclude_core_shaders = config.getBoolean("resource-pack.exclude-core-shaders", false);
         resource_pack$overlay_format = config.getString("resource-pack.overlay-format", "overlay_{version}");
         if (!resource_pack$overlay_format.contains("{version}")) {
@@ -311,6 +386,7 @@ public class Config {
 
         // light
         light_system$force_update_light = config.getBoolean("light-system.force-update-light", false);
+        light_system$async_update = config.getBoolean("light-system.async-update", true);
         light_system$enable = config.getBoolean("light-system.enable", true);
 
         // chunk
@@ -370,12 +446,30 @@ public class Config {
         equipment$sacrificed_vanilla_armor$humanoid_leggings = Key.of(config.getString("equipment.sacrificed-vanilla-armor.humanoid-leggings", "minecraft:trims/entity/humanoid_leggings/chainmail"));
 
         // item
-        item$client_bound_model = config.getBoolean("item.client-bound-model", false);
+        item$client_bound_model = config.getBoolean("item.client-bound-model", true) && VersionHelper.PREMIUM;
         item$non_italic_tag = config.getBoolean("item.non-italic-tag", false);
         item$update_triggers$attack = config.getBoolean("item.update-triggers.attack", false);
         item$update_triggers$click_in_inventory = config.getBoolean("item.update-triggers.click-in-inventory", false);
         item$update_triggers$drop = config.getBoolean("item.update-triggers.drop", false);
         item$update_triggers$pick_up = config.getBoolean("item.update-triggers.pick-up", false);
+        item$custom_model_data_starting_value$default = config.getInt("item.custom-model-data-starting-value.default", 10000);
+        item$always_use_item_model = config.getBoolean("item.always-use-item-model", true) && VersionHelper.isOrAbove1_21_2();
+        item$default_material = config.getString("item.default-material", "");
+
+        Section customModelDataOverridesSection = config.getSection("item.custom-model-data-starting-value.overrides");
+        if (customModelDataOverridesSection != null) {
+            Map<Key, Integer> customModelDataOverrides = new HashMap<>();
+            for (Map.Entry<String, Object> entry : customModelDataOverridesSection.getStringRouteMappedValues(false).entrySet()) {
+                if (entry.getValue() instanceof String s) {
+                    customModelDataOverrides.put(Key.of(entry.getKey()), Integer.parseInt(s));
+                } else if (entry.getValue() instanceof Integer i) {
+                    customModelDataOverrides.put(Key.of(entry.getKey()), i);
+                }
+            }
+            item$custom_model_data_starting_value$overrides = customModelDataOverrides;
+        } else {
+            item$custom_model_data_starting_value$overrides = Map.of();
+        }
 
         // block
         block$sound_system$enable = config.getBoolean("block.sound-system.enable", true);
@@ -384,6 +478,29 @@ public class Config {
         block$predict_breaking = config.getBoolean("block.predict-breaking.enable", true);
         block$predict_breaking_interval = Math.max(config.getInt("block.predict-breaking.interval", 10), 1);
         block$extended_interaction_range = Math.max(config.getDouble("block.predict-breaking.extended-interaction-range", 0.5), 0.0);
+        block$chunk_relighter = config.getBoolean("block.chunk-relighter", true);
+        if (firstTime) {
+            block$deceive_bukkit_material$default = Key.of(config.getString("block.deceive-bukkit-material.default", "bricks"));
+            block$deceive_bukkit_material$overrides = new HashMap<>();
+            Section overridesSection = config.getSection("block.deceive-bukkit-material.overrides");
+            if (overridesSection != null) {
+                for (Map.Entry<String, Object> entry : overridesSection.getStringRouteMappedValues(false).entrySet()) {
+                    String key = entry.getKey();
+                    Key value = Key.of(String.valueOf(entry.getValue()));
+                    if (key.contains("~")) {
+                        int min = Integer.parseInt(key.split("~")[0]);
+                        int max = Integer.parseInt(key.split("~")[1]);
+                        for (int i = min; i <= max; i++) {
+                            block$deceive_bukkit_material$overrides.put(i, value);
+                        }
+                    } else {
+                        block$deceive_bukkit_material$overrides.put(Integer.valueOf(key), value);
+                    }
+                }
+            }
+            block$serverside_blocks = Math.min(config.getInt("block.serverside-blocks", 2000), 10_0000);
+            if (block$serverside_blocks < 0) block$serverside_blocks = 0;
+        }
 
         // recipe
         recipe$enable = config.getBoolean("recipe.enable", true);
@@ -397,21 +514,40 @@ public class Config {
         image$illegal_characters_filter$chat = config.getBoolean("image.illegal-characters-filter.chat", true);
         image$illegal_characters_filter$command = config.getBoolean("image.illegal-characters-filter.command", true);
         image$illegal_characters_filter$sign = config.getBoolean("image.illegal-characters-filter.sign", true);
-        image$intercept_packets$system_chat = config.getBoolean("image.intercept-packets.system-chat", true);
-        image$intercept_packets$tab_list = config.getBoolean("image.intercept-packets.tab-list", true);
-        image$intercept_packets$actionbar = config.getBoolean("image.intercept-packets.actionbar", true);
-        image$intercept_packets$title = config.getBoolean("image.intercept-packets.title", true);
-        image$intercept_packets$bossbar = config.getBoolean("image.intercept-packets.bossbar", true);
-        image$intercept_packets$container = config.getBoolean("image.intercept-packets.container", true);
-        image$intercept_packets$team = config.getBoolean("image.intercept-packets.team", true);
-        image$intercept_packets$scoreboard = config.getBoolean("image.intercept-packets.scoreboard", true);
-        image$intercept_packets$entity_name = config.getBoolean("image.intercept-packets.entity-name", false);
-        image$intercept_packets$text_display = config.getBoolean("image.intercept-packets.text-display", true);
-        image$intercept_packets$armor_stand = config.getBoolean("image.intercept-packets.armor-stand", true);
-        image$intercept_packets$player_info = config.getBoolean("image.intercept-packets.player-info", true);
-        image$intercept_packets$set_score = config.getBoolean("image.intercept-packets.set-score", true);
-        image$intercept_packets$item = config.getBoolean("image.intercept-packets.item", true);
-        image$intercept_packets$advancement = config.getBoolean("image.intercept-packets.advancement", true);
+
+        image$codepoint_starting_value$default = config.getInt("image.codepoint-starting-value.default", 0);
+        Section codepointOverridesSection = config.getSection("image.codepoint-starting-value.overrides");
+        if (codepointOverridesSection != null) {
+            Map<Key, Integer> codepointOverrides = new HashMap<>();
+            for (Map.Entry<String, Object> entry : codepointOverridesSection.getStringRouteMappedValues(false).entrySet()) {
+                if (entry.getValue() instanceof String s) {
+                    codepointOverrides.put(Key.of(entry.getKey()), Integer.parseInt(s));
+                } else if (entry.getValue() instanceof Integer i) {
+                    codepointOverrides.put(Key.of(entry.getKey()), i);
+                }
+            }
+            image$codepoint_starting_value$overrides = codepointOverrides;
+        } else {
+            image$codepoint_starting_value$overrides = Map.of();
+        }
+
+        network$disable_item_operations = config.getBoolean("network.disable-item-operations", false);
+        network$intercept_packets$system_chat = config.getBoolean("network.intercept-packets.system-chat", true);
+        network$intercept_packets$tab_list = config.getBoolean("network.intercept-packets.tab-list", true);
+        network$intercept_packets$actionbar = config.getBoolean("network.intercept-packets.actionbar", true);
+        network$intercept_packets$title = config.getBoolean("network.intercept-packets.title", true);
+        network$intercept_packets$bossbar = config.getBoolean("network.intercept-packets.bossbar", true);
+        network$intercept_packets$container = config.getBoolean("network.intercept-packets.container", true);
+        network$intercept_packets$team = config.getBoolean("network.intercept-packets.team", true);
+        network$intercept_packets$scoreboard = config.getBoolean("network.intercept-packets.scoreboard", true);
+        network$intercept_packets$entity_name = config.getBoolean("network.intercept-packets.entity-name", false);
+        network$intercept_packets$text_display = config.getBoolean("network.intercept-packets.text-display", true);
+        network$intercept_packets$armor_stand = config.getBoolean("network.intercept-packets.armor-stand", true);
+        network$intercept_packets$player_info = config.getBoolean("network.intercept-packets.player-info", true);
+        network$intercept_packets$set_score = config.getBoolean("network.intercept-packets.set-score", true);
+        network$intercept_packets$item = config.getBoolean("network.intercept-packets.item", true);
+        network$intercept_packets$advancement = config.getBoolean("network.intercept-packets.advancement", true);
+        network$intercept_packets$player_chat = config.getBoolean("network.intercept-packets.player-chat", true);
 
         // emoji
         emoji$contexts$chat = config.getBoolean("emoji.contexts.chat", true);
@@ -424,13 +560,17 @@ public class Config {
     }
 
     private static MinecraftVersion getVersion(String version) {
-        if (version.equalsIgnoreCase("LATEST")) {
+        if (version.equalsIgnoreCase("latest")) {
             return new MinecraftVersion(PluginProperties.getValue("latest-version"));
         }
-        if (version.equalsIgnoreCase("SERVER")) {
+        if (version.equalsIgnoreCase("server")) {
             return VersionHelper.MINECRAFT_VERSION;
         }
         return MinecraftVersion.parse(version);
+    }
+
+    public static Locale forcedLocale() {
+        return instance.forcedLocale;
     }
 
     public static String configVersion() {
@@ -449,6 +589,14 @@ public class Config {
         return instance.debug$item;
     }
 
+    public static boolean debugBlockEntity() {
+        return false;
+    }
+
+    public static boolean debugBlock() {
+        return false;
+    }
+
     public static boolean debugFurniture() {
         return instance.debug$furniture;
     }
@@ -463,6 +611,14 @@ public class Config {
 
     public static boolean metrics() {
         return instance.metrics;
+    }
+
+    public static int serverSideBlocks() {
+        return instance.block$serverside_blocks;
+    }
+
+    public static boolean alwaysUseItemModel() {
+        return instance.item$always_use_item_model;
     }
 
     public static boolean filterConfigurationPhaseDisconnect() {
@@ -580,6 +736,9 @@ public class Config {
     public static boolean autoUpload() {
         return instance.resource_pack$delivery$auto_upload;
     }
+    public static boolean strictPlayerUuidValidation() {
+        return instance.resource_pack$delivery$strict_player_uuid_validation;
+    }
 
     public static Path fileToUpload() {
         return instance.resource_pack$delivery$file_to_upload;
@@ -602,7 +761,27 @@ public class Config {
     }
 
     public static boolean crashTool4() {
-        return false;
+        return instance.resource_pack$protection$crash_tools$method_4;
+    }
+
+    public static boolean crashTool5() {
+        return instance.resource_pack$protection$crash_tools$method_5;
+    }
+
+    public static boolean crashTool6() {
+        return instance.resource_pack$protection$crash_tools$method_6;
+    }
+
+    public static boolean crashTool7() {
+        return instance.resource_pack$protection$crash_tools$method_7;
+    }
+
+    public static boolean crashTool8() {
+        return instance.resource_pack$protection$crash_tools$method_8;
+    }
+
+    public static boolean crashTool9() {
+        return instance.resource_pack$protection$crash_tools$method_9;
     }
 
     public static boolean enableObfuscation() {
@@ -614,63 +793,75 @@ public class Config {
     }
 
     public static boolean createFakeDirectory() {
-        return instance.resource_pack$protection$obfuscation$fake_directory;
+        return instance.resource_pack$protection$fake_directory;
     }
 
-    public static boolean escapeUnicode() {
-        return instance.resource_pack$protection$obfuscation$escape_unicode;
+    public static boolean escapeJson() {
+        return instance.resource_pack$protection$escape_json;
     }
 
-    public static boolean breakJson() {
-        return instance.resource_pack$protection$obfuscation$break_json;
+    public static boolean breakTexture() {
+        return instance.resource_pack$protection$break_texture;
     }
 
-    public static boolean enableRandomResourceLocation() {
-        return instance.resource_pack$protection$obfuscation$resource_location$enable;
-    }
-
-    public static int namespaceLength() {
-        return instance.resource_pack$protection$obfuscation$resource_location$random_namespace$length;
+    public static NumberProvider namespaceLength() {
+        return instance.resource_pack$protection$obfuscation$namespace$length;
     }
 
     public static int namespaceAmount() {
-        return instance.resource_pack$protection$obfuscation$resource_location$random_namespace$amount;
+        return instance.resource_pack$protection$obfuscation$namespace$amount;
     }
 
     public static String atlasSource() {
-        return instance.resource_pack$protection$obfuscation$resource_location$random_path$source;
+        return instance.resource_pack$protection$obfuscation$path$source;
     }
 
-    public static int pathDepth() {
-        return instance.resource_pack$protection$obfuscation$resource_location$random_path$depth;
+    public static NumberProvider pathDepth() {
+        return instance.resource_pack$protection$obfuscation$path$depth;
+    }
+
+    public static NumberProvider pathLength() {
+        return instance.resource_pack$protection$obfuscation$path$length;
     }
 
     public static boolean antiUnzip() {
-        return instance.resource_pack$protection$obfuscation$resource_location$random_path$anti_unzip;
+        return instance.resource_pack$protection$obfuscation$path$anti_unzip;
+    }
+
+    public static boolean incorrectCrc() {
+        return instance.resource_pack$protection$incorrect_crc;
+    }
+
+    public static boolean fakeFileSize() {
+        return instance.resource_pack$protection$fake_file_size;
     }
 
     public static int imagesPerCanvas() {
-        return instance.resource_pack$protection$obfuscation$resource_location$random_atlas$images_per_canvas;
+        return instance.resource_pack$protection$obfuscation$atlas$images_per_canvas;
     }
 
-    public static boolean useDouble() {
-        return instance.resource_pack$protection$obfuscation$resource_location$random_atlas$use_double;
+    public static String imageCanvasPrefix() {
+        return instance.resource_pack$protection$obfuscation$atlas$prefix;
     }
 
     public static List<String> bypassTextures() {
-        return instance.resource_pack$protection$obfuscation$resource_location$bypass_textures;
+        return instance.resource_pack$protection$obfuscation$bypass_textures;
     }
 
     public static List<String> bypassModels() {
-        return instance.resource_pack$protection$obfuscation$resource_location$bypass_models;
+        return instance.resource_pack$protection$obfuscation$bypass_models;
     }
 
     public static List<String> bypassSounds() {
-        return instance.resource_pack$protection$obfuscation$resource_location$bypass_sounds;
+        return instance.resource_pack$protection$obfuscation$bypass_sounds;
     }
 
     public static List<String> bypassEquipments() {
-        return instance.resource_pack$protection$obfuscation$resource_location$bypass_equipments;
+        return instance.resource_pack$protection$obfuscation$bypass_equipments;
+    }
+
+    public static Key deceiveBukkitMaterial(int id) {
+        return instance.block$deceive_bukkit_material$overrides.getOrDefault(id, instance.block$deceive_bukkit_material$default);
     }
 
     public static boolean generateModAssets() {
@@ -705,6 +896,20 @@ public class Config {
         return instance.furniture$hide_base_entity;
     }
 
+    public static int customModelDataStartingValue(Key material) {
+        if (instance.item$custom_model_data_starting_value$overrides.containsKey(material)) {
+            return instance.item$custom_model_data_starting_value$overrides.get(material);
+        }
+        return instance.item$custom_model_data_starting_value$default;
+    }
+
+    public static int codepointStartingValue(Key font) {
+        if (instance.image$codepoint_starting_value$overrides.containsKey(font)) {
+            return instance.image$codepoint_starting_value$overrides.get(font);
+        }
+        return instance.image$codepoint_starting_value$default;
+    }
+
     public static int compressionMethod() {
         int id = instance.chunk_system$compression_method;
         if (id <= 0 || id > CompressionMethod.METHOD_COUNT) {
@@ -713,64 +918,72 @@ public class Config {
         return id;
     }
 
+    public static boolean disableItemOperations() {
+        return instance.network$disable_item_operations;
+    }
+
     public static boolean interceptSystemChat() {
-        return instance.image$intercept_packets$system_chat;
+        return instance.network$intercept_packets$system_chat;
     }
 
     public static boolean interceptTabList() {
-        return instance.image$intercept_packets$tab_list;
+        return instance.network$intercept_packets$tab_list;
     }
 
     public static boolean interceptActionBar() {
-        return instance.image$intercept_packets$actionbar;
+        return instance.network$intercept_packets$actionbar;
     }
 
     public static boolean interceptTitle() {
-        return instance.image$intercept_packets$title;
+        return instance.network$intercept_packets$title;
     }
 
     public static boolean interceptBossBar() {
-        return instance.image$intercept_packets$bossbar;
+        return instance.network$intercept_packets$bossbar;
     }
 
     public static boolean interceptContainer() {
-        return instance.image$intercept_packets$container;
+        return instance.network$intercept_packets$container;
     }
 
     public static boolean interceptTeam() {
-        return instance.image$intercept_packets$team;
+        return instance.network$intercept_packets$team;
     }
 
     public static boolean interceptEntityName() {
-        return instance.image$intercept_packets$entity_name;
+        return instance.network$intercept_packets$entity_name;
     }
 
     public static boolean interceptScoreboard() {
-        return instance.image$intercept_packets$scoreboard;
+        return instance.network$intercept_packets$scoreboard;
     }
 
     public static boolean interceptTextDisplay() {
-        return instance.image$intercept_packets$text_display;
+        return instance.network$intercept_packets$text_display;
     }
 
     public static boolean interceptArmorStand() {
-        return instance.image$intercept_packets$armor_stand;
+        return instance.network$intercept_packets$armor_stand;
     }
 
     public static boolean interceptPlayerInfo() {
-        return instance.image$intercept_packets$player_info;
+        return instance.network$intercept_packets$player_info;
     }
 
     public static boolean interceptSetScore() {
-        return instance.image$intercept_packets$set_score;
+        return instance.network$intercept_packets$set_score;
     }
 
     public static boolean interceptItem() {
-        return instance.image$intercept_packets$item;
+        return instance.network$intercept_packets$item;
     }
 
     public static boolean interceptAdvancement() {
-        return instance.image$intercept_packets$advancement;
+        return instance.network$intercept_packets$advancement;
+    }
+
+    public static boolean interceptPlayerChat() {
+        return instance.network$intercept_packets$player_chat;
     }
 
     public static boolean predictBreaking() {
@@ -822,7 +1035,11 @@ public class Config {
     }
 
     public static boolean validateResourcePack() {
-        return instance.resource_pack$validate$enable;
+        return instance.resource_pack$validation$enable;
+    }
+
+    public static boolean fixTextureAtlas() {
+        return instance.resource_pack$validation$fix_atlas;
     }
 
     public static boolean excludeShaders() {
@@ -873,8 +1090,48 @@ public class Config {
         return instance.item$update_triggers$drop;
     }
 
+    public static boolean enableChunkRelighter() {
+        return instance.block$chunk_relighter;
+    }
+
+    public static boolean asyncLightUpdate() {
+        return instance.light_system$async_update;
+    }
+
+    public static String defaultMaterial() {
+        return instance.item$default_material;
+    }
+
+    public static Path resourcePackPath() {
+        return instance.resource_pack$path;
+    }
+
     public void setObf(boolean enable) {
         this.resource_pack$protection$obfuscation$enable = enable;
+    }
+
+    public static boolean optimizeResourcePack() {
+        return instance.resource_pack$optimization$enable;
+    }
+
+    public static boolean optimizeTexture() {
+        return instance.resource_pack$optimization$texture$enable;
+    }
+
+    public static Set<String> optimizeTextureExclude() {
+        return instance.resource_pack$optimization$texture$exlude;
+    }
+
+    public static boolean optimizeJson() {
+        return instance.resource_pack$optimization$json$enable;
+    }
+
+    public static Set<String> optimizeJsonExclude() {
+        return instance.resource_pack$optimization$json$exclude;
+    }
+
+    public static int zopfliIterations() {
+        return instance.resource_pack$optimization$texture$zopfli_iterations;
     }
 
     public YamlDocument loadOrCreateYamlData(String fileName) {
@@ -928,7 +1185,7 @@ public class Config {
     }
 
     private Path resolvePath(String path) {
-        return path.startsWith(".") ? CraftEngine.instance().dataFolderPath().resolve(path) : Path.of(path);
+        return FileUtils.isAbsolute(path) ? Path.of(path) : this.plugin.dataFolderPath().resolve(path);
     }
 
     public YamlDocument settings() {

@@ -23,27 +23,30 @@ public class CommandFunction<CTX extends Context> extends AbstractConditionalFun
     private final PlayerSelector<CTX> selector;
     private final boolean asPlayer;
     private final boolean asEvent;
+    private final boolean asOp;
 
-    public CommandFunction(List<Condition<CTX>> predicates, @Nullable PlayerSelector<CTX> selector, List<TextProvider> command, boolean asPlayer, boolean asEvent) {
+    public CommandFunction(List<Condition<CTX>> predicates, @Nullable PlayerSelector<CTX> selector, List<TextProvider> command,
+                           boolean asPlayer, boolean asEvent, boolean asOp) {
         super(predicates);
         this.command = command;
         this.selector = selector;
         this.asPlayer = asPlayer;
         this.asEvent = asEvent;
+        this.asOp = asOp;
     }
 
     @Override
     public void runInternal(CTX ctx) {
-        if (this.asPlayer) {
+        if (this.asPlayer || this.asOp) {
             if (this.selector == null) {
                 ctx.getOptionalParameter(DirectContextParameters.PLAYER)
                         .ifPresent(player -> executeCommands(
-                                ctx, this.asEvent ? player::performCommandAsEvent : player::performCommand
+                                ctx, this.asEvent ? player::performCommandAsEvent : command1 -> player.performCommand(command1, this.asOp)
                         ));
             } else {
                 for (Player viewer : this.selector.get(ctx)) {
-                    RelationalContext relationalContext = ViewerContext.of(ctx, PlayerOptionalContext.of(viewer, ContextHolder.EMPTY));
-                    executeCommands(relationalContext, this.asEvent ? viewer::performCommandAsEvent : viewer::performCommand);
+                    RelationalContext relationalContext = ViewerContext.of(ctx, PlayerOptionalContext.of(viewer));
+                    executeCommands(relationalContext, this.asEvent ? viewer::performCommandAsEvent : command1 -> viewer.performCommand(command1, this.asOp));
                 }
             }
         } else {
@@ -77,7 +80,8 @@ public class CommandFunction<CTX extends Context> extends AbstractConditionalFun
             List<TextProvider> commands = MiscUtils.getAsStringList(command).stream().map(TextProviders::fromString).toList();
             boolean asPlayer = ResourceConfigUtils.getAsBoolean(arguments.getOrDefault("as-player", false), "as-player");
             boolean asEvent = ResourceConfigUtils.getAsBoolean(arguments.getOrDefault("as-event", false), "as-event");
-            return new CommandFunction<>(getPredicates(arguments), PlayerSelectors.fromObject(arguments.get("target"), conditionFactory()), commands, asPlayer, asEvent);
+            boolean asOp = ResourceConfigUtils.getAsBoolean(arguments.getOrDefault("as-op", false), "as-op");
+            return new CommandFunction<>(getPredicates(arguments), PlayerSelectors.fromObject(arguments.get("target"), conditionFactory()), commands, asPlayer, asEvent, asOp);
         }
     }
 }

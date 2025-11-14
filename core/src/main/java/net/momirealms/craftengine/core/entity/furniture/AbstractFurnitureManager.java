@@ -5,10 +5,12 @@ import net.momirealms.craftengine.core.entity.ItemDisplayContext;
 import net.momirealms.craftengine.core.loot.LootTable;
 import net.momirealms.craftengine.core.pack.LoadingSequence;
 import net.momirealms.craftengine.core.pack.Pack;
+import net.momirealms.craftengine.core.pack.PendingConfigSection;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
-import net.momirealms.craftengine.core.plugin.config.ConfigParser;
+import net.momirealms.craftengine.core.plugin.config.IdSectionConfigParser;
 import net.momirealms.craftengine.core.plugin.context.event.EventFunctions;
 import net.momirealms.craftengine.core.plugin.locale.LocalizedResourceConfigException;
+import net.momirealms.craftengine.core.util.GsonHelper;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
@@ -31,7 +33,7 @@ public abstract class AbstractFurnitureManager implements FurnitureManager {
     }
 
     @Override
-    public ConfigParser parser() {
+    public FurnitureParser parser() {
         return this.furnitureParser;
     }
 
@@ -59,18 +61,41 @@ public abstract class AbstractFurnitureManager implements FurnitureManager {
     }
 
     @Override
+    public Map<Key, CustomFurniture> loadedFurniture() {
+        return Collections.unmodifiableMap(this.byId);
+    }
+
+    @Override
     public void unload() {
         this.byId.clear();
     }
 
-    protected abstract HitBox defaultHitBox();
+    protected abstract HitBoxConfig defaultHitBox();
 
     protected abstract FurnitureElement.Builder furnitureElementBuilder();
 
     protected abstract CustomFurniture.Builder furnitureBuilder();
 
-    public class FurnitureParser implements ConfigParser {
+    public class FurnitureParser extends IdSectionConfigParser {
         public static final String[] CONFIG_SECTION_NAME = new String[] { "furniture" };
+        private final List<PendingConfigSection> pendingConfigSections = new ArrayList<>();
+
+        public void addPendingConfigSection(PendingConfigSection section) {
+            this.pendingConfigSections.add(section);
+        }
+
+        @Override
+        public void preProcess() {
+            for (PendingConfigSection section : this.pendingConfigSections) {
+                ResourceConfigUtils.runCatching(
+                        section.path(),
+                        section.node(),
+                        () -> parseSection(section.pack(), section.path(), section.node(), section.id(), section.config()),
+                        () -> GsonHelper.get().toJson(section.config())
+                );
+            }
+            this.pendingConfigSections.clear();
+        }
 
         @Override
         public String[] sectionId() {
@@ -84,8 +109,8 @@ public abstract class AbstractFurnitureManager implements FurnitureManager {
 
         @SuppressWarnings("unchecked")
         @Override
-        public void parseSection(Pack pack, Path path, Key id, Map<String, Object> section) {
-            if (byId.containsKey(id)) {
+        public void parseSection(Pack pack, Path path, String node, Key id, Map<String, Object> section) {
+            if (AbstractFurnitureManager.this.byId.containsKey(id)) {
                 throw new LocalizedResourceConfigException("warning.config.furniture.duplicate");
             }
             EnumMap<AnchorType, CustomFurniture.Placement> placements = new EnumMap<>(AnchorType.class);
@@ -98,7 +123,7 @@ public abstract class AbstractFurnitureManager implements FurnitureManager {
                 // anchor type
                 AnchorType anchorType = AnchorType.valueOf(entry.getKey().toUpperCase(Locale.ENGLISH));
                 Map<String, Object> placementArguments = MiscUtils.castToMap(entry.getValue(), false);
-                Optional<Vector3f> optionalLootSpawnOffset = Optional.ofNullable(placementArguments.get("loot-spawn-offset")).map(it -> MiscUtils.getAsVector3f(it, "loot-spawn-offset"));
+                Optional<Vector3f> optionalLootSpawnOffset = Optional.ofNullable(placementArguments.get("loot-spawn-offset")).map(it -> ResourceConfigUtils.getAsVector3f(it, "loot-spawn-offset"));
                 // furniture display elements
                 List<FurnitureElement> elements = new ArrayList<>();
                 List<Map<String, Object>> elementConfigs = (List<Map<String, Object>>) placementArguments.getOrDefault("elements", List.of());
@@ -108,10 +133,12 @@ public abstract class AbstractFurnitureManager implements FurnitureManager {
                             .applyDyedColor(ResourceConfigUtils.getAsBoolean(element.getOrDefault("apply-dyed-color", true), "apply-dyed-color"))
                             .billboard(ResourceConfigUtils.getOrDefault(element.get("billboard"), o -> Billboard.valueOf(o.toString().toUpperCase(Locale.ENGLISH)), Billboard.FIXED))
                             .transform(ResourceConfigUtils.getOrDefault(element.get("transform"), o -> ItemDisplayContext.valueOf(o.toString().toUpperCase(Locale.ENGLISH)), ItemDisplayContext.NONE))
-                            .scale(MiscUtils.getAsVector3f(element.getOrDefault("scale", "1"), "scale"))
-                            .position(MiscUtils.getAsVector3f(element.getOrDefault("position", "0"), "position"))
-                            .translation(MiscUtils.getAsVector3f(element.getOrDefault("translation", "0"), "translation"))
-                            .rotation(MiscUtils.getAsQuaternionf(element.getOrDefault("rotation", "0"), "rotation"))
+                            .scale(ResourceConfigUtils.getAsVector3f(element.getOrDefault("scale", "1"), "scale"))
+                            .position(ResourceConfigUtils.getAsVector3f(element.getOrDefault("position", "0"), "position"))
+                            .translation(ResourceConfigUtils.getAsVector3f(element.getOrDefault("translation", "0"), "translation"))
+                            .rotation(ResourceConfigUtils.getAsQuaternionf(element.getOrDefault("rotation", "0"), "rotation"))
+                            .shadowRadius(ResourceConfigUtils.getAsFloat(element.getOrDefault("shadow-radius", 0f), "shadow-radius"))
+                            .shadowStrength(ResourceConfigUtils.getAsFloat(element.getOrDefault("shadow-strength", 1f), "shadow-strength"))
                             .build();
                     elements.add(furnitureElement);
                 }
@@ -127,7 +154,7 @@ public abstract class AbstractFurnitureManager implements FurnitureManager {
                 }
 
                 // add hitboxes
-                List<HitBox> hitboxes = ResourceConfigUtils.parseConfigAsList(placementArguments.get("hitboxes"), HitBoxTypes::fromMap);
+                List<HitBoxConfig> hitboxes = ResourceConfigUtils.parseConfigAsList(placementArguments.get("hitboxes"), HitBoxTypes::fromMap);
                 if (hitboxes.isEmpty() && externalModel.isEmpty()) {
                     hitboxes = List.of(defaultHitBox());
                 }
@@ -138,7 +165,7 @@ public abstract class AbstractFurnitureManager implements FurnitureManager {
                     placements.put(anchorType, new CustomFurniture.Placement(
                             anchorType,
                             elements.toArray(new FurnitureElement[0]),
-                            hitboxes.toArray(new HitBox[0]),
+                            hitboxes.toArray(new HitBoxConfig[0]),
                             ResourceConfigUtils.getOrDefault(ruleSection.get("rotation"), o -> RotationRule.valueOf(o.toString().toUpperCase(Locale.ENGLISH)), RotationRule.ANY),
                             ResourceConfigUtils.getOrDefault(ruleSection.get("alignment"), o -> AlignmentRule.valueOf(o.toString().toUpperCase(Locale.ENGLISH)), AlignmentRule.CENTER),
                             externalModel,
@@ -148,7 +175,7 @@ public abstract class AbstractFurnitureManager implements FurnitureManager {
                     placements.put(anchorType, new CustomFurniture.Placement(
                             anchorType,
                             elements.toArray(new FurnitureElement[0]),
-                            hitboxes.toArray(new HitBox[0]),
+                            hitboxes.toArray(new HitBoxConfig[0]),
                             RotationRule.ANY,
                             AlignmentRule.CENTER,
                             externalModel,

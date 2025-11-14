@@ -9,7 +9,7 @@ import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.util.*;
-import net.momirealms.craftengine.bukkit.world.BukkitBlockInWorld;
+import net.momirealms.craftengine.bukkit.world.BukkitExistingBlock;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.UpdateOption;
@@ -23,6 +23,7 @@ import net.momirealms.craftengine.core.item.behavior.ItemBehaviorFactory;
 import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
 import net.momirealms.craftengine.core.item.context.UseOnContext;
 import net.momirealms.craftengine.core.pack.Pack;
+import net.momirealms.craftengine.core.pack.PendingConfigSection;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.plugin.context.ContextHolder;
@@ -73,7 +74,7 @@ public class BlockItemBehavior extends BlockBoundItemBehavior {
             return InteractionResult.FAIL;
         }
         if (!context.canPlace()) {
-            return InteractionResult.FAIL;
+            return InteractionResult.PASS;
         }
 
         Player player = context.getPlayer();
@@ -89,7 +90,7 @@ public class BlockItemBehavior extends BlockBoundItemBehavior {
 
         ImmutableBlockState blockStateToPlace = getPlacementState(context, block);
         if (blockStateToPlace == null) {
-            return InteractionResult.FAIL;
+            return InteractionResult.PASS;
         }
 
         BlockPos againstPos = context.getAgainstPos();
@@ -111,7 +112,7 @@ public class BlockItemBehavior extends BlockBoundItemBehavior {
                 } else {
                     ImmutableBlockState customState = optionalCustomState.get();
                     // custom block
-                    if (!AdventureModeUtils.canPlace(context.getItem(), context.getLevel(), againstPos, Config.simplifyAdventurePlaceCheck() ? customState.vanillaBlockState().handle() : againstBlockState)) {
+                    if (!AdventureModeUtils.canPlace(context.getItem(), context.getLevel(), againstPos, Config.simplifyAdventurePlaceCheck() ? customState.vanillaBlockState().literalObject() : againstBlockState)) {
                         return InteractionResult.FAIL;
                     }
                 }
@@ -157,7 +158,7 @@ public class BlockItemBehavior extends BlockBoundItemBehavior {
         WorldPosition position = new WorldPosition(context.getLevel(), pos.x() + 0.5, pos.y() + 0.5, pos.z() + 0.5);
         Cancellable dummy = Cancellable.dummy();
         PlayerOptionalContext functionContext = PlayerOptionalContext.of(player, ContextHolder.builder()
-                .withParameter(DirectContextParameters.BLOCK, new BukkitBlockInWorld(bukkitBlock))
+                .withParameter(DirectContextParameters.BLOCK, new BukkitExistingBlock(bukkitBlock))
                 .withParameter(DirectContextParameters.POSITION, position)
                 .withParameter(DirectContextParameters.EVENT, dummy)
                 .withParameter(DirectContextParameters.HAND, context.getHand())
@@ -196,7 +197,7 @@ public class BlockItemBehavior extends BlockBoundItemBehavior {
         try {
             Player cePlayer = context.getPlayer();
             Object player = cePlayer != null ? cePlayer.serverPlayer() : null;
-            Object blockState = state.customBlockState().handle();
+            Object blockState = state.customBlockState().literalObject();
             Object blockPos = LocationUtils.toBlockPos(context.getClickedPos());
             Object voxelShape;
             if (VersionHelper.isOrAbove1_21_6()) {
@@ -232,20 +233,24 @@ public class BlockItemBehavior extends BlockBoundItemBehavior {
         return this.blockId;
     }
 
+    static void addPendingSection(Pack pack, Path path, String node, Key key, Map<?, ?> map) {
+        if (map.containsKey(key.toString())) {
+            // 防呆
+            BukkitBlockManager.instance().blockParser().addPendingConfigSection(new PendingConfigSection(pack, path, node, key, MiscUtils.castToMap(map.get(key.toString()), false)));
+        } else {
+            BukkitBlockManager.instance().blockParser().addPendingConfigSection(new PendingConfigSection(pack, path, node, key, MiscUtils.castToMap(map, false)));
+        }
+    }
+
     public static class Factory implements ItemBehaviorFactory {
         @Override
-        public ItemBehavior create(Pack pack, Path path, Key key, Map<String, Object> arguments) {
+        public ItemBehavior create(Pack pack, Path path, String node, Key key, Map<String, Object> arguments) {
             Object id = arguments.get("block");
             if (id == null) {
                 throw new LocalizedResourceConfigException("warning.config.item.behavior.block.missing_block", new IllegalArgumentException("Missing required parameter 'block' for block_item behavior"));
             }
             if (id instanceof Map<?, ?> map) {
-                if (map.containsKey(key.toString())) {
-                    // 防呆
-                    BukkitBlockManager.instance().parser().parseSection(pack, path, key, MiscUtils.castToMap(map.get(key.toString()), false));
-                } else {
-                    BukkitBlockManager.instance().parser().parseSection(pack, path, key, MiscUtils.castToMap(map, false));
-                }
+                addPendingSection(pack, path, node, key, map);
                 return new BlockItemBehavior(key);
             } else {
                 return new BlockItemBehavior(Key.of(id.toString()));

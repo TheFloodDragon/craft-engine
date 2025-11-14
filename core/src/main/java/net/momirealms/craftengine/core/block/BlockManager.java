@@ -16,7 +16,7 @@ import java.util.Optional;
 
 public interface BlockManager extends Manageable, ModelGenerator {
 
-    ConfigParser parser();
+    ConfigParser[] parsers();
 
     Collection<ModelGeneration> modelsToGenerate();
 
@@ -24,15 +24,20 @@ public interface BlockManager extends Manageable, ModelGenerator {
 
     Map<Key, JsonElement> modBlockStates();
 
-    Map<Key, CustomBlock> blocks();
+    boolean isTransparentModelInUse();
+
+    Map<Key, CustomBlock> loadedBlocks();
+
+    @Deprecated(forRemoval = true)
+    default Map<Key, CustomBlock> blocks() {
+        return loadedBlocks();
+    }
 
     Optional<CustomBlock> blockById(Key key);
 
     Collection<Suggestion> cachedSuggestions();
 
-    Map<Key, Key> soundMapper();
-
-    int availableAppearances(Key blockType);
+    Map<Key, Key> soundReplacements();
 
     Key getBlockOwnerId(BlockStateWrapper state);
 
@@ -43,5 +48,12 @@ public interface BlockManager extends Manageable, ModelGenerator {
     ImmutableBlockState getImmutableBlockState(int stateId);
     
     @Nullable
-    BlockStateWrapper createPackedBlockState(String blockState);
+    BlockStateWrapper createBlockState(String blockState);
+
+    @Nullable
+    BlockStateWrapper createVanillaBlockState(String blockState);
+
+    static Key createCustomBlockKey(int id) {
+        return Key.of("craftengine", "custom_" + id);
+    }
 }

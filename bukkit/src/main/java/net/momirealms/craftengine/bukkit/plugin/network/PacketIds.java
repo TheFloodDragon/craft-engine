@@ -60,6 +60,10 @@ public interface PacketIds {
 
     int clientboundUpdateAdvancementsPacket();
 
+    int clientBoundMerchantOffersPacket();
+
+    int clientboundBlockEntityDataPacket();
+
     int serverboundContainerClickPacket();
 
     int serverboundSetCreativeModeSlotPacket();
@@ -67,4 +71,10 @@ public interface PacketIds {
     int serverboundInteractPacket();
 
     int clientboundUpdateRecipesPacket();
+
+    int clientboundForgetLevelChunkPacket();
+
+    int serverboundCustomPayloadPacket();
+
+    int clientboundPlayerChatPacket();
 }

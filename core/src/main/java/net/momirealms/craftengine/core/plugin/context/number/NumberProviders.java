@@ -17,12 +17,16 @@ public class NumberProviders {
     public static final Key CONSTANT = Key.of("craftengine:constant");
     public static final Key UNIFORM = Key.of("craftengine:uniform");
     public static final Key EXPRESSION = Key.of("craftengine:expression");
+    public static final Key GAUSSIAN = Key.of("craftengine:gaussian");
+    public static final Key BINOMIAL = Key.of("craftengine:binomial");
 
     static {
         register(FIXED, FixedNumberProvider.FACTORY);
         register(CONSTANT, FixedNumberProvider.FACTORY);
         register(UNIFORM, UniformNumberProvider.FACTORY);
+        register(GAUSSIAN, GaussianNumberProvider.FACTORY);
         register(EXPRESSION, ExpressionNumberProvider.FACTORY);
+        register(BINOMIAL, BinomialNumberProvider.FACTORY);
     }
 
     public static void register(Key key, NumberProviderFactory factory) {
@@ -60,6 +64,8 @@ public class NumberProviders {
         }
         if (object instanceof Number number) {
             return new FixedNumberProvider(number.floatValue());
+        } else if (object instanceof Boolean bool) {
+            return new FixedNumberProvider(bool ? 1 : 0);
         } else if (object instanceof Map<?,?> map) {
             return fromMap((Map<String, Object>) map);
         } else {

@@ -4,6 +4,7 @@ import io.papermc.paper.event.block.CompostItemEvent;
 import net.momirealms.craftengine.bukkit.api.BukkitAdaptors;
 import net.momirealms.craftengine.bukkit.api.event.CustomBlockInteractEvent;
 import net.momirealms.craftengine.bukkit.entity.BukkitEntity;
+import net.momirealms.craftengine.bukkit.entity.BukkitItemEntity;
 import net.momirealms.craftengine.bukkit.item.BukkitCustomItem;
 import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
@@ -11,7 +12,7 @@ import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.bukkit.util.*;
-import net.momirealms.craftengine.bukkit.world.BukkitBlockInWorld;
+import net.momirealms.craftengine.bukkit.world.BukkitExistingBlock;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.behavior.AbstractBlockBehavior;
@@ -21,6 +22,7 @@ import net.momirealms.craftengine.core.item.CustomItem;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.item.ItemBuildContext;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
+import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
 import net.momirealms.craftengine.core.item.context.UseOnContext;
 import net.momirealms.craftengine.core.item.setting.FoodData;
 import net.momirealms.craftengine.core.item.updater.ItemUpdateResult;
@@ -29,7 +31,7 @@ import net.momirealms.craftengine.core.plugin.context.ContextHolder;
 import net.momirealms.craftengine.core.plugin.context.PlayerOptionalContext;
 import net.momirealms.craftengine.core.plugin.context.event.EventTrigger;
 import net.momirealms.craftengine.core.plugin.context.parameter.DirectContextParameters;
-import net.momirealms.craftengine.core.sound.SoundData;
+import net.momirealms.craftengine.core.sound.SoundSet;
 import net.momirealms.craftengine.core.sound.SoundSource;
 import net.momirealms.craftengine.core.util.*;
 import net.momirealms.craftengine.core.world.BlockHitResult;
@@ -41,6 +43,7 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Openable;
+import org.bukkit.block.data.Powerable;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -140,7 +143,7 @@ public class ItemEventListener implements Listener {
             Direction direction = DirectionUtils.toDirection(event.getBlockFace());
             BlockPos pos = LocationUtils.toBlockPos(block.getLocation());
             Vec3d vec3d = new Vec3d(interactionPoint.getX(), interactionPoint.getY(), interactionPoint.getZ());
-            hitResult = new BlockHitResult(vec3d, direction, pos, false);
+            hitResult = new BlockHitResult(vec3d, direction, pos, false); // todo 需要检测玩家是否在方块内
         }
 
         // 处理自定义方块
@@ -164,16 +167,15 @@ public class ItemEventListener implements Listener {
 
             // fix client side issues
             if (action.isRightClick() && hitResult != null &&
-                    InteractUtils.willConsume(player, BlockStateUtils.fromBlockData(immutableBlockState.vanillaBlockState().handle()), hitResult, itemInHand)) {
+                    InteractUtils.canPlaceVisualBlock(player, BlockStateUtils.fromBlockData(immutableBlockState.vanillaBlockState().literalObject()), hitResult, itemInHand)) {
                 player.updateInventory();
-                //PlayerUtils.resendItemInHand(player);
             }
 
             Cancellable dummy = Cancellable.dummy();
             // run custom functions
             CustomBlock customBlock = immutableBlockState.owner().value();
             PlayerOptionalContext context = PlayerOptionalContext.of(serverPlayer, ContextHolder.builder()
-                    .withParameter(DirectContextParameters.BLOCK, new BukkitBlockInWorld(block))
+                    .withParameter(DirectContextParameters.BLOCK, new BukkitExistingBlock(block))
                     .withParameter(DirectContextParameters.CUSTOM_BLOCK_STATE, immutableBlockState)
                     .withParameter(DirectContextParameters.HAND, hand)
                     .withParameter(DirectContextParameters.EVENT, dummy)
@@ -219,14 +221,29 @@ public class ItemEventListener implements Listener {
             }
         } else {
             if (Config.enableSoundSystem() && hitResult != null) {
-                Object blockOwner = FastNMS.INSTANCE.method$BlockState$getBlock(blockState);
-                if (this.plugin.blockManager().isOpenableBlockSoundRemoved(blockOwner)) {
+                Key blockOwner = BlockStateUtils.getBlockOwnerIdFromState(blockState);
+                if (this.plugin.blockManager().isInteractSoundMissing(blockOwner)) {
                     boolean hasItem = player.getInventory().getItemInMainHand().getType() != Material.AIR || player.getInventory().getItemInOffHand().getType() != Material.AIR;
                     boolean flag = player.isSneaking() && hasItem;
                     if (!flag) {
                         if (blockData instanceof Openable openable) {
-                            SoundData soundData = this.plugin.blockManager().getRemovedOpenableBlockSound(blockOwner, !openable.isOpen());
-                            serverPlayer.playSound(soundData.id(), SoundSource.BLOCK, soundData.volume().get(), soundData.pitch().get());
+                            SoundSet soundSet = SoundSet.getByBlock(blockOwner);
+                            if (soundSet != null) {
+                                serverPlayer.playSound(
+                                        Vec3d.atCenterOf(hitResult.getBlockPos()),
+                                        openable.isOpen() ? soundSet.closeSound() : soundSet.openSound(),
+                                        SoundSource.BLOCK,
+                                        1, RandomUtils.generateRandomFloat(0.9f, 1));
+                            }
+                        } else if (blockData instanceof Powerable powerable && !powerable.isPowered()) {
+                            SoundSet soundSet = SoundSet.getByBlock(blockOwner);
+                            if (soundSet != null) {
+                                serverPlayer.playSound(
+                                        Vec3d.atCenterOf(hitResult.getBlockPos()),
+                                        soundSet.openSound(),
+                                        SoundSource.BLOCK,
+                                        1, RandomUtils.generateRandomFloat(0.9f, 1));
+                            }
                         }
                     }
                 }
@@ -255,13 +272,13 @@ public class ItemEventListener implements Listener {
                     if (immutableBlockState != null) {
                         // client won't have sounds if the clientside block is interactable
                         // so we should check and resend sounds on BlockPlaceEvent
-                        BlockData craftBlockData = BlockStateUtils.fromBlockData(immutableBlockState.vanillaBlockState().handle());
+                        BlockData craftBlockData = BlockStateUtils.fromBlockData(immutableBlockState.vanillaBlockState().literalObject());
                         if (InteractUtils.isInteractable(player, craftBlockData, hitResult, itemInHand)) {
                             if (!serverPlayer.isSecondaryUseActive()) {
                                 serverPlayer.setResendSound();
                             }
                         } else {
-                            if (BlockStateUtils.isReplaceable(immutableBlockState.customBlockState().handle()) && !BlockStateUtils.isReplaceable(immutableBlockState.vanillaBlockState().handle())) {
+                            if (BlockStateUtils.isReplaceable(immutableBlockState.customBlockState().literalObject()) && !BlockStateUtils.isReplaceable(immutableBlockState.vanillaBlockState().literalObject())) {
                                 serverPlayer.setResendSwing();
                             }
                         }
@@ -269,15 +286,13 @@ public class ItemEventListener implements Listener {
                 }
                 // custom item
                 else {
-                    if (optionalCustomItem.get().settings().canPlaceRelatedVanillaBlock()) {
-                        // 如果用户设置了允许放置对应的原版方块，那么直接返回。
-                        // 这种情况下最好是return，以避免同时触发多个behavior发生冲突
-                        // 当用户选择其作为原版方块放下时，自定义行为可能已经不重要了？
-                        return;
-                    } else {
-                        // todo 实际上这里的处理并不正确，因为判断玩家是否能够放置那个方块需要更加细节的判断。比如玩家无法对着树叶放置火把，但是交互事件依然触发，此情况下不可丢弃自定义行为。
+                    if (optionalCustomItem.get().settings().disableVanillaBehavior()) {
+                        // 不能在BlockPlaceEvent里检测，是因为种农作物不触发相关事件
+                        // 允许尝试放置方块
                         if (serverPlayer.isSecondaryUseActive() || !InteractUtils.isInteractable(player, blockData, hitResult, itemInHand)) {
-                            event.setCancelled(true);
+                            if (InteractUtils.canPlaceBlock(new BlockPlaceContext(new UseOnContext(serverPlayer, hand, itemInHand, hitResult)))) {
+                                event.setCancelled(true);
+                            }
                         }
                     }
                 }
@@ -318,7 +333,7 @@ public class ItemEventListener implements Listener {
                 if (serverPlayer.isSecondaryUseActive() || !InteractUtils.isInteractable(player, blockData, hitResult, itemInHand)) {
                     Cancellable dummy = Cancellable.dummy();
                     PlayerOptionalContext context = PlayerOptionalContext.of(serverPlayer, ContextHolder.builder()
-                            .withParameter(DirectContextParameters.BLOCK, new BukkitBlockInWorld(block))
+                            .withParameter(DirectContextParameters.BLOCK, new BukkitExistingBlock(block))
                             .withOptionalParameter(DirectContextParameters.CUSTOM_BLOCK_STATE, immutableBlockState)
                             .withOptionalParameter(DirectContextParameters.ITEM_IN_HAND, itemInHand)
                             .withParameter(DirectContextParameters.POSITION, LocationUtils.toWorldPosition(block.getLocation()))
@@ -339,7 +354,7 @@ public class ItemEventListener implements Listener {
         if (hasCustomItem && action == Action.LEFT_CLICK_BLOCK) {
             Cancellable dummy = Cancellable.dummy();
             PlayerOptionalContext context = PlayerOptionalContext.of(serverPlayer, ContextHolder.builder()
-                    .withParameter(DirectContextParameters.BLOCK, new BukkitBlockInWorld(block))
+                    .withParameter(DirectContextParameters.BLOCK, new BukkitExistingBlock(block))
                     .withOptionalParameter(DirectContextParameters.CUSTOM_BLOCK_STATE, immutableBlockState)
                     .withOptionalParameter(DirectContextParameters.ITEM_IN_HAND, itemInHand)
                     .withParameter(DirectContextParameters.POSITION, LocationUtils.toWorldPosition(block.getLocation()))
@@ -458,9 +473,9 @@ public class ItemEventListener implements Listener {
         if (foodData == null) return;
         event.setCancelled(true);
         int oldFoodLevel = player.getFoodLevel();
-        if (foodData.nutrition() != 0) player.setFoodLevel(MCUtils.clamp(oldFoodLevel + foodData.nutrition(), 0, 20));
+        if (foodData.nutrition() != 0) player.setFoodLevel(MiscUtils.clamp(oldFoodLevel + foodData.nutrition(), 0, 20));
         float oldSaturation = player.getSaturation();
-        if (foodData.saturation() != 0) player.setSaturation(MCUtils.clamp(oldSaturation, 0, 10));
+        if (foodData.saturation() != 0) player.setSaturation(MiscUtils.clamp(oldSaturation, 0, 10));
     }
 
     private boolean cancelEventIfHasInteraction(PlayerInteractEvent event, BukkitServerPlayer player, InteractionHand hand) {
@@ -562,16 +577,31 @@ public class ItemEventListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGHEST)
     public void onPickUpItem(EntityPickupItemEvent event) {
-        if (!Config.triggerUpdatePickUp()) return;
         if (!(event.getEntity() instanceof Player player)) return;
         org.bukkit.entity.Item itemDrop = event.getItem();
         ItemStack itemStack = itemDrop.getItemStack();
         Item<ItemStack> wrapped = this.itemManager.wrap(itemStack);
-        ItemUpdateResult result = this.itemManager.updateItem(wrapped, () -> ItemBuildContext.of(BukkitAdaptors.adapt(player)));
-        if (result.updated()) {
-            itemDrop.setItemStack((ItemStack) result.finalItem().getItem());
+        Optional<CustomItem<ItemStack>> optionalCustomItem = wrapped.getCustomItem();
+        if (optionalCustomItem.isEmpty()) return;
+        BukkitServerPlayer serverPlayer = BukkitAdaptors.adapt(player);
+        CustomItem<ItemStack> customItem = optionalCustomItem.get();
+        if (Config.triggerUpdatePickUp() && customItem.updater().isPresent()) {
+            ItemUpdateResult result = this.itemManager.updateItem(wrapped, () -> ItemBuildContext.of(serverPlayer));
+            if (result.updated()) {
+                itemDrop.setItemStack((ItemStack) result.finalItem().getItem());
+            }
+        }
+        Cancellable dummy = Cancellable.dummy();
+        customItem.execute(PlayerOptionalContext.of(serverPlayer, ContextHolder.builder()
+                .withParameter(DirectContextParameters.ENTITY, new BukkitItemEntity(itemDrop))
+                .withParameter(DirectContextParameters.POSITION, LocationUtils.toWorldPosition(itemDrop.getLocation()))
+                .withParameter(DirectContextParameters.EVENT, dummy)
+        ), EventTrigger.PICK_UP);
+        if (dummy.isCancelled()) {
+            event.setCancelled(true);
+            return;
         }
     }
 

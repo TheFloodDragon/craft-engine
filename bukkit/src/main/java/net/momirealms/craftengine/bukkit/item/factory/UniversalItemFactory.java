@@ -190,7 +190,6 @@ public class UniversalItemFactory extends BukkitItemFactory<LegacyItemWrapper> {
 
     @Override
     protected void maxDamage(LegacyItemWrapper item, Integer damage) {
-        throw new UnsupportedOperationException("This feature is only available on 1.20.5+");
     }
 
     @Override
@@ -225,6 +224,34 @@ public class UniversalItemFactory extends BukkitItemFactory<LegacyItemWrapper> {
         int level = item.getItem().getEnchantmentLevel(Objects.requireNonNull(Registry.ENCHANTMENT.get(new NamespacedKey(key.namespace(), key.value()))));
         if (level <= 0) return Optional.empty();
         return Optional.of(new Enchantment(key, level));
+    }
+
+    @SuppressWarnings("DuplicatedCode")
+    @Override
+    protected Optional<List<Enchantment>> enchantments(LegacyItemWrapper item) {
+        ListTag enchantmentTag = (ListTag) item.getNBTTag("Enchantments");
+        if (enchantmentTag == null) return Optional.empty();
+        List<Enchantment> enchantments = new ArrayList<>();
+        for (Tag tag : enchantmentTag) {
+            if (tag instanceof CompoundTag enchantTag) {
+                enchantments.add(new Enchantment(Key.of(enchantTag.getString("id")), enchantTag.getInt("lvl")));
+            }
+        }
+        return Optional.of(enchantments);
+    }
+
+    @SuppressWarnings("DuplicatedCode")
+    @Override
+    protected Optional<List<Enchantment>> storedEnchantments(LegacyItemWrapper item) {
+        ListTag enchantmentTag = (ListTag) item.getNBTTag("StoredEnchantments");
+        if (enchantmentTag == null) return Optional.empty();
+        List<Enchantment> enchantments = new ArrayList<>();
+        for (Tag tag : enchantmentTag) {
+            if (tag instanceof CompoundTag enchantTag) {
+                enchantments.add(new Enchantment(Key.of(enchantTag.getString("id")), enchantTag.getInt("lvl")));
+            }
+        }
+        return Optional.of(enchantments);
     }
 
     @Override
@@ -302,6 +329,18 @@ public class UniversalItemFactory extends BukkitItemFactory<LegacyItemWrapper> {
                     "Flicker", explosion.hasTwinkle()
             ), "Explosion");
         }
+    }
+
+    @Override
+    protected Optional<Map<String, String>> blockState(LegacyItemWrapper item) {
+        Map<String, String> state = item.getJavaTag("BlockStateTag");
+        if (state == null) return Optional.empty();
+        return Optional.of(state);
+    }
+
+    @Override
+    protected void blockState(LegacyItemWrapper item, Map<String, String> state) {
+        item.setTag(state, "BlockStateTag");
     }
 
     @Override

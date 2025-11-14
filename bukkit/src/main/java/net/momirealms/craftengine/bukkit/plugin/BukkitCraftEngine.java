@@ -5,9 +5,11 @@ import net.momirealms.craftengine.bukkit.advancement.BukkitAdvancementManager;
 import net.momirealms.craftengine.bukkit.api.event.CraftEngineReloadEvent;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.block.behavior.BukkitBlockBehaviors;
+import net.momirealms.craftengine.bukkit.block.entity.renderer.element.BukkitBlockEntityElementConfigs;
 import net.momirealms.craftengine.bukkit.entity.furniture.BukkitFurnitureManager;
 import net.momirealms.craftengine.bukkit.entity.furniture.hitbox.BukkitHitBoxTypes;
 import net.momirealms.craftengine.bukkit.entity.projectile.BukkitProjectileManager;
+import net.momirealms.craftengine.bukkit.entity.seat.BukkitSeatManager;
 import net.momirealms.craftengine.bukkit.font.BukkitFontManager;
 import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.item.behavior.BukkitItemBehaviors;
@@ -19,12 +21,10 @@ import net.momirealms.craftengine.bukkit.plugin.command.BukkitSenderFactory;
 import net.momirealms.craftengine.bukkit.plugin.gui.BukkitGuiManager;
 import net.momirealms.craftengine.bukkit.plugin.injector.*;
 import net.momirealms.craftengine.bukkit.plugin.network.BukkitNetworkManager;
-import net.momirealms.craftengine.bukkit.plugin.network.PacketConsumers;
 import net.momirealms.craftengine.bukkit.plugin.scheduler.BukkitSchedulerAdapter;
 import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.bukkit.sound.BukkitSoundManager;
 import net.momirealms.craftengine.bukkit.util.EventUtils;
-import net.momirealms.craftengine.bukkit.util.RegistryUtils;
 import net.momirealms.craftengine.bukkit.world.BukkitWorldManager;
 import net.momirealms.craftengine.core.item.ItemManager;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
@@ -56,6 +56,7 @@ import org.jspecify.annotations.Nullable;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -72,26 +73,30 @@ public class BukkitCraftEngine extends CraftEngine {
     private final Path dataFolderPath;
 
     protected BukkitCraftEngine(JavaPlugin plugin) {
-        this(new JavaPluginLogger(plugin.getLogger()), plugin.getDataFolder().toPath().toAbsolutePath(), new ReflectionClassPathAppender(plugin.getClass().getClassLoader()));
+        this(new JavaPluginLogger(plugin.getLogger()), plugin.getDataFolder().toPath().toAbsolutePath(),
+                new ReflectionClassPathAppender(plugin.getClass().getClassLoader()), new ReflectionClassPathAppender(plugin.getClass().getClassLoader()));
         this.setJavaPlugin(plugin);
     }
 
-    protected BukkitCraftEngine(PluginLogger logger, Path dataFolderPath, ClassPathAppender classPathAppender) {
+    protected BukkitCraftEngine(PluginLogger logger, Path dataFolderPath, ClassPathAppender sharedClassPathAppender, ClassPathAppender privateClassPathAppender) {
         super((p) -> {
             CraftEngineReloadEvent event = new CraftEngineReloadEvent((BukkitCraftEngine) p);
             EventUtils.fireAndForget(event);
         });
         instance = this;
         this.dataFolderPath = dataFolderPath;
-        super.classPathAppender = classPathAppender;
+        super.sharedClassPathAppender = sharedClassPathAppender;
+        super.privateClassPathAppender = privateClassPathAppender;
         super.logger = logger;
-        super.platform = new BukkitPlatform();
+        super.platform = new BukkitPlatform(this);
         super.scheduler = new BukkitSchedulerAdapter(this);
-        Class<?> compatibilityClass = Objects.requireNonNull(ReflectionUtils.getClazz(COMPATIBILITY_CLASS), "Compatibility class not found");
-        try {
-            super.compatibilityManager = (CompatibilityManager) Objects.requireNonNull(ReflectionUtils.getConstructor(compatibilityClass, 0)).newInstance(this);
-        } catch (ReflectiveOperationException e) {
-            logger().warn("Compatibility class could not be instantiated: " + compatibilityClass.getName());
+        Class<?> compatibilityClass = ReflectionUtils.getClazz(COMPATIBILITY_CLASS);
+        if (compatibilityClass != null) {
+            try {
+                super.compatibilityManager = (CompatibilityManager) Objects.requireNonNull(ReflectionUtils.getConstructor(compatibilityClass, 0)).newInstance(this);
+            } catch (ReflectiveOperationException e) {
+                logger().warn("Compatibility class could not be instantiated: " + compatibilityClass.getName());
+            }
         }
     }
 
@@ -99,9 +104,15 @@ public class BukkitCraftEngine extends CraftEngine {
         this.javaPlugin = javaPlugin;
     }
 
-    protected void setUpConfig() {
-        this.translationManager = new TranslationManagerImpl(this);
+    protected void setUpConfigAndLocale() {
         this.config = new Config(this);
+        this.config.updateConfigCache();
+        // 先读取语言后，再重载语言文件系统
+        this.config.loadForcedLocale();
+        this.translationManager = new TranslationManagerImpl(this);
+        this.translationManager.reload();
+        // 最后才加载完整的config配置
+        this.config.loadFullSettings();
     }
 
     public void injectRegistries() {
@@ -117,6 +128,11 @@ public class BukkitCraftEngine extends CraftEngine {
             LootEntryInjector.init();
         } catch (Exception e) {
             throw new InjectionException("Error injecting loot entries", e);
+        }
+        try {
+            BlockStateProviderInjector.init();
+        } catch (Exception e) {
+            throw new InjectionException("Error injecting block state providers", e);
         }
     }
 
@@ -141,8 +157,8 @@ public class BukkitCraftEngine extends CraftEngine {
             throw new InjectionException("Error initializing ProtectedFieldVisitor", e);
         }
         super.onPluginLoad();
-        super.blockManager.init();
         super.networkManager = new BukkitNetworkManager(this);
+        super.blockManager.init();
         super.itemManager = new BukkitItemManager(this);
         this.successfullyLoaded = true;
         super.compatibilityManager().onLoad();
@@ -185,7 +201,7 @@ public class BukkitCraftEngine extends CraftEngine {
         BukkitBlockBehaviors.init();
         BukkitItemBehaviors.init();
         BukkitHitBoxTypes.init();
-        PacketConsumers.initEntities(RegistryUtils.currentEntityTypeRegistrySize());
+        BukkitBlockEntityElementConfigs.init();
         super.packManager = new BukkitPackManager(this);
         super.senderFactory = new BukkitSenderFactory(this);
         super.recipeManager = new BukkitRecipeManager(this);
@@ -199,8 +215,22 @@ public class BukkitCraftEngine extends CraftEngine {
         super.advancementManager = new BukkitAdvancementManager(this);
         super.projectileManager = new BukkitProjectileManager(this);
         super.furnitureManager = new BukkitFurnitureManager(this);
+        super.seatManager = new BukkitSeatManager(this);
         super.onPluginEnable();
         super.compatibilityManager().onEnable();
+
+        // todo 未来版本移除
+        Path legacyFile1 = this.dataFolderPath().resolve("additional-real-blocks.yml");
+        Path legacyFile2 = this.dataFolderPath().resolve("mappings.yml");
+        if (Files.exists(legacyFile1)) {
+            try {
+                Files.delete(legacyFile1);
+                Files.deleteIfExists(legacyFile2);
+                this.saveResource("resources/internal/configuration/mappings.yml");
+            } catch (IOException e) {
+                this.logger.warn("Failed to delete legacy files", e);
+            }
+        }
     }
 
     @Override
@@ -325,6 +355,11 @@ public class BukkitCraftEngine extends CraftEngine {
         return (BukkitPackManager) packManager;
     }
 
+    @Override
+    public BukkitFontManager fontManager() {
+        return (BukkitFontManager) fontManager;
+    }
+
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @Override
     public void saveResource(String resourcePath) {
@@ -373,6 +408,7 @@ public class BukkitCraftEngine extends CraftEngine {
             this.antiGrief = AntiGriefLib.builder(this.javaPlugin)
                     .ignoreOP(true)
                     .silentLogs(false)
+                    .bypassPermission("craftengine.antigrief.bypass")
                     .build();
         }
         return this.antiGrief;

@@ -2,6 +2,7 @@ package net.momirealms.craftengine.bukkit.api;
 
 import net.momirealms.craftengine.bukkit.entity.furniture.BukkitFurniture;
 import net.momirealms.craftengine.bukkit.entity.furniture.BukkitFurnitureManager;
+import net.momirealms.craftengine.bukkit.entity.seat.BukkitSeatManager;
 import net.momirealms.craftengine.bukkit.nms.CollisionEntity;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
@@ -18,6 +19,7 @@ import net.momirealms.craftengine.core.plugin.context.parameter.DirectContextPar
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.world.World;
 import net.momirealms.craftengine.core.world.WorldPosition;
+import net.momirealms.sparrow.nbt.CompoundTag;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -27,10 +29,26 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Map;
 
 public final class CraftEngineFurniture {
 
     private CraftEngineFurniture() {}
+
+    /**
+     * Returns an unmodifiable map of all currently loaded custom furniture.
+     * The map keys represent unique identifiers, and the values are the corresponding CustomFurniture instances.
+     *
+     * <p><strong>Important:</strong> Do not attempt to access this method during the onEnable phase
+     * as it will be empty. Instead, listen for the {@code CraftEngineReloadEvent} and use this method
+     * after the event is fired to obtain the complete furniture list.
+     *
+     * @return a non-null map containing all loaded custom furniture
+     */
+    @NotNull
+    public static Map<Key, CustomFurniture> loadedFurniture() {
+        return BukkitFurnitureManager.instance().loadedFurniture();
+    }
 
     /**
      * Gets custom furniture by ID
@@ -143,8 +161,7 @@ public final class CraftEngineFurniture {
      * @return is seat or not
      */
     public static boolean isSeat(@NotNull Entity entity) {
-        Integer baseEntityId = entity.getPersistentDataContainer().get(BukkitFurnitureManager.FURNITURE_SEAT_BASE_ENTITY_KEY, PersistentDataType.INTEGER);
-        return baseEntityId != null;
+        return entity.getPersistentDataContainer().has(BukkitSeatManager.SEAT_KEY);
     }
 
     /**
@@ -166,9 +183,12 @@ public final class CraftEngineFurniture {
      */
     @Nullable
     public static BukkitFurniture getLoadedFurnitureBySeat(@NotNull Entity seat) {
-        Integer baseEntityId = seat.getPersistentDataContainer().get(BukkitFurnitureManager.FURNITURE_SEAT_BASE_ENTITY_KEY, PersistentDataType.INTEGER);
-        if (baseEntityId == null) return null;
-        return BukkitFurnitureManager.instance().loadedFurnitureByRealEntityId(baseEntityId);
+        if (isSeat(seat)) {
+            CompoundTag seatExtraData = BukkitSeatManager.instance().getSeatExtraData(seat);
+            int entityId = seatExtraData.getInt("entity_id");
+            BukkitFurnitureManager.instance().loadedFurnitureByRealEntityId(entityId);
+        }
+        return null;
     }
 
     /**

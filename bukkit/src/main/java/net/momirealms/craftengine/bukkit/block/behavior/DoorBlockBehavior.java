@@ -16,8 +16,8 @@ import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.UpdateOption;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
 import net.momirealms.craftengine.core.block.properties.Property;
-import net.momirealms.craftengine.core.block.state.properties.DoorHinge;
-import net.momirealms.craftengine.core.block.state.properties.DoubleBlockHalf;
+import net.momirealms.craftengine.core.block.properties.type.DoorHinge;
+import net.momirealms.craftengine.core.block.properties.type.DoubleBlockHalf;
 import net.momirealms.craftengine.core.entity.player.InteractionHand;
 import net.momirealms.craftengine.core.entity.player.InteractionResult;
 import net.momirealms.craftengine.core.entity.player.Player;
@@ -107,7 +107,7 @@ public class DoorBlockBehavior extends AbstractCanSurviveBlockBehavior {
                 return MBlocks.AIR$defaultState;
             }
             if (neighborState.get(anotherDoorBehavior.get().halfProperty) != half) {
-                return neighborState.with(anotherDoorBehavior.get().halfProperty, half).customBlockState().handle();
+                return neighborState.with(anotherDoorBehavior.get().halfProperty, half).customBlockState().literalObject();
             }
             return MBlocks.AIR$defaultState;
         } else {
@@ -169,9 +169,11 @@ public class DoorBlockBehavior extends AbstractCanSurviveBlockBehavior {
     }
 
     @Override
-    public void setPlacedBy(BlockPlaceContext context, ImmutableBlockState state) {
-        BlockPos pos = context.getClickedPos();
-        context.getLevel().setBlockAt(pos.x(), pos.y() + 1, pos.z(), state.with(this.halfProperty, DoubleBlockHalf.UPPER).customBlockState(), UpdateOption.UPDATE_ALL.flags());
+    public void setPlacedBy(Object thisBlock, Object[] args, Callable<Object> superMethod) {
+        Object blockState = args[2];
+        Object pos = args[1];
+        Optional<ImmutableBlockState> immutableBlockState = BlockStateUtils.getOptionalCustomBlockState(blockState);
+        immutableBlockState.ifPresent(state -> FastNMS.INSTANCE.method$LevelWriter$setBlock(args[0], LocationUtils.above(pos), state.with(this.halfProperty, DoubleBlockHalf.UPPER).customBlockState().literalObject(), UpdateOption.UPDATE_ALL.flags()));
     }
 
     @Override
@@ -245,7 +247,7 @@ public class DoorBlockBehavior extends AbstractCanSurviveBlockBehavior {
     public void setOpen(@Nullable Player player, Object serverLevel, ImmutableBlockState state, BlockPos pos, boolean isOpen) {
         if (isOpen(state) != isOpen) {
             org.bukkit.World world = FastNMS.INSTANCE.method$Level$getCraftWorld(serverLevel);
-            FastNMS.INSTANCE.method$LevelWriter$setBlock(serverLevel, LocationUtils.toBlockPos(pos), state.with(this.openProperty, isOpen).customBlockState().handle(), UpdateOption.builder().updateImmediate().updateClients().build().flags());
+            FastNMS.INSTANCE.method$LevelWriter$setBlock(serverLevel, LocationUtils.toBlockPos(pos), state.with(this.openProperty, isOpen).customBlockState().literalObject(), UpdateOption.builder().updateImmediate().updateClients().build().flags());
             world.sendGameEvent(player == null ? null : (org.bukkit.entity.Player) player.platformPlayer(), isOpen ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, new Vector(pos.x(), pos.y(), pos.z()));
             SoundData soundData = isOpen ? this.openSound : this.closeSound;
             if (soundData != null) {
@@ -307,7 +309,7 @@ public class DoorBlockBehavior extends AbstractCanSurviveBlockBehavior {
                     );
                 }
             }
-            FastNMS.INSTANCE.method$LevelWriter$setBlock(level, blockPos, customState.with(this.poweredProperty, flag).with(this.openProperty, flag).customBlockState().handle(), UpdateOption.Flags.UPDATE_CLIENTS);
+            FastNMS.INSTANCE.method$LevelWriter$setBlock(level, blockPos, customState.with(this.poweredProperty, flag).with(this.openProperty, flag).customBlockState().literalObject(), UpdateOption.Flags.UPDATE_CLIENTS);
         }
     }
 

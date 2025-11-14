@@ -5,7 +5,7 @@ import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MBlocks;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.EventUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
-import net.momirealms.craftengine.bukkit.world.BukkitBlockInWorld;
+import net.momirealms.craftengine.bukkit.world.BukkitExistingBlock;
 import net.momirealms.craftengine.core.entity.player.InteractionResult;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
@@ -38,7 +38,7 @@ public class CompostableItemBehavior extends ItemBehavior {
     @SuppressWarnings("UnstableApiUsage")
     @Override
     public InteractionResult useOnBlock(UseOnContext context) {
-        BukkitBlockInWorld block = (BukkitBlockInWorld) context.getLevel().getBlockAt(context.getClickedPos());
+        BukkitExistingBlock block = (BukkitExistingBlock) context.getLevel().getBlockAt(context.getClickedPos());
         BlockData blockData = block.block().getBlockData();
         Object blockOwner = BlockStateUtils.getBlockOwner(BlockStateUtils.blockDataToBlockState(blockData));
         if (blockOwner != MBlocks.COMPOSTER) return InteractionResult.PASS;
@@ -79,7 +79,7 @@ public class CompostableItemBehavior extends ItemBehavior {
 
     public static class Factory implements ItemBehaviorFactory {
         @Override
-        public ItemBehavior create(Pack pack, Path path, Key key, Map<String, Object> arguments) {
+        public ItemBehavior create(Pack pack, Path path, String node, Key key, Map<String, Object> arguments) {
             double chance = ResourceConfigUtils.getAsDouble(arguments.getOrDefault("chance", 0.55), "chance");
             return new CompostableItemBehavior(chance);
         }

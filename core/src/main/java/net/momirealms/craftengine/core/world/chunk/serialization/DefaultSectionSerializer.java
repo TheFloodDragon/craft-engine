@@ -27,6 +27,8 @@ import java.util.stream.LongStream;
 
 public final class DefaultSectionSerializer {
 
+    private DefaultSectionSerializer() {}
+
     @Nullable
     public static CompoundTag serialize(@NotNull CESection section) {
         ReadableContainer.Serialized<ImmutableBlockState> serialized = section.statesContainer().serialize(null, PalettedContainer.PaletteProvider.CUSTOM_BLOCK_STATE);
@@ -74,9 +76,8 @@ public final class DefaultSectionSerializer {
                 key = Key.of(id);
             }
             Holder<CustomBlock> owner = BuiltInRegistries.BLOCK.get(key).orElseGet(() -> {
-                Holder.Reference<CustomBlock> holder = ((WritableRegistry<CustomBlock>) BuiltInRegistries.BLOCK).registerForHolder(
-                        ResourceKey.create(BuiltInRegistries.BLOCK.key().location(), key));
-                InactiveCustomBlock inactiveBlock = new InactiveCustomBlock(key, holder);
+                Holder.Reference<CustomBlock> holder = ((WritableRegistry<CustomBlock>) BuiltInRegistries.BLOCK).registerForHolder(ResourceKey.create(BuiltInRegistries.BLOCK.key().location(), key));
+                InactiveCustomBlock inactiveBlock = new InactiveCustomBlock(holder);
                 holder.bindValue(inactiveBlock);
                 return holder;
             });

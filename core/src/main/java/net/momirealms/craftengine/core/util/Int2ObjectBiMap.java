@@ -35,13 +35,38 @@ public class Int2ObjectBiMap<K> implements IndexedIterable<K> {
 
     public void remapValues(Function<K, K> function) {
         for (int i = 0; i < values.length; i++) {
-            if (values[i] == null) break;
-            values[i] = function.apply(values[i]);
+            K prev = values[i];
+            if (prev == null) break;
+            values[i] = function.apply(prev);
         }
         for (int i = 0; i < idToValues.length; i++) {
-            if (idToValues[i] == null) break;
-            idToValues[i] = function.apply(idToValues[i]);
+            K prev = idToValues[i];
+            if (prev == null) break;
+            idToValues[i] = function.apply(prev);
         }
+    }
+
+    public boolean remapValuesAndCheck(Function<K, K> function) {
+        boolean changed = false;
+        for (int i = 0; i < values.length; i++) {
+            K prev = values[i];
+            if (prev == null) break;
+            K apply = function.apply(prev);
+            values[i] = apply;
+            if (!apply.equals(prev)) {
+                changed = true;
+            }
+        }
+        for (int i = 0; i < idToValues.length; i++) {
+            K prev = idToValues[i];
+            if (prev == null) break;
+            K apply = function.apply(prev);
+            idToValues[i] = apply;
+            if (!apply.equals(prev)) {
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     public static <A> Int2ObjectBiMap<A> create(int expectedSize) {
@@ -121,12 +146,12 @@ public class Int2ObjectBiMap<K> implements IndexedIterable<K> {
     }
 
     private int getIdealIndex(@Nullable K value) {
-        return (MCUtils.idealHash(System.identityHashCode(value)) & Integer.MAX_VALUE) % this.values.length;
+        return (MiscUtils.idealHash(System.identityHashCode(value)) & Integer.MAX_VALUE) % this.values.length;
     }
 
     private int findIndex(@Nullable K value, int id) {
         int i;
-        for(i = id; i < this.values.length; ++i) {
+        for (i = id; i < this.values.length; ++i) {
             if (this.values[i] == value) {
                 return i;
             }
@@ -136,7 +161,7 @@ public class Int2ObjectBiMap<K> implements IndexedIterable<K> {
             }
         }
 
-        for(i = 0; i < id; ++i) {
+        for (i = 0; i < id; ++i) {
             if (this.values[i] == value) {
                 return i;
             }
@@ -151,7 +176,7 @@ public class Int2ObjectBiMap<K> implements IndexedIterable<K> {
 
     private int findFree(int size) {
         int i;
-        for(i = size; i < this.values.length; ++i) {
+        for (i = size; i < this.values.length; ++i) {
             if (this.values[i] == EMPTY) {
                 return i;
             }

@@ -4,8 +4,12 @@ import com.google.gson.JsonObject;
 import net.momirealms.craftengine.core.item.recipe.input.CraftingInput;
 import net.momirealms.craftengine.core.item.recipe.input.RecipeInput;
 import net.momirealms.craftengine.core.item.recipe.result.CustomRecipeResult;
+import net.momirealms.craftengine.core.plugin.context.Condition;
+import net.momirealms.craftengine.core.plugin.context.Context;
+import net.momirealms.craftengine.core.plugin.context.function.Function;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
+import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -20,10 +24,14 @@ public class CustomShapelessRecipe<T> extends CustomCraftingTableRecipe<T> {
     public CustomShapelessRecipe(Key id,
                                  boolean showNotification,
                                  CustomRecipeResult<T> result,
+                                 CustomRecipeResult<T> visualResult,
                                  String group,
                                  CraftingRecipeCategory category,
-                                 List<Ingredient<T>> ingredients) {
-        super(id, showNotification, result, group, category);
+                                 List<Ingredient<T>> ingredients,
+                                 Function<Context>[] craftingFunctions,
+                                 Condition<Context> craftingCondition,
+                                 boolean alwaysRebuildOutput) {
+        super(id, showNotification, result, visualResult, group, category, craftingFunctions, craftingCondition, alwaysRebuildOutput);
         this.ingredients = ingredients;
         this.placementInfo = PlacementInfo.create(ingredients);
     }
@@ -84,8 +92,13 @@ public class CustomShapelessRecipe<T> extends CustomCraftingTableRecipe<T> {
             }
             return new CustomShapelessRecipe(id,
                     showNotification(arguments),
-                    parseResult(arguments), arguments.containsKey("group") ? arguments.get("group").toString() : null, craftingRecipeCategory(arguments),
-                    ingredients
+                    parseResult(arguments),
+                    parseVisualResult(arguments),
+                    arguments.containsKey("group") ? arguments.get("group").toString() : null, craftingRecipeCategory(arguments),
+                    ingredients,
+                    functions(arguments),
+                    conditions(arguments),
+                    ResourceConfigUtils.getAsBoolean(arguments.getOrDefault("always-rebuild-result", true), "always-rebuild-result")
             );
         }
 
@@ -93,8 +106,13 @@ public class CustomShapelessRecipe<T> extends CustomCraftingTableRecipe<T> {
         public CustomShapelessRecipe<A> readJson(Key id, JsonObject json) {
             return new CustomShapelessRecipe<>(id,
                     true,
-                    parseResult(VANILLA_RECIPE_HELPER.craftingResult(json.getAsJsonObject("result"))), VANILLA_RECIPE_HELPER.readGroup(json), VANILLA_RECIPE_HELPER.craftingCategory(json),
-                    VANILLA_RECIPE_HELPER.shapelessIngredients(json.getAsJsonArray("ingredients")).stream().map(this::toIngredient).toList()
+                    parseResult(VANILLA_RECIPE_HELPER.craftingResult(json.getAsJsonObject("result"))),
+                    null,
+                    VANILLA_RECIPE_HELPER.readGroup(json), VANILLA_RECIPE_HELPER.craftingCategory(json),
+                    VANILLA_RECIPE_HELPER.shapelessIngredients(json.getAsJsonArray("ingredients")).stream().map(this::toIngredient).toList(),
+                    null,
+                    null,
+                    false
             );
         }
     }

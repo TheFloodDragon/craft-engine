@@ -19,7 +19,6 @@ import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.item.ItemBuildContext;
 import net.momirealms.craftengine.core.item.ItemKeys;
 import net.momirealms.craftengine.core.item.recipe.*;
-import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.registry.BuiltInRegistries;
 import net.momirealms.craftengine.core.util.*;
@@ -29,7 +28,6 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.Reader;
-import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -113,94 +111,13 @@ public class BukkitRecipeManager extends AbstractRecipeManager<ItemStack> {
             }
     );
 
-    private static void modifyShapedRecipeIngredients(CustomShapedRecipe<ItemStack> recipe, Object shapedRecipe) {
-        try {
-            List<Ingredient<ItemStack>> actualIngredients = recipe.parsedPattern().ingredients()
-                    .stream()
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .toList();
-            if (VersionHelper.isOrAbove1_21_2()) {
-                CoreReflections.methodHandle$ShapedRecipe$placementInfoSetter.invokeExact(shapedRecipe, (Object) null);
-            }
-            List<Object> ingredients = getIngredientsFromShapedRecipe(shapedRecipe);
-            modifyIngredients(ingredients, actualIngredients);
-        } catch (Throwable e) {
-            CraftEngine.instance().logger().warn("Failed to inject shaped recipe", e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static List<Object> getIngredientsFromShapedRecipe(Object recipe) {
-        List<Object> ingredients = new ArrayList<>();
-        try {
-            if (VersionHelper.isOrAbove1_20_3()) {
-                Object pattern = CoreReflections.methodHandle$1_20_3$ShapedRecipe$patternGetter.invokeExact(recipe);
-                if (VersionHelper.isOrAbove1_21_2()) {
-                    List<Optional<Object>> optionals = (List<Optional<Object>>) CoreReflections.methodHandle$ShapedRecipePattern$ingredients1_21_2Getter.invokeExact(pattern);
-                    for (Optional<Object> optional : optionals) {
-                        optional.ifPresent(ingredients::add);
-                    }
-                } else {
-                    List<Object> objectList = (List<Object>) CoreReflections.methodHandle$ShapedRecipePattern$ingredients1_20_3Getter.invokeExact(pattern);
-                    for (Object object : objectList) {
-                        Object[] values = (Object[]) CoreReflections.methodHandle$Ingredient$valuesGetter.invokeExact(object);
-                        // is empty or not
-                        if (values.length != 0) {
-                            ingredients.add(object);
-                        }
-                    }
-                }
-            } else {
-                List<Object> objectList = (List<Object>) CoreReflections.methodHandle$1_20_1$ShapedRecipe$recipeItemsGetter.invokeExact(recipe);
-                for (Object object : objectList) {
-                    Object[] values = (Object[]) CoreReflections.methodHandle$Ingredient$valuesGetter.invokeExact(object);
-                    if (values.length != 0) {
-                        ingredients.add(object);
-                    }
-                }
-            }
-        } catch (Throwable e) {
-            CraftEngine.instance().logger().warn("Failed to get ingredients from shaped recipe", e);
-        }
-        return ingredients;
-    }
-
-    private static void modifyShapelessRecipeIngredients(CustomShapelessRecipe<ItemStack> recipe, Object shapelessRecipe) {
-        try {
-            List<Ingredient<ItemStack>> actualIngredients = recipe.ingredientsInUse();
-            if (VersionHelper.isOrAbove1_21_2()) {
-                CoreReflections.methodHandle$ShapelessRecipe$placementInfoSetter.invokeExact(shapelessRecipe, (Object) null);
-            }
-            @SuppressWarnings("unchecked")
-            List<Object> ingredients = (List<Object>) CoreReflections.methodHandle$ShapelessRecipe$ingredientsGetter.invokeExact(shapelessRecipe);
-            modifyIngredients(ingredients, actualIngredients);
-        } catch (Throwable e) {
-            CraftEngine.instance().logger().warn("Failed to inject shapeless recipe", e);
-        }
-    }
-
-    private static void modifyCookingRecipeIngredient(CustomCookingRecipe<ItemStack> recipe, Object cookingRecipe) {
-        try {
-            Ingredient<ItemStack> actualIngredient = recipe.ingredient();
-            Object ingredient;
-            if (VersionHelper.isOrAbove1_21_2()) {
-                ingredient = CoreReflections.methodHandle$SingleItemRecipe$inputGetter.invokeExact(cookingRecipe);
-            } else {
-                ingredient = CoreReflections.methodHandle$AbstractCookingRecipe$inputGetter.invokeExact(cookingRecipe);
-            }
-            modifyIngredients(List.of(ingredient), List.of(actualIngredient));
-        } catch (Throwable e) {
-            CraftEngine.instance().logger().warn("Failed to inject cooking recipe", e);
-        }
-    }
-
+    // nms 模块需要使用此方法
     public static List<Object> getIngredientLooks(List<UniqueKey> holders) {
         List<Object> itemStacks = new ArrayList<>();
         for (UniqueKey holder : holders) {
             Optional<? extends BuildableItem<ItemStack>> buildableItem = BukkitItemManager.instance().getBuildableItem(holder.key());
             if (buildableItem.isPresent()) {
-                ItemStack itemStack = buildableItem.get().buildItemStack(ItemBuildContext.EMPTY, 1);
+                ItemStack itemStack = buildableItem.get().buildItemStack(ItemBuildContext.empty(), 1);
                 Object nmsStack = FastNMS.INSTANCE.method$CraftItemStack$asNMSCopy(itemStack);
                 itemStacks.add(nmsStack);
             } else {
@@ -211,28 +128,6 @@ public class BukkitRecipeManager extends AbstractRecipeManager<ItemStack> {
             }
         }
         return itemStacks;
-    }
-
-    private static void modifyIngredients(List<Object> fakeIngredients, List<Ingredient<ItemStack>> actualIngredients) throws Throwable {
-        if (fakeIngredients.size() != actualIngredients.size()) {
-            throw new IllegalArgumentException("Ingredient count mismatch");
-        }
-        for (int i = 0; i < fakeIngredients.size(); i++) {
-            Object ingredient = fakeIngredients.get(i);
-            Ingredient<ItemStack> actualIngredient = actualIngredients.get(i);
-            List<Object> items = getIngredientLooks(actualIngredient.items());
-            if (VersionHelper.isOrAbove1_21_4()) {
-                CoreReflections.methodHandle$Ingredient$itemStacksSetter.invokeExact(ingredient, (Set<Object>) new CustomIngredientSet(items, actualIngredient));
-            } else if (VersionHelper.isOrAbove1_21_2()) {
-                CoreReflections.methodHandle$Ingredient$itemStacksSetter.invokeExact(ingredient, (List<Object>) new CustomIngredientList(items, actualIngredient));
-            } else {
-                Object itemStackArray = Array.newInstance(CoreReflections.clazz$ItemStack, items.size());
-                for (int j = 0; j < items.size(); j++) {
-                    Array.set(itemStackArray, j, items.get(j));
-                }
-                CoreReflections.methodHandle$Ingredient$itemStacksSetter.invokeExact(ingredient, (Object) itemStackArray);
-            }
-        }
     }
 
     public static Object toRecipeResourceKey(Key id) {
@@ -251,6 +146,7 @@ public class BukkitRecipeManager extends AbstractRecipeManager<ItemStack> {
      */
     private final BukkitCraftEngine plugin;
     private final RecipeEventListener recipeEventListener;
+    private final CrafterEventListener crafterEventListener;
     // 欺骗服务端使其以为自己处于启动阶段
     private Object stolenFeatureFlagSet;
     // 需要在主线程卸载的配方
@@ -258,13 +154,14 @@ public class BukkitRecipeManager extends AbstractRecipeManager<ItemStack> {
     // 已经被替换过的数据包配方
     private final Set<Key> replacedDatapackRecipes = new HashSet<>();
     // 换成的数据包配方
-    private Map<Key, Recipe<ItemStack>> lastDatapackRecipes = Map.of();
+    private Map<Key, JsonObject> lastDatapackRecipes = Map.of();
     private Object lastRecipeManager = null;
 
     public BukkitRecipeManager(BukkitCraftEngine plugin) {
         instance = this;
         this.plugin = plugin;
         this.recipeEventListener = new RecipeEventListener(plugin, this, plugin.itemManager());
+        this.crafterEventListener = VersionHelper.isOrAbove1_21() ? new CrafterEventListener(plugin, this, plugin.itemManager()) : null;
     }
 
     public static Object minecraftRecipeManager() {
@@ -278,6 +175,9 @@ public class BukkitRecipeManager extends AbstractRecipeManager<ItemStack> {
     @Override
     public void delayedInit() {
         Bukkit.getPluginManager().registerEvents(this.recipeEventListener, this.plugin.javaPlugin());
+        if (this.crafterEventListener != null) {
+            Bukkit.getPluginManager().registerEvents(this.crafterEventListener, this.plugin.javaPlugin());
+        }
     }
 
     @Override
@@ -336,7 +236,7 @@ public class BukkitRecipeManager extends AbstractRecipeManager<ItemStack> {
         if (recipe instanceof CustomBrewingRecipe<ItemStack> brewingRecipe) {
             if (!VersionHelper.isOrAbove1_20_2()) return;
             PotionMix potionMix = new PotionMix(new NamespacedKey(id.namespace(), id.value()),
-                    brewingRecipe.result(ItemBuildContext.EMPTY),
+                    brewingRecipe.result(ItemBuildContext.empty()),
                     PotionMix.createPredicateChoice(container -> {
                         Item<ItemStack> wrapped = this.plugin.itemManager().wrap(container);
                         return brewingRecipe.container().test(UniqueIdItem.of(wrapped));
@@ -386,18 +286,33 @@ public class BukkitRecipeManager extends AbstractRecipeManager<ItemStack> {
         }
 
         boolean hasDisabledAny = !Config.disabledVanillaRecipes().isEmpty();
-        for (Map.Entry<Key, Recipe<ItemStack>> entry : this.lastDatapackRecipes.entrySet()) {
+        for (Map.Entry<Key, JsonObject> entry : this.lastDatapackRecipes.entrySet()) {
+            Key id = entry.getKey();
             if (hasDisabledAny && Config.disabledVanillaRecipes().contains(entry.getKey())) {
-                this.recipesToUnregister.add(Pair.of(entry.getKey(), false));
+                this.recipesToUnregister.add(Pair.of(id, false));
                 continue;
             }
-            markAsDataPackRecipe(entry.getKey());
-            registerInternalRecipe(entry.getKey(), entry.getValue());
+
+            JsonObject jsonObject = entry.getValue();
+            Key serializerType = Key.of(jsonObject.get("type").getAsString());
+            @SuppressWarnings("unchecked")
+            RecipeSerializer<ItemStack, ? extends Recipe<ItemStack>> serializer = (RecipeSerializer<ItemStack, ? extends Recipe<ItemStack>>) BuiltInRegistries.RECIPE_SERIALIZER.getValue(serializerType);
+            if (serializer == null) {
+                continue;
+            }
+
+            try {
+                Recipe<ItemStack> recipe = serializer.readJson(id, jsonObject);
+                markAsDataPackRecipe(id);
+                registerInternalRecipe(id, recipe);
+            } catch (Exception e) {
+                this.plugin.logger().warn("Failed to load data pack recipe " + id + ". Json: " + jsonObject, e);
+            }
         }
     }
 
     @SuppressWarnings("unchecked")
-    private Map<Key, Recipe<ItemStack>> scanResources() throws Throwable {
+    private Map<Key, JsonObject> scanResources() throws Throwable {
         Object fileToIdConverter = CoreReflections.methodHandle$FileToIdConverter$json.invokeExact((String) (VersionHelper.isOrAbove1_21() ? "recipe" : "recipes"));
         Object minecraftServer = FastNMS.INSTANCE.method$MinecraftServer$getServer();
         Object packRepository = CoreReflections.methodHandle$MinecraftServer$getPackRepository.invokeExact(minecraftServer);
@@ -406,7 +321,7 @@ public class BukkitRecipeManager extends AbstractRecipeManager<ItemStack> {
         for (Object pack : selected) {
             packResources.add(CoreReflections.methodHandle$Pack$open.invokeExact(pack));
         }
-        Map<Key, Recipe<ItemStack>> recipes = new HashMap<>();
+        Map<Key, JsonObject> recipes = new HashMap<>();
 
         try (AutoCloseable resourceManager = (AutoCloseable) CoreReflections.methodHandle$MultiPackResourceManagerConstructor.invokeExact(CoreReflections.instance$PackType$SERVER_DATA, packResources)) {
             Map<Object, Object> scannedResources = (Map<Object, Object>) CoreReflections.methodHandle$FileToIdConverter$listMatchingResources.invokeExact(fileToIdConverter, resourceManager);
@@ -414,17 +329,7 @@ public class BukkitRecipeManager extends AbstractRecipeManager<ItemStack> {
                 Key id = extractKeyFromResourceLocation(entry.getKey().toString());
                 Reader reader = (Reader) CoreReflections.methodHandle$Resource$openAsReader.invokeExact(entry.getValue());
                 JsonObject jsonObject = JsonParser.parseReader(reader).getAsJsonObject();
-                Key serializerType = Key.of(jsonObject.get("type").getAsString());
-                RecipeSerializer<ItemStack, ? extends Recipe<ItemStack>> serializer = (RecipeSerializer<ItemStack, ? extends Recipe<ItemStack>>) BuiltInRegistries.RECIPE_SERIALIZER.getValue(serializerType);
-                if (serializer == null) {
-                    continue;
-                }
-                try {
-                    Recipe<ItemStack> recipe = serializer.readJson(id, jsonObject);
-                    recipes.put(id, recipe);
-                } catch (Exception e) {
-                    this.plugin.logger().warn("Failed to load data pack recipe " + id + ". Json: " + jsonObject, e);
-                }
+                recipes.put(id, jsonObject);
             }
         } catch (Throwable e) {
             this.plugin.logger().warn("Unknown error occurred when loading data pack recipes", e);

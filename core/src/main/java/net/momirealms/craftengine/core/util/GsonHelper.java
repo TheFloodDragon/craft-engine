@@ -11,25 +11,19 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-public class GsonHelper {
-    private final Gson gson;
+public final class GsonHelper {
+    private static final Gson GSON;
 
-    public GsonHelper() {
-        this.gson = new GsonBuilder()
+    private GsonHelper() {}
+
+    static {
+        GSON = new GsonBuilder()
                 .disableHtmlEscaping()
                 .create();
     }
 
-    public Gson getGson() {
-        return gson;
-    }
-
     public static Gson get() {
-        return SingletonHolder.INSTANCE.getGson();
-    }
-
-    private static class SingletonHolder {
-        private static final GsonHelper INSTANCE = new GsonHelper();
+        return GSON;
     }
 
     public static void writeJsonFile(JsonElement json, Path path) throws IOException {
@@ -42,6 +36,20 @@ public class GsonHelper {
         try (BufferedReader reader = Files.newBufferedReader(path)) {
             return JsonParser.parseReader(reader);
         }
+    }
+
+    public static JsonElement parseJson(String json) {
+        return GSON.fromJson(json, JsonElement.class);
+    }
+
+    public static String toString(JsonElement json) {
+        return GSON.toJson(json);
+    }
+
+    public static boolean isCompactJson(String content) {
+        String trimmed = content.trim();
+        return !trimmed.contains("\n") && !trimmed.contains("\r") &&
+                content.length() == trimmed.length();
     }
 
     public static JsonObject shallowMerge(JsonObject obj1, JsonObject obj2) {

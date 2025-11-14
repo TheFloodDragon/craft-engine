@@ -1,31 +1,41 @@
 package net.momirealms.craftengine.bukkit.compatibility;
 
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
-import net.momirealms.craftengine.bukkit.compatibility.item.CustomFishingSource;
-import net.momirealms.craftengine.bukkit.compatibility.item.MMOItemsSource;
-import net.momirealms.craftengine.bukkit.compatibility.item.MythicMobsSource;
-import net.momirealms.craftengine.bukkit.compatibility.item.NeigeItemsSource;
+import net.momirealms.craftengine.bukkit.compatibility.item.*;
 import net.momirealms.craftengine.bukkit.compatibility.legacy.slimeworld.LegacySlimeFormatStorageAdaptor;
 import net.momirealms.craftengine.bukkit.compatibility.leveler.*;
 import net.momirealms.craftengine.bukkit.compatibility.model.bettermodel.BetterModelModel;
+import net.momirealms.craftengine.bukkit.compatibility.model.bettermodel.BetterModelUtils;
 import net.momirealms.craftengine.bukkit.compatibility.model.modelengine.ModelEngineModel;
 import net.momirealms.craftengine.bukkit.compatibility.model.modelengine.ModelEngineUtils;
 import net.momirealms.craftengine.bukkit.compatibility.mythicmobs.MythicItemDropListener;
 import net.momirealms.craftengine.bukkit.compatibility.mythicmobs.MythicSkillHelper;
 import net.momirealms.craftengine.bukkit.compatibility.papi.PlaceholderAPIUtils;
 import net.momirealms.craftengine.bukkit.compatibility.permission.LuckPermsEventListeners;
+import net.momirealms.craftengine.bukkit.compatibility.quickshop.QuickShopItemExpressionHandler;
+import net.momirealms.craftengine.bukkit.compatibility.region.WorldGuardRegionCondition;
 import net.momirealms.craftengine.bukkit.compatibility.skript.SkriptHook;
 import net.momirealms.craftengine.bukkit.compatibility.slimeworld.SlimeFormatStorageAdaptor;
+import net.momirealms.craftengine.bukkit.compatibility.tag.CustomNameplateProviders;
 import net.momirealms.craftengine.bukkit.compatibility.viaversion.ViaVersionUtils;
 import net.momirealms.craftengine.bukkit.compatibility.worldedit.WorldEditBlockRegister;
 import net.momirealms.craftengine.bukkit.font.BukkitFontManager;
 import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
+import net.momirealms.craftengine.core.block.BlockManager;
 import net.momirealms.craftengine.core.entity.furniture.ExternalModel;
 import net.momirealms.craftengine.core.entity.player.Player;
+import net.momirealms.craftengine.core.loot.LootConditions;
 import net.momirealms.craftengine.core.plugin.compatibility.CompatibilityManager;
 import net.momirealms.craftengine.core.plugin.compatibility.LevelerProvider;
 import net.momirealms.craftengine.core.plugin.compatibility.ModelProvider;
+import net.momirealms.craftengine.core.plugin.compatibility.TagResolverProvider;
+import net.momirealms.craftengine.core.plugin.config.Config;
+import net.momirealms.craftengine.core.plugin.context.Context;
+import net.momirealms.craftengine.core.plugin.context.condition.AlwaysFalseCondition;
+import net.momirealms.craftengine.core.plugin.context.event.EventConditions;
+import net.momirealms.craftengine.core.plugin.text.minimessage.FormattedLine;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.VersionHelper;
 import net.momirealms.craftengine.core.world.WorldManager;
@@ -38,6 +48,8 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
     private final BukkitCraftEngine plugin;
     private final Map<String, ModelProvider> modelProviders;
     private final Map<String, LevelerProvider> levelerProviders;
+    private final Map<String, TagResolverProvider> tagResolverProviders;
+    private TagResolverProvider[] tagResolverProviderArray = null;
     private boolean hasPlaceholderAPI;
 
     public BukkitCompatibilityManager(BukkitCraftEngine plugin) {
@@ -47,6 +59,7 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
                 "BetterModel", BetterModelModel::new
         ));
         this.levelerProviders = new HashMap<>();
+        this.tagResolverProviders = new HashMap<>();
     }
 
     @Override
@@ -120,6 +133,33 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
             new MythicItemDropListener(this.plugin);
             logHook("MythicMobs");
         }
+        Key worldGuardRegion = Key.of("worldguard:region");
+        if (this.isPluginEnabled("WorldGuard")) {
+            EventConditions.register(worldGuardRegion, new WorldGuardRegionCondition.FactoryImpl<>());
+            LootConditions.register(worldGuardRegion, new WorldGuardRegionCondition.FactoryImpl<>());
+            logHook("WorldGuard");
+        } else {
+            EventConditions.register(worldGuardRegion, new AlwaysFalseCondition.FactoryImpl<>());
+            LootConditions.register(worldGuardRegion, new AlwaysFalseCondition.FactoryImpl<>());
+        }
+        if (this.isPluginEnabled("BetterModel")) {
+            BetterModelUtils.registerConstantBlockEntityRender();
+            logHook("BetterModel");
+        }
+        if (this.isPluginEnabled("ModelEngine")) {
+            ModelEngineUtils.registerConstantBlockEntityRender();
+            logHook("ModelEngine");
+        }
+        if (this.isPluginEnabled("QuickShop-Hikari")) {
+            new QuickShopItemExpressionHandler(this.plugin).register();
+            logHook("QuickShop-Hikari");
+        }
+        if (this.isPluginEnabled("CustomNameplates")) {
+            registerTagResolverProvider(new CustomNameplateProviders.Background());
+            registerTagResolverProvider(new CustomNameplateProviders.Nameplate());
+            registerTagResolverProvider(new CustomNameplateProviders.Bubble());
+            logHook("CustomNameplates");
+        }
     }
 
     @Override
@@ -130,6 +170,13 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
     @Override
     public void registerLevelerProvider(String plugin, LevelerProvider provider) {
         this.levelerProviders.put(plugin, provider);
+    }
+
+    @Override
+    public void registerTagResolverProvider(TagResolverProvider provider) {
+        this.tagResolverProviders.put(provider.name(), provider);
+        this.tagResolverProviderArray = this.tagResolverProviders.values().toArray(new TagResolverProvider[0]);
+        FormattedLine.Companion.resetWithCustomResolvers(new ArrayList<>(this.tagResolverProviders.keySet()));
     }
 
     private void logHook(String plugin) {
@@ -227,8 +274,8 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
     private void initWorldEditHook() {
         WorldEditBlockRegister weBlockRegister = new WorldEditBlockRegister(BukkitBlockManager.instance(), false);
         try {
-            for (Key newBlockId : BukkitBlockManager.instance().blockRegisterOrder()) {
-                weBlockRegister.register(newBlockId);
+            for (int i = 0; i < Config.serverSideBlocks(); i++) {
+                weBlockRegister.register(BlockManager.createCustomBlockKey(i));
             }
         } catch (Exception e) {
             this.plugin.logger().warn("Failed to initialize world edit hook", e);
@@ -248,6 +295,26 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
         if (this.isPluginEnabled("CustomFishing")) {
             itemManager.registerExternalItemSource(new CustomFishingSource());
             logHook("CustomFishing");
+        }
+        if (this.isPluginEnabled("Zaphkiel")) {
+            itemManager.registerExternalItemSource(new ZaphkielSource());
+            logHook("Zaphkiel");
+        }
+        if (this.isPluginEnabled("HeadDatabase")) {
+            itemManager.registerExternalItemSource(new HeadDatabaseSource());
+            logHook("HeadDatabase");
+        }
+        if (this.isPluginEnabled("SX-Item")) {
+            itemManager.registerExternalItemSource(new SXItemSource());
+            logHook("SX-Item");
+        }
+        if (this.isPluginEnabled("Slimefun")) {
+            itemManager.registerExternalItemSource(new SlimefunSource());
+            logHook("Slimefun");
+        }
+        if (this.isPluginEnabled("Nexo")) {
+            itemManager.registerExternalItemSource(new NexoItemSource());
+            logHook("Nexo");
         }
     }
 
@@ -272,7 +339,9 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
 
     @Override
     public String parse(Player player, String text) {
-        return PlaceholderAPIUtils.parse((org.bukkit.entity.Player) player.platformPlayer(), text);
+        return player == null
+                ? PlaceholderAPIUtils.parse(null, text)
+                : PlaceholderAPIUtils.parse((org.bukkit.entity.Player) player.platformPlayer(), text);
     }
 
     @Override
@@ -283,5 +352,16 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
     @Override
     public int getPlayerProtocolVersion(UUID uuid) {
         return ViaVersionUtils.getPlayerProtocolVersion(uuid);
+    }
+
+    @Override
+    public TagResolver[] createExternalTagResolvers(Context context) {
+        if (this.tagResolverProviderArray == null) return null;
+        int length = this.tagResolverProviderArray.length;
+        TagResolver[] resolvers = new TagResolver[length];
+        for (int i = 0; i < length; i++) {
+            resolvers[i] = this.tagResolverProviderArray[i].getTagResolver(context);
+        }
+        return resolvers;
     }
 }

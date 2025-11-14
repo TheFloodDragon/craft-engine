@@ -3,6 +3,7 @@ package net.momirealms.craftengine.bukkit.block.behavior;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.BlockTags;
+import net.momirealms.craftengine.bukkit.util.LocationUtils;
 import net.momirealms.craftengine.core.block.BlockBehavior;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
@@ -25,11 +26,13 @@ public class BushBlockBehavior extends AbstractCanSurviveBlockBehavior {
     protected final Set<String> customBlocksCansSurviveOn;
     protected final boolean blacklistMode;
     protected final boolean stackable;
+    protected final int maxHeight;
 
-    public BushBlockBehavior(CustomBlock block, int delay, boolean blacklist, boolean stackable, List<Object> tagsCanSurviveOn, Set<Object> blockStatesCanSurviveOn, Set<String> customBlocksCansSurviveOn) {
+    public BushBlockBehavior(CustomBlock block, int delay, boolean blacklist, boolean stackable, int maxHeight, List<Object> tagsCanSurviveOn, Set<Object> blockStatesCanSurviveOn, Set<String> customBlocksCansSurviveOn) {
         super(block, delay);
         this.blacklistMode = blacklist;
         this.stackable = stackable;
+        this.maxHeight = maxHeight;
         this.tagsCanSurviveOn = tagsCanSurviveOn;
         this.blockStatesCanSurviveOn = blockStatesCanSurviveOn;
         this.customBlocksCansSurviveOn = customBlocksCansSurviveOn;
@@ -41,9 +44,10 @@ public class BushBlockBehavior extends AbstractCanSurviveBlockBehavior {
         public BlockBehavior create(CustomBlock block, Map<String, Object> arguments) {
             Tuple<List<Object>, Set<Object>, Set<String>> tuple = readTagsAndState(arguments, false);
             boolean stackable = ResourceConfigUtils.getAsBoolean(arguments.getOrDefault("stackable", false), "stackable");
+            int maxHeight = ResourceConfigUtils.getAsInt(arguments.getOrDefault("max-height", 0), "max-height");
             int delay = ResourceConfigUtils.getAsInt(arguments.getOrDefault("delay", 0), "delay");
             boolean blacklistMode = ResourceConfigUtils.getAsBoolean(arguments.getOrDefault("blacklist", false), "blacklist");
-            return new BushBlockBehavior(block, delay, blacklistMode, stackable, tuple.left(), tuple.mid(), tuple.right());
+            return new BushBlockBehavior(block, delay, blacklistMode, stackable, maxHeight,tuple.left(), tuple.mid(), tuple.right());
         }
     }
 
@@ -61,7 +65,7 @@ public class BushBlockBehavior extends AbstractCanSurviveBlockBehavior {
             if (material != null) {
                 if (index == -1) {
                     // vanilla
-                    mcBlocks.addAll(BlockStateUtils.getAllVanillaBlockStates(blockType));
+                    mcBlocks.addAll(BlockStateUtils.getPossibleBlockStates(blockType));
                 } else {
                     mcBlocks.add(BlockStateUtils.blockDataToBlockState(Bukkit.createBlockData(blockStateStr)));
                 }
@@ -76,10 +80,7 @@ public class BushBlockBehavior extends AbstractCanSurviveBlockBehavior {
     @SuppressWarnings("DuplicatedCode")
     @Override
     protected boolean canSurvive(Object thisBlock, Object state, Object world, Object blockPos) throws Exception {
-        int y = FastNMS.INSTANCE.field$Vec3i$y(blockPos);
-        int x = FastNMS.INSTANCE.field$Vec3i$x(blockPos);
-        int z = FastNMS.INSTANCE.field$Vec3i$z(blockPos);
-        Object belowPos = FastNMS.INSTANCE.constructor$BlockPos(x, y - 1, z);
+        Object belowPos = LocationUtils.below(blockPos);
         Object belowState = FastNMS.INSTANCE.method$BlockGetter$getBlockState(world, belowPos);
         return mayPlaceOn(belowState, world, belowPos);
     }
@@ -98,7 +99,11 @@ public class BushBlockBehavior extends AbstractCanSurviveBlockBehavior {
         } else {
             ImmutableBlockState belowCustomState = optionalCustomState.get();
             if (belowCustomState.owner().value() == super.customBlock) {
-                return this.stackable;
+                if (!this.stackable || this.maxHeight == 1) return false;
+                if (this.maxHeight > 1) {
+                    return mayStackOn(world, belowPos);
+                }
+                return true;
             }
             if (this.customBlocksCansSurviveOn.contains(belowCustomState.owner().value().id().toString())) {
                 return !this.blacklistMode;
@@ -108,5 +113,22 @@ public class BushBlockBehavior extends AbstractCanSurviveBlockBehavior {
             }
         }
         return this.blacklistMode;
+    }
+
+    protected boolean mayStackOn(Object world, Object belowPos) {
+        int count = 1;
+        Object cursorPos = LocationUtils.below(belowPos);
+
+        while (count < this.maxHeight) {
+            Object belowState = FastNMS.INSTANCE.method$BlockGetter$getBlockState(world, cursorPos);
+            Optional<ImmutableBlockState> belowCustomState = BlockStateUtils.getOptionalCustomBlockState(belowState);
+            if (belowCustomState.isPresent() && belowCustomState.get().owner().value() == super.customBlock) {
+                count++;
+                cursorPos = LocationUtils.below(cursorPos);
+            } else {
+                break;
+            }
+        }
+        return count < this.maxHeight;
     }
 }

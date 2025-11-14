@@ -5,22 +5,19 @@ import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
 import net.momirealms.craftengine.bukkit.plugin.command.BukkitCommandFeature;
+import net.momirealms.craftengine.core.block.BlockManager;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
+import net.momirealms.craftengine.core.pack.allocator.IdAllocator;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.command.CraftEngineCommandManager;
-import net.momirealms.craftengine.core.util.Key;
+import net.momirealms.craftengine.core.plugin.config.Config;
 import org.bukkit.command.CommandSender;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.incendo.cloud.Command;
-import org.incendo.cloud.context.CommandContext;
-import org.incendo.cloud.context.CommandInput;
-import org.incendo.cloud.parser.standard.StringParser;
-import org.incendo.cloud.suggestion.Suggestion;
-import org.incendo.cloud.suggestion.SuggestionProvider;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.Map;
 
 public class DebugRealStateUsageCommand extends BukkitCommandFeature<CommandSender> {
 
@@ -31,34 +28,40 @@ public class DebugRealStateUsageCommand extends BukkitCommandFeature<CommandSend
     @Override
     public Command.Builder<? extends CommandSender> assembleCommand(org.incendo.cloud.CommandManager<CommandSender> manager, Command.Builder<CommandSender> builder) {
         return builder
-                .required("id", StringParser.stringComponent(StringParser.StringMode.GREEDY_FLAG_YIELDING).suggestionProvider(new SuggestionProvider<>() {
-                    @Override
-                    public @NonNull CompletableFuture<? extends @NonNull Iterable<? extends @NonNull Suggestion>> suggestionsFuture(@NonNull CommandContext<Object> context, @NonNull CommandInput input) {
-                        return CompletableFuture.completedFuture(plugin().blockManager().blockAppearanceArranger().keySet().stream().map(it -> Suggestion.suggestion(it.toString())).toList());
-                    }
-                }))
                 .handler(context -> {
-                    String data = context.get("id");
                     BukkitBlockManager blockManager = plugin().blockManager();
-                    Key baseBlockId = Key.of(data);
-                    List<Integer> reals = blockManager.realBlockArranger().get(baseBlockId);
-                    if (reals == null) return;
-                    int i = 0;
-                    Component block = Component.text(baseBlockId + ": ");
-                    plugin().senderFactory().wrap(context.sender()).sendMessage(block);
-
+                    plugin().senderFactory().wrap(context.sender()).sendMessage(Component.text("Serverside block state usage:"));
                     List<Component> batch = new ArrayList<>(100);
-                    for (int real : reals) {
-                        ImmutableBlockState state = blockManager.getImmutableBlockStateUnsafe(real);
+                    IdAllocator idAllocator = blockManager.blockParser().internalIdAllocator();
+                    Map<String, Integer> cachedIds = idAllocator.cachedIdMap();
+                    Map<Integer, String> reversedCachedIds = new HashMap<>(cachedIds.size());
+                    for (Map.Entry<String, Integer> entry : cachedIds.entrySet()) {
+                        reversedCachedIds.put(entry.getValue(), entry.getKey());
+                    }
+                    for (int i = 0; i < Config.serverSideBlocks(); i++) {
+                        ImmutableBlockState state = blockManager.getImmutableBlockStateUnsafe(i + blockManager.vanillaBlockStateCount());
                         if (state.isEmpty()) {
-                            Component hover = Component.text("craftengine:" + baseBlockId.value() + "_" + i).color(NamedTextColor.GREEN);
-                            batch.add(Component.text("|").color(NamedTextColor.GREEN).hoverEvent(HoverEvent.showText(hover)));
+                            String cached = reversedCachedIds.get(i);
+                            if (cached == null) {
+                                Component hover = Component.text("[Available] " + BlockManager.createCustomBlockKey(i).asString()).color(NamedTextColor.GREEN);
+                                batch.add(Component.text("|").color(NamedTextColor.GREEN).hoverEvent(HoverEvent.showText(hover)));
+                            } else {
+                                Component hover = Component.text(BlockManager.createCustomBlockKey(i).asString()).color(NamedTextColor.GRAY);
+                                hover = hover.append(Component.newline()).append(Component.text("[Inactive] " + cached).color(NamedTextColor.GRAY));
+                                batch.add(Component.text("|").color(NamedTextColor.GRAY).hoverEvent(HoverEvent.showText(hover)));
+                            }
                         } else {
-                            Component hover = Component.text("craftengine:" + baseBlockId.value() + "_" + i).color(NamedTextColor.RED);
-                            hover = hover.append(Component.newline()).append(Component.text(state.toString()).color(NamedTextColor.GRAY));
-                            batch.add(Component.text("|").color(NamedTextColor.RED).hoverEvent(HoverEvent.showText(hover)));
+                            boolean forced = idAllocator.isForced(state.toString());
+                            if (forced) {
+                                Component hover = Component.text("[Forced] " + BlockManager.createCustomBlockKey(i).asString()).color(NamedTextColor.RED);
+                                hover = hover.append(Component.newline()).append(Component.text(state.toString()).color(NamedTextColor.GRAY));
+                                batch.add(Component.text("|").color(NamedTextColor.RED).hoverEvent(HoverEvent.showText(hover)));
+                            } else {
+                                Component hover = Component.text("[Auto] " + BlockManager.createCustomBlockKey(i).asString()).color(NamedTextColor.YELLOW);
+                                hover = hover.append(Component.newline()).append(Component.text(state.toString()).color(NamedTextColor.GRAY));
+                                batch.add(Component.text("|").color(NamedTextColor.YELLOW).hoverEvent(HoverEvent.showText(hover)));
+                            }
                         }
-                        i++;
                         if (batch.size() == 100) {
                             plugin().senderFactory().wrap(context.sender())
                                     .sendMessage(Component.text("").children(batch));

@@ -1,13 +1,9 @@
 package net.momirealms.craftengine.core.plugin.dependency;
 
-import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.dependency.relocation.Relocation;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
 
 public class Dependencies {
 
@@ -143,25 +139,6 @@ public class Dependencies {
             Collections.emptyList()
     );
 
-    public static final Dependency SLF4J_API = new Dependency(
-            "slf4j-api",
-            "org.slf4j",
-            "slf4j-api",
-            Collections.emptyList()
-    );
-
-    public static final Dependency SLF4J_SIMPLE = new Dependency(
-            "slf4j-simple",
-            "org.slf4j",
-            "slf4j-simple",
-            Collections.emptyList()
-    ) {
-        @Override
-        public String getVersion() {
-            return Dependencies.SLF4J_API.getVersion();
-        }
-    };
-
     public static final Dependency COMMONS_LANG3 = new Dependency(
             "commons-lang3",
             "org{}apache{}commons",
@@ -174,22 +151,6 @@ public class Dependencies {
             "commons-io",
             "commons-io",
             List.of(Relocation.of("commons", "org{}apache{}commons"))
-    );
-
-    public static final Dependency COMMONS_IMAGING = new Dependency(
-            "commons-imaging",
-            "org{}apache{}commons",
-            "commons-imaging",
-            List.of(Relocation.of("commons", "org{}apache{}commons")),
-            (p) -> {
-                try (JarFile jarFile = new JarFile(p.toFile())) {
-                    ZipEntry entry = jarFile.getEntry("net/momirealms/craftengine/libraries/commons/imaging/Imaging.class");
-                    return entry != null;
-                } catch (IOException e) {
-                    CraftEngine.instance().logger().warn("Error reading jar file", e);
-                    return false;
-                }
-            }
     );
 
     public static final Dependency BYTE_BUDDY = new Dependency(
@@ -224,7 +185,8 @@ public class Dependencies {
             "option",
             List.of(Relocation.of("option", "net{}kyori{}option"),
                     Relocation.of("examination", "net{}kyori{}examination"),
-                    Relocation.of("adventure", "net{}kyori{}adventure"))
+                    Relocation.of("adventure", "net{}kyori{}adventure")),
+            true
     );
 
     public static final Dependency ADVENTURE_API = new Dependency(
@@ -233,7 +195,8 @@ public class Dependencies {
             "adventure-api",
             List.of(Relocation.of("option", "net{}kyori{}option"),
                     Relocation.of("examination", "net{}kyori{}examination"),
-                    Relocation.of("adventure", "net{}kyori{}adventure"))
+                    Relocation.of("adventure", "net{}kyori{}adventure")),
+            true
     );
 
     public static final Dependency ADVENTURE_NBT = new Dependency(
@@ -242,7 +205,8 @@ public class Dependencies {
             "adventure-nbt",
             List.of(Relocation.of("option", "net{}kyori{}option"),
                     Relocation.of("examination", "net{}kyori{}examination"),
-                    Relocation.of("adventure", "net{}kyori{}adventure"))
+                    Relocation.of("adventure", "net{}kyori{}adventure")),
+            true
     ) {
         @Override
         public String getVersion() {
@@ -256,7 +220,8 @@ public class Dependencies {
             "adventure-key",
             List.of(Relocation.of("option", "net{}kyori{}option"),
                     Relocation.of("examination", "net{}kyori{}examination"),
-                    Relocation.of("adventure", "net{}kyori{}adventure"))
+                    Relocation.of("adventure", "net{}kyori{}adventure")),
+            true
     ) {
         @Override
         public String getVersion() {
@@ -270,7 +235,8 @@ public class Dependencies {
             "examination-api",
             List.of(Relocation.of("option", "net{}kyori{}option"),
                     Relocation.of("examination", "net{}kyori{}examination"),
-                    Relocation.of("adventure", "net{}kyori{}adventure"))
+                    Relocation.of("adventure", "net{}kyori{}adventure")),
+            true
     );
 
     public static final Dependency EXAMINATION_STRING = new Dependency(
@@ -279,7 +245,8 @@ public class Dependencies {
             "examination-string",
             List.of(Relocation.of("option", "net{}kyori{}option"),
                     Relocation.of("examination", "net{}kyori{}examination"),
-                    Relocation.of("adventure", "net{}kyori{}adventure"))
+                    Relocation.of("adventure", "net{}kyori{}adventure")),
+            true
     ) {
         @Override
         public String getVersion() {
@@ -293,7 +260,8 @@ public class Dependencies {
             "adventure-text-minimessage",
             List.of(Relocation.of("option", "net{}kyori{}option"),
                     Relocation.of("examination", "net{}kyori{}examination"),
-                    Relocation.of("adventure", "net{}kyori{}adventure"))
+                    Relocation.of("adventure", "net{}kyori{}adventure")),
+            true
     ) {
         @Override
         public String getVersion() {
@@ -307,7 +275,8 @@ public class Dependencies {
             "adventure-text-serializer-commons",
             List.of(Relocation.of("option", "net{}kyori{}option"),
                     Relocation.of("examination", "net{}kyori{}examination"),
-                    Relocation.of("adventure", "net{}kyori{}adventure"))
+                    Relocation.of("adventure", "net{}kyori{}adventure")),
+            true
     ) {
         @Override
         public String getVersion() {
@@ -321,7 +290,8 @@ public class Dependencies {
             "adventure-text-serializer-gson",
             List.of(Relocation.of("option", "net{}kyori{}option"),
                     Relocation.of("examination", "net{}kyori{}examination"),
-                    Relocation.of("adventure", "net{}kyori{}adventure"))
+                    Relocation.of("adventure", "net{}kyori{}adventure")),
+            true
     ) {
         @Override
         public String getVersion() {
@@ -335,7 +305,8 @@ public class Dependencies {
             "adventure-text-serializer-json-legacy-impl",
             List.of(Relocation.of("option", "net{}kyori{}option"),
                     Relocation.of("examination", "net{}kyori{}examination"),
-                    Relocation.of("adventure", "net{}kyori{}adventure"))
+                    Relocation.of("adventure", "net{}kyori{}adventure")),
+            true
     ) {
         @Override
         public String getVersion() {
@@ -349,7 +320,8 @@ public class Dependencies {
             "adventure-text-serializer-legacy",
             List.of(Relocation.of("option", "net{}kyori{}option"),
                     Relocation.of("examination", "net{}kyori{}examination"),
-                    Relocation.of("adventure", "net{}kyori{}adventure"))
+                    Relocation.of("adventure", "net{}kyori{}adventure")),
+            true
     ) {
         @Override
         public String getVersion() {
@@ -363,7 +335,8 @@ public class Dependencies {
             "adventure-text-serializer-json",
             List.of(Relocation.of("option", "net{}kyori{}option"),
                     Relocation.of("examination", "net{}kyori{}examination"),
-                    Relocation.of("adventure", "net{}kyori{}adventure"))
+                    Relocation.of("adventure", "net{}kyori{}adventure")),
+            true
     ) {
         @Override
         public String getVersion() {
@@ -392,27 +365,6 @@ public class Dependencies {
             List.of(Relocation.of("evalex", "com{}ezylang{}evalex"))
     );
 
-    public static final Dependency NETTY_HTTP = new Dependency(
-            "netty-codec-http",
-            "io{}netty",
-            "netty-codec-http",
-            Collections.emptyList()
-    );
-
-    public static final Dependency NETTY_HTTP2 = new Dependency(
-            "netty-codec-http2",
-            "io{}netty",
-            "netty-codec-http2",
-            Collections.emptyList()
-    );
-
-    public static final Dependency REACTIVE_STREAMS = new Dependency(
-            "reactive-streams",
-            "org{}reactivestreams",
-            "reactive-streams",
-            List.of(Relocation.of("reactivestreams", "org{}reactivestreams"))
-    );
-
     public static final Dependency JIMFS = new Dependency(
             "jimfs",
             "com{}google{}jimfs",
@@ -420,6 +372,36 @@ public class Dependencies {
             List.of(Relocation.of("jimfs", "com{}google{}common{}jimfs"))
     );
 
+    public static final Dependency NETTY_HTTP = new Dependency(
+            "netty-codec-http",
+            "io{}netty",
+            "netty-codec-http",
+            List.of(
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
+            )
+    );
+
+    public static final Dependency NETTY_HTTP2 = new Dependency(
+            "netty-codec-http2",
+            "io{}netty",
+            "netty-codec-http2",
+            List.of(Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"))
+    );
+
+    public static final Dependency REACTIVE_STREAMS = new Dependency(
+            "reactive-streams",
+            "org{}reactivestreams",
+            "reactive-streams",
+            List.of(
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
+            )
+    );
 
     public static final Dependency AMAZON_AWSSDK_S3 = new Dependency(
             "amazon-sdk-s3",
@@ -427,7 +409,11 @@ public class Dependencies {
             "s3",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     );
 
@@ -437,7 +423,11 @@ public class Dependencies {
             "netty-nio-client",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -452,7 +442,11 @@ public class Dependencies {
             "sdk-core",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -467,7 +461,11 @@ public class Dependencies {
             "auth",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -482,7 +480,11 @@ public class Dependencies {
             "regions",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -497,7 +499,11 @@ public class Dependencies {
             "identity-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -512,7 +518,11 @@ public class Dependencies {
             "http-client-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -527,7 +537,11 @@ public class Dependencies {
             "protocol-core",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -542,7 +556,11 @@ public class Dependencies {
             "aws-xml-protocol",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -557,7 +575,11 @@ public class Dependencies {
             "json-utils",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -572,7 +594,11 @@ public class Dependencies {
             "aws-core",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -587,7 +613,11 @@ public class Dependencies {
             "utils",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -602,7 +632,11 @@ public class Dependencies {
             "annotations",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -617,7 +651,11 @@ public class Dependencies {
             "crt-core",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -632,7 +670,11 @@ public class Dependencies {
             "checksums",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -647,7 +689,11 @@ public class Dependencies {
             "eventstream",
             List.of(
                     Relocation.of("eventstream", "software{}amazon{}eventstream"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     );
 
@@ -657,7 +703,11 @@ public class Dependencies {
             "profiles",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -672,7 +722,11 @@ public class Dependencies {
             "retries",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -687,7 +741,11 @@ public class Dependencies {
             "endpoints-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -702,7 +760,11 @@ public class Dependencies {
             "arns",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -717,7 +779,11 @@ public class Dependencies {
             "aws-query-protocol",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -732,7 +798,11 @@ public class Dependencies {
             "http-auth-aws",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -747,7 +817,11 @@ public class Dependencies {
             "http-auth-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -762,7 +836,11 @@ public class Dependencies {
             "http-auth",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -777,7 +855,11 @@ public class Dependencies {
             "http-auth-aws-eventstream",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -792,7 +874,11 @@ public class Dependencies {
             "checksums-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -807,7 +893,11 @@ public class Dependencies {
             "retries-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -822,7 +912,11 @@ public class Dependencies {
             "metrics-spi",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override
@@ -837,7 +931,11 @@ public class Dependencies {
             "third-party-jackson-core",
             List.of(
                     Relocation.of("awssdk", "software{}amazon{}awssdk"),
-                    Relocation.of("reactivestreams", "org{}reactivestreams")
+                    Relocation.of("reactivestreams", "org{}reactivestreams"),
+                    Relocation.of("netty{}handler{}codec{}http2", "io{}netty{}handler{}codec{}http2"),
+                    Relocation.of("netty{}handler{}codec{}http", "io{}netty{}handler{}codec{}http"),
+                    Relocation.of("netty{}handler{}codec{}rtsp", "io{}netty{}handler{}codec{}rtsp"),
+                    Relocation.of("netty{}handler{}codec{}spdy", "io{}netty{}handler{}codec{}spdy")
             )
     ) {
         @Override

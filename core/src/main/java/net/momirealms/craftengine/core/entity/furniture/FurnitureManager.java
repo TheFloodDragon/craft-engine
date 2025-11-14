@@ -9,13 +9,12 @@ import org.incendo.cloud.suggestion.Suggestion;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 public interface FurnitureManager extends Manageable {
     Key FURNITURE_KEY = Key.of("craftengine:furniture_id");
     Key FURNITURE_EXTRA_DATA_KEY = Key.of("craftengine:furniture_extra_data");
-    Key FURNITURE_SEAT_BASE_ENTITY_KEY = Key.of("craftengine:seat_to_base_entity");
-    Key FURNITURE_SEAT_VECTOR_3F_KEY = Key.of("craftengine:seat_vector");
     Key FURNITURE_COLLISION = Key.of("craftengine:collision");
 
     String FURNITURE_ADMIN_NODE = "craftengine.furniture.admin";
@@ -29,6 +28,8 @@ public interface FurnitureManager extends Manageable {
     Furniture place(WorldPosition position, CustomFurniture furniture, FurnitureExtraData extraData, boolean playSound);
 
     Optional<CustomFurniture> furnitureById(Key id);
+
+    Map<Key, CustomFurniture> loadedFurniture();
 
     boolean isFurnitureRealEntity(int entityId);
 

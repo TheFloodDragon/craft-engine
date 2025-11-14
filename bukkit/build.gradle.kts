@@ -1,14 +1,14 @@
 plugins {
-    id("com.gradleup.shadow") version "9.0.0-rc2"
+    id("com.gradleup.shadow") version "9.2.2"
     id("maven-publish")
 }
 
 repositories {
+    mavenCentral()
     maven("https://jitpack.io/")
     maven("https://repo.momirealms.net/releases/")
     maven("https://libraries.minecraft.net/")
     maven("https://repo.papermc.io/repository/maven-public/")
-    mavenCentral()
 }
 
 dependencies {
@@ -60,6 +60,8 @@ dependencies {
     compileOnly("org.ahocorasick:ahocorasick:${rootProject.properties["ahocorasick_version"]}")
     // authlib
     compileOnly("com.mojang:authlib:${rootProject.properties["authlib_version"]}")
+    // concurrentutil
+    compileOnly("ca.spottedleaf:concurrentutil:${rootProject.properties["concurrent_util_version"]}")
 }
 
 java {
@@ -78,7 +80,7 @@ tasks.withType<JavaCompile> {
 }
 
 artifacts {
-    archives(tasks.shadowJar)
+    implementation(tasks.shadowJar)
 }
 
 tasks {
@@ -99,6 +101,10 @@ tasks {
         relocate("com.google.common.jimfs", "net.momirealms.craftengine.libraries.jimfs")
         relocate("org.apache.commons", "net.momirealms.craftengine.libraries.commons")
         relocate("io.leangen.geantyref", "net.momirealms.craftengine.libraries.geantyref")
+        relocate("io.netty.handler.codec.http", "net.momirealms.craftengine.libraries.netty.handler.codec.http")
+        relocate("io.netty.handler.codec.rtsp", "net.momirealms.craftengine.libraries.netty.handler.codec.rtsp")
+        relocate("io.netty.handler.codec.spdy", "net.momirealms.craftengine.libraries.netty.handler.codec.spdy")
+        relocate("io.netty.handler.codec.http2", "net.momirealms.craftengine.libraries.netty.handler.codec.http2")
     }
 }
 

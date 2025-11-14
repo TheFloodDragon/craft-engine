@@ -88,7 +88,7 @@ public class SaplingBlockBehavior extends BukkitBlockBehavior {
             return;
         }
         Object chunkGenerator = CoreReflections.method$ServerChunkCache$getGenerator.invoke(FastNMS.INSTANCE.method$ServerLevel$getChunkSource(world));
-        Object configuredFeature = CoreReflections.method$Holder$value.invoke(holder.get());
+        Object configuredFeature = FastNMS.INSTANCE.method$Holder$value(holder.get());
         Object fluidState = FastNMS.INSTANCE.method$BlockGetter$getFluidState(world, blockPos);
         Object legacyState = CoreReflections.method$FluidState$createLegacyBlock.invoke(fluidState);
         FastNMS.INSTANCE.method$LevelWriter$setBlock(world, blockPos, legacyState, UpdateOption.UPDATE_NONE.flags());
@@ -114,7 +114,7 @@ public class SaplingBlockBehavior extends BukkitBlockBehavior {
         }
         ImmutableBlockState customState = optionalCustomState.get();
         boolean sendParticles = false;
-        Object visualState = customState.vanillaBlockState().handle();
+        Object visualState = customState.vanillaBlockState().literalObject();
         Object visualStateBlock = BlockStateUtils.getBlockOwner(visualState);
         if (CoreReflections.clazz$BonemealableBlock.isInstance(visualStateBlock)) {
             boolean is = FastNMS.INSTANCE.method$BonemealableBlock$isValidBonemealTarget(visualStateBlock, level, blockPos, visualState);
@@ -151,7 +151,7 @@ public class SaplingBlockBehavior extends BukkitBlockBehavior {
         if (ItemUtils.isEmpty(item) || !item.vanillaId().equals(ItemKeys.BONE_MEAL) || context.getPlayer().isAdventureMode())
             return InteractionResult.PASS;
         boolean sendSwing = false;
-        Object visualState = state.vanillaBlockState().handle();
+        Object visualState = state.vanillaBlockState().literalObject();
         Object visualStateBlock = BlockStateUtils.getBlockOwner(visualState);
         if (CoreReflections.clazz$BonemealableBlock.isInstance(visualStateBlock)) {
             boolean is = FastNMS.INSTANCE.method$BonemealableBlock$isValidBonemealTarget(visualStateBlock, context.getLevel().serverWorld(), LocationUtils.toBlockPos(context.getClickedPos()), visualState);

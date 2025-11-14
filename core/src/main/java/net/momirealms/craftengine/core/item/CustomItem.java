@@ -3,7 +3,7 @@ package net.momirealms.craftengine.core.item;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.item.modifier.ItemDataModifier;
 import net.momirealms.craftengine.core.item.updater.ItemUpdateConfig;
-import net.momirealms.craftengine.core.plugin.context.PlayerOptionalContext;
+import net.momirealms.craftengine.core.plugin.context.Context;
 import net.momirealms.craftengine.core.plugin.context.event.EventTrigger;
 import net.momirealms.craftengine.core.plugin.context.function.Function;
 import net.momirealms.craftengine.core.util.Key;
@@ -16,6 +16,10 @@ import java.util.Optional;
 
 public interface CustomItem<I> extends BuildableItem<I> {
 
+    /**
+     * Since CraftEngine allows users to add certain functionalities to vanilla items, this custom item might actually be a vanilla item.
+     * This will be refactored before the 1.0 release, but no changes will be made for now to ensure compatibility.
+     */
     boolean isVanillaItem();
 
     Key id();
@@ -40,7 +44,7 @@ public interface CustomItem<I> extends BuildableItem<I> {
         return settings().tags().contains(tag);
     }
 
-    void execute(PlayerOptionalContext context, EventTrigger trigger);
+    void execute(Context context, EventTrigger trigger);
 
     @NotNull
     List<ItemBehavior> behaviors();
@@ -70,7 +74,7 @@ public interface CustomItem<I> extends BuildableItem<I> {
 
         Builder<I> updater(ItemUpdateConfig updater);
 
-        Builder<I> events(Map<EventTrigger, List<Function<PlayerOptionalContext>>> events);
+        Builder<I> events(Map<EventTrigger, List<Function<Context>>> events);
 
         CustomItem<I> build();
     }

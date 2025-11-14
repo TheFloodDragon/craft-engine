@@ -2,26 +2,20 @@ package net.momirealms.craftengine.core.advancement.network;
 
 import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.core.advancement.AdvancementType;
-import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.Item;
-import net.momirealms.craftengine.core.plugin.CraftEngine;
-import net.momirealms.craftengine.core.plugin.config.Config;
-import net.momirealms.craftengine.core.util.AdventureHelper;
 import net.momirealms.craftengine.core.util.FriendlyByteBuf;
 import net.momirealms.craftengine.core.util.Key;
-import net.momirealms.craftengine.core.util.VersionHelper;
-import net.momirealms.sparrow.nbt.Tag;
 
-import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
-public class AdvancementDisplay {
+public class AdvancementDisplay<I> {
     public static final int FLAG_BACKGROUND = 0b001;
     public static final int FLAG_SHOW_TOAST = 0b010;
     public static final int FLAG_HIDDEN = 0b100;
     private Component title;
     private Component description;
-    private Item<Object> icon;
+    private Item<I> icon;
     private Optional<Key> background;
     private final AdvancementType type;
     private final boolean showToast;
@@ -31,7 +25,7 @@ public class AdvancementDisplay {
 
     public AdvancementDisplay(Component title,
                               Component description,
-                              Item<Object> icon,
+                              Item<I> icon,
                               Optional<Key> background,
                               AdvancementType type,
                               boolean showToast,
@@ -49,14 +43,19 @@ public class AdvancementDisplay {
         this.y = y;
     }
 
-    public void applyClientboundData(Player player) {
-        this.icon = CraftEngine.instance().itemManager().s2c(this.icon, player);
+    public void applyClientboundData(Function<Item<I>, Item<I>> function) {
+        this.icon = function.apply(this.icon);
     }
 
-    public void write(FriendlyByteBuf buf) {
+    public void replaceNetworkTags(Function<Component, Component> function) {
+        this.title = function.apply(this.title);
+        this.description = function.apply(this.description);
+    }
+
+    public void write(FriendlyByteBuf buf, FriendlyByteBuf.Writer<Item<I>> writer) {
         buf.writeComponent(this.title);
         buf.writeComponent(this.description);
-        CraftEngine.instance().itemManager().encode(buf, this.icon);
+        writer.accept(buf, this.icon);
         buf.writeVarInt(this.type.ordinal());
         int flags = 0;
         if (this.background.isPresent()) {
@@ -74,10 +73,10 @@ public class AdvancementDisplay {
         buf.writeFloat(this.y);
     }
 
-    public static AdvancementDisplay read(FriendlyByteBuf buf) {
-        Component title = readComponent(buf);
-        Component description = readComponent(buf);
-        Item<Object> icon = CraftEngine.instance().itemManager().decode(buf);
+    public static <I> AdvancementDisplay<I> read(FriendlyByteBuf buf, FriendlyByteBuf.Reader<Item<I>> reader) {
+        Component title = buf.readComponent();
+        Component description = buf.readComponent();
+        Item<I> icon = reader.apply(buf);
         AdvancementType type = AdvancementType.byId(buf.readVarInt());
         int flags = buf.readInt();
         boolean hasBackground = (flags & 1) != 0;
@@ -86,30 +85,6 @@ public class AdvancementDisplay {
         boolean hidden = (flags & 4) != 0;
         float x = buf.readFloat();
         float y = buf.readFloat();
-        return new AdvancementDisplay(title, description, icon, background, type, showToast, hidden, x, y);
-    }
-
-    private static Component readComponent(FriendlyByteBuf buf) {
-        if (Config.interceptAdvancement()) {
-            if (VersionHelper.isOrAbove1_20_3()) {
-                Tag nbt = buf.readNbt(false);
-                Map<String, Component> tokens = CraftEngine.instance().fontManager().matchTags(nbt.getAsString());
-                Component component = AdventureHelper.nbtToComponent(nbt);
-                if (!tokens.isEmpty()) {
-                    component = AdventureHelper.replaceText(component, tokens);
-                }
-                return component;
-            } else {
-                String json = buf.readUtf();
-                Component component = AdventureHelper.jsonToComponent(json);
-                Map<String, Component> tokens = CraftEngine.instance().fontManager().matchTags(json);
-                if (!tokens.isEmpty()) {
-                    component = AdventureHelper.replaceText(component, tokens);
-                }
-                return component;
-            }
-        } else {
-            return buf.readComponent();
-        }
+        return new AdvancementDisplay<>(title, description, icon, background, type, showToast, hidden, x, y);
     }
 }

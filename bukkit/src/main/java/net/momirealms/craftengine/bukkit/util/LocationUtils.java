@@ -14,11 +14,15 @@ public final class LocationUtils {
     private LocationUtils() {}
 
     public static Location toLocation(WorldPosition position) {
-        return new Location((World) position.world().platformWorld(), position.x(), position.y(), position.z(), position.xRot(), position.yRot());
+        return new Location((World) position.world().platformWorld(), position.x(), position.y(), position.z(), position.yRot(), position.xRot());
     }
 
     public static WorldPosition toWorldPosition(Location location) {
-        return new WorldPosition(new BukkitWorld(location.getWorld()), location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+        return new WorldPosition(new BukkitWorld(location.getWorld()), location.getX(), location.getY(), location.getZ(), location.getPitch(), location.getYaw());
+    }
+
+    public static Object toVec(Vec3d vec) {
+        return FastNMS.INSTANCE.constructor$Vec3(vec.x, vec.y, vec.z);
     }
 
     public static Vec3d toVec3d(Location loc) {
@@ -29,7 +33,7 @@ public final class LocationUtils {
         return new Vec3d(
             FastNMS.INSTANCE.field$Vec3$x(vec),
             FastNMS.INSTANCE.field$Vec3$y(vec),
-            FastNMS.INSTANCE.field$Vec3$y(vec)
+            FastNMS.INSTANCE.field$Vec3$z(vec)
         );
     }
 

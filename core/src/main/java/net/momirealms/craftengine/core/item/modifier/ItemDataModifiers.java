@@ -15,6 +15,7 @@ public final class ItemDataModifiers {
     private ItemDataModifiers() {}
 
     public static final Key ITEM_MODEL = Key.of("craftengine:item-model");
+    public static final Key OVERWRITABLE_ITEM_MODEL = Key.of("craftengine:overwritable-item-model");
     public static final Key ID = Key.of("craftengine:id");
     public static final Key HIDE_TOOLTIP = Key.of("craftengine:hide-tooltip");
     public static final Key FOOD = Key.of("craftengine:food");
@@ -27,7 +28,9 @@ public final class ItemDataModifiers {
     public static final Key DISPLAY_NAME = Key.of("craftengine:display-name");
     public static final Key CUSTOM_NAME = Key.of("craftengine:custom-name");
     public static final Key CUSTOM_MODEL_DATA = Key.of("craftengine:custom-model-data");
+    public static final Key OVERWRITABLE_CUSTOM_MODEL_DATA = Key.of("craftengine:overwritable-custom-model-data");
     public static final Key COMPONENTS = Key.of("craftengine:components");
+    public static final Key COMPONENT = Key.of("craftengine:component");
     public static final Key ATTRIBUTE_MODIFIERS = Key.of("craftengine:attribute-modifiers");
     public static final Key ATTRIBUTES = Key.of("craftengine:attributes");
     public static final Key ARGUMENTS = Key.of("craftengine:arguments");
@@ -37,6 +40,7 @@ public final class ItemDataModifiers {
     public static final Key OVERWRITABLE_ITEM_NAME = Key.of("craftengine:overwritable-item-name");
     public static final Key JUKEBOX_PLAYABLE = Key.of("craftengine:jukebox-playable");
     public static final Key REMOVE_COMPONENTS = Key.of("craftengine:remove-components");
+    public static final Key REMOVE_COMPONENT = Key.of("craftengine:remove-component");
     public static final Key TAGS = Key.of("craftengine:tags");
     public static final Key NBT = Key.of("craftengine:nbt");
     public static final Key TOOLTIP_STYLE = Key.of("craftengine:tooltip-style");
@@ -45,6 +49,8 @@ public final class ItemDataModifiers {
     public static final Key UNBREAKABLE = Key.of("craftengine:unbreakable");
     public static final Key DYNAMIC_LORE = Key.of("craftengine:dynamic-lore");
     public static final Key OVERWRITABLE_LORE = Key.of("craftengine:overwritable-lore");
+    public static final Key MAX_DAMAGE = Key.of("craftengine:max-damage");
+    public static final Key BLOCK_STATE = Key.of("craftengine:block-state");
 
     public static <T> void register(Key key, ItemDataModifierFactory<T> factory) {
         ((WritableRegistry<ItemDataModifierFactory<?>>) BuiltInRegistries.ITEM_DATA_MODIFIER_FACTORY)
@@ -76,13 +82,17 @@ public final class ItemDataModifiers {
         register(ARGUMENTS, ArgumentsModifier.FACTORY);
         register(OVERWRITABLE_ITEM_NAME, OverwritableItemNameModifier.FACTORY);
         register(PDC, PDCModifier.FACTORY);
+        register(BLOCK_STATE, BlockStateModifier.FACTORY);
         if (VersionHelper.isOrAbove1_20_5()) {
             register(CUSTOM_NAME, CustomNameModifier.FACTORY);
             register(ITEM_NAME, ItemNameModifier.FACTORY);
             register(DISPLAY_NAME, ItemNameModifier.FACTORY);
             register(COMPONENTS, ComponentsModifier.FACTORY);
+            register(COMPONENT, ComponentsModifier.FACTORY);
             register(REMOVE_COMPONENTS, RemoveComponentModifier.FACTORY);
+            register(REMOVE_COMPONENT, RemoveComponentModifier.FACTORY);
             register(FOOD, FoodModifier.FACTORY);
+            register(MAX_DAMAGE, MaxDamageModifier.FACTORY);
         } else {
             register(CUSTOM_NAME, CustomNameModifier.FACTORY);
             register(ITEM_NAME, CustomNameModifier.FACTORY);

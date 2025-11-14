@@ -5,10 +5,9 @@ import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.plugin.Manageable;
 import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.plugin.config.ConfigParser;
-import net.momirealms.craftengine.core.util.AdventureHelper;
-import net.momirealms.craftengine.core.util.CharacterUtils;
-import net.momirealms.craftengine.core.util.FormatUtils;
-import net.momirealms.craftengine.core.util.Key;
+import net.momirealms.craftengine.core.plugin.text.component.ComponentProvider;
+import net.momirealms.craftengine.core.util.*;
+import net.momirealms.sparrow.nbt.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,6 +43,12 @@ public interface FontManager extends Manageable {
     }
 
     IllegalCharacterProcessResult processIllegalCharacters(String raw, char replacement);
+
+    OffsetFont offsetFont();
+
+    Map<Key, BitmapImage> loadedImages();
+
+    Map<Key, Emoji> emojis();
 
     ConfigParser[] parsers();
 
@@ -103,7 +108,11 @@ public interface FontManager extends Manageable {
         return createOffsets(offset, (raw, font) -> raw);
     }
 
-    Map<String, Component> matchTags(String json);
+    Map<String, ComponentProvider> matchTags(String text);
+
+    default Map<String, ComponentProvider> matchTags(Tag nbt) {
+        return matchTags(new StringValueOnlyTagVisitor().visit(nbt));
+    }
 
     void refreshEmojiSuggestions(UUID uuid);
 }

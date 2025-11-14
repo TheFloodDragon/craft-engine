@@ -38,7 +38,7 @@ public class ResolutionMergeAltas implements Resolution {
             j3.add("sources", ja3);
             GsonHelper.writeJsonFile(j3, existing.path());
         } catch (Exception e) {
-            CraftEngine.instance().logger().severe("Failed to merge json when resolving file conflicts", e);
+            CraftEngine.instance().logger().severe("Failed to merge altas when resolving file conflicts", e);
         }
     }
 

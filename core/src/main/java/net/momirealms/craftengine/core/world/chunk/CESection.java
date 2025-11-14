@@ -5,12 +5,8 @@ import net.momirealms.craftengine.core.world.BlockPos;
 import org.jetbrains.annotations.ApiStatus;
 
 public class CESection {
-    public static final int SECTION_WIDTH = 16;
-    public static final int SECTION_HEIGHT = 16;
-    public static final int SECTION_SIZE = SECTION_WIDTH * SECTION_WIDTH * SECTION_HEIGHT;
-
-    private final int sectionY;
-    private final PalettedContainer<ImmutableBlockState> statesContainer;
+    public final int sectionY;
+    public final PalettedContainer<ImmutableBlockState> statesContainer;
 
     public CESection(int sectionY, PalettedContainer<ImmutableBlockState> statesContainer) {
         this.sectionY = sectionY;
@@ -53,6 +49,6 @@ public class CESection {
     }
 
     public int sectionY() {
-        return sectionY;
+        return this.sectionY;
     }
 }

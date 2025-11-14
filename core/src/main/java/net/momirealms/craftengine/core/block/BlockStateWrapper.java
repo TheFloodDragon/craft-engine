@@ -1,72 +1,51 @@
 package net.momirealms.craftengine.core.block;
 
-public interface BlockStateWrapper {
+import net.momirealms.craftengine.core.util.Key;
+import net.momirealms.sparrow.nbt.*;
+import org.jetbrains.annotations.NotNull;
 
-    Object handle();
+import java.util.Collection;
+import java.util.Map;
+
+public interface BlockStateWrapper extends Comparable<BlockStateWrapper> {
+
+    Object literalObject();
 
     int registryId();
 
-    boolean isVanillaBlock();
+    Key ownerId();
 
-    static BlockStateWrapper vanilla(Object handle, int registryId) {
-        return new VanillaBlockState(handle, registryId);
+    <T> T getProperty(String propertyName);
+
+    boolean hasProperty(String propertyName);
+
+    Collection<String> getPropertyNames();
+
+    BlockStateWrapper withProperty(String propertyName, String propertyValue);
+
+    BlockStateWrapper cycleProperty(String propertyName, boolean backwards);
+
+    String getAsString();
+
+    boolean isCustom();
+
+    @Override
+    default int compareTo(@NotNull BlockStateWrapper o) {
+        return Integer.compare(registryId(), o.registryId());
     }
 
-    static BlockStateWrapper custom(Object handle, int registryId) {
-        return new CustomBlockState(handle, registryId);
-    }
-
-    static BlockStateWrapper create(Object handle, int registryId, boolean isVanillaBlock) {
-        if (isVanillaBlock) return new VanillaBlockState(handle, registryId);
-        else return new CustomBlockState(handle, registryId);
-    }
-
-    abstract class AbstractBlockState implements BlockStateWrapper {
-        protected final Object handle;
-        protected final int registryId;
-
-        public AbstractBlockState(Object handle, int registryId) {
-            this.handle = handle;
-            this.registryId = registryId;
+    default BlockStateWrapper withProperties(CompoundTag properties) {
+        BlockStateWrapper result = this;
+        for (Map.Entry<String, Tag> entry : properties.entrySet()) {
+            Tag value = entry.getValue();
+            if (value instanceof StringTag stringTag) {
+                result = result.withProperty(entry.getKey(), stringTag.getAsString());
+            } else if (value instanceof IntTag intTag) {
+                result = result.withProperty(entry.getKey(), String.valueOf(intTag.getAsInt()));
+            } else if (value instanceof ByteTag byteTag) {
+                result = result.withProperty(entry.getKey(), String.valueOf(byteTag.booleanValue()));
+            }
         }
-
-        @Override
-        public Object handle() {
-            return this.handle;
-        }
-
-        @Override
-        public int registryId() {
-            return this.registryId;
-        }
-    }
-
-    class VanillaBlockState extends AbstractBlockState {
-
-        public VanillaBlockState(Object handle, int registryId) {
-            super(handle, registryId);
-        }
-
-        @Override
-        public boolean isVanillaBlock() {
-            return true;
-        }
-    }
-
-    class CustomBlockState extends AbstractBlockState {
-
-        public CustomBlockState(Object handle, int registryId) {
-            super(handle, registryId);
-        }
-
-        @Override
-        public DelegatingBlockState handle() {
-            return (DelegatingBlockState) super.handle();
-        }
-
-        @Override
-        public boolean isVanillaBlock() {
-            return false;
-        }
+        return result;
     }
 }

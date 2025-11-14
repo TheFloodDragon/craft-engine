@@ -12,7 +12,7 @@ import net.momirealms.craftengine.bukkit.util.LocationUtils;
 import net.momirealms.craftengine.core.entity.furniture.AnchorType;
 import net.momirealms.craftengine.core.entity.furniture.CustomFurniture;
 import net.momirealms.craftengine.core.entity.furniture.FurnitureExtraData;
-import net.momirealms.craftengine.core.entity.furniture.HitBox;
+import net.momirealms.craftengine.core.entity.furniture.HitBoxConfig;
 import net.momirealms.craftengine.core.entity.player.InteractionResult;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.Item;
@@ -20,6 +20,7 @@ import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.item.behavior.ItemBehaviorFactory;
 import net.momirealms.craftengine.core.item.context.UseOnContext;
 import net.momirealms.craftengine.core.pack.Pack;
+import net.momirealms.craftengine.core.pack.PendingConfigSection;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.context.ContextHolder;
 import net.momirealms.craftengine.core.plugin.context.PlayerOptionalContext;
@@ -108,11 +109,11 @@ public class FurnitureItemBehavior extends ItemBehavior {
         Location furnitureLocation = new Location(world, finalPlacePosition.x(), finalPlacePosition.y(), finalPlacePosition.z(), (float) furnitureYaw, 0);
 
         List<AABB> aabbs = new ArrayList<>();
-        for (HitBox hitBox : placement.hitBoxes()) {
-            hitBox.initShapeForPlacement(finalPlacePosition.x(), finalPlacePosition.y(), finalPlacePosition.z(), (float) furnitureYaw, QuaternionUtils.toQuaternionf(0, Math.toRadians(180 - furnitureYaw), 0).conjugate(), aabbs::add);
+        for (HitBoxConfig hitBoxConfig : placement.hitBoxConfigs()) {
+            hitBoxConfig.initShapeForPlacement(finalPlacePosition.x(), finalPlacePosition.y(), finalPlacePosition.z(), (float) furnitureYaw, QuaternionUtils.toQuaternionf(0, Math.toRadians(180 - furnitureYaw), 0).conjugate(), aabbs::add);
         }
         if (!aabbs.isEmpty()) {
-            if (!FastNMS.INSTANCE.checkEntityCollision(context.getLevel().serverWorld(), aabbs.stream().map(it -> FastNMS.INSTANCE.constructor$AABB(it.minX, it.minY, it.minZ, it.maxX, it.maxY, it.maxZ)).toList(), finalPlacePosition.x(), finalPlacePosition.y(), finalPlacePosition.z())) {
+            if (!FastNMS.INSTANCE.checkEntityCollision(context.getLevel().serverWorld(), aabbs.stream().map(it -> FastNMS.INSTANCE.constructor$AABB(it.minX, it.minY, it.minZ, it.maxX, it.maxY, it.maxZ)).toList())) {
                 return InteractionResult.FAIL;
             }
         }
@@ -177,7 +178,7 @@ public class FurnitureItemBehavior extends ItemBehavior {
     public static class Factory implements ItemBehaviorFactory {
 
         @Override
-        public ItemBehavior create(Pack pack, Path path, Key key, Map<String, Object> arguments) {
+        public ItemBehavior create(Pack pack, Path path, String node, Key key, Map<String, Object> arguments) {
             Object id = arguments.get("furniture");
             if (id == null) {
                 throw new LocalizedResourceConfigException("warning.config.item.behavior.furniture.missing_furniture", new IllegalArgumentException("Missing required parameter 'furniture' for furniture_item behavior"));
@@ -185,9 +186,9 @@ public class FurnitureItemBehavior extends ItemBehavior {
             if (id instanceof Map<?,?> map) {
                 if (map.containsKey(key.toString())) {
                     // 防呆
-                    BukkitFurnitureManager.instance().parser().parseSection(pack, path, key, MiscUtils.castToMap(map.get(key.toString()), false));
+                    BukkitFurnitureManager.instance().parser().addPendingConfigSection(new PendingConfigSection(pack, path, node, key, MiscUtils.castToMap(map.get(key.toString()), false)));
                 } else {
-                    BukkitFurnitureManager.instance().parser().parseSection(pack, path, key, MiscUtils.castToMap(map, false));
+                    BukkitFurnitureManager.instance().parser().addPendingConfigSection(new PendingConfigSection(pack, path, node, key, MiscUtils.castToMap(map, false)));
                 }
                 return new FurnitureItemBehavior(key);
             } else {

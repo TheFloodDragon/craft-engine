@@ -10,8 +10,8 @@ import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
 import net.momirealms.craftengine.core.block.properties.Property;
-import net.momirealms.craftengine.core.block.state.properties.SingleBlockHalf;
-import net.momirealms.craftengine.core.block.state.properties.StairsShape;
+import net.momirealms.craftengine.core.block.properties.type.SingleBlockHalf;
+import net.momirealms.craftengine.core.block.properties.type.StairsShape;
 import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
 import net.momirealms.craftengine.core.util.Direction;
 import net.momirealms.craftengine.core.util.HorizontalDirection;
@@ -65,7 +65,7 @@ public class StairsBlockBehavior extends BukkitBlockBehavior {
         Direction direction = DirectionUtils.fromNMSDirection(VersionHelper.isOrAbove1_21_2() ? args[4] : args[1]);
         StairsShape stairsShape = getStairsShape(customState, level, LocationUtils.fromBlockPos(blockPos));
         return direction.axis().isHorizontal()
-                ? customState.with(this.shapeProperty, stairsShape).customBlockState().handle()
+                ? customState.with(this.shapeProperty, stairsShape).customBlockState().literalObject()
                 : superMethod.call();
     }
 

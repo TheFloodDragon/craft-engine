@@ -10,10 +10,7 @@ import net.momirealms.craftengine.bukkit.util.DirectionUtils;
 import net.momirealms.craftengine.bukkit.util.InteractUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
 import net.momirealms.craftengine.bukkit.world.BukkitWorld;
-import net.momirealms.craftengine.core.block.BlockBehavior;
-import net.momirealms.craftengine.core.block.CustomBlock;
-import net.momirealms.craftengine.core.block.ImmutableBlockState;
-import net.momirealms.craftengine.core.block.UpdateOption;
+import net.momirealms.craftengine.core.block.*;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
 import net.momirealms.craftengine.core.block.properties.Property;
 import net.momirealms.craftengine.core.entity.player.InteractionResult;
@@ -113,7 +110,7 @@ public class FenceGateBlockBehavior extends BukkitBlockBehavior {
         if (relativeStateIsWall) {
             // TODO: 连接原版方块
         }
-        return customState.with(this.inWallProperty, flag).customBlockState().handle();
+        return customState.with(this.inWallProperty, flag).customBlockState().literalObject();
     }
 
     @Override
@@ -148,7 +145,7 @@ public class FenceGateBlockBehavior extends BukkitBlockBehavior {
     private void playerToggle(UseOnContext context, ImmutableBlockState state) {
         Player player = context.getPlayer();
         this.toggle(state, context.getLevel(), context.getClickedPos(), player);
-        if (!InteractUtils.isInteractable((org.bukkit.entity.Player) player.platformPlayer(), BlockStateUtils.fromBlockData(state.vanillaBlockState().handle()), context.getHitResult(), (Item<ItemStack>) context.getItem())) {
+        if (!InteractUtils.isInteractable((org.bukkit.entity.Player) player.platformPlayer(), BlockStateUtils.fromBlockData(state.vanillaBlockState().literalObject()), context.getHitResult(), (Item<ItemStack>) context.getItem())) {
             player.swingHand(context.getHand());
         }
     }
@@ -223,7 +220,7 @@ public class FenceGateBlockBehavior extends BukkitBlockBehavior {
             this.playSound(LocationUtils.fromBlockPos(blockPos), world, hasSignal);
         }
 
-        FastNMS.INSTANCE.method$LevelWriter$setBlock(level, blockPos, customState.with(this.poweredProperty, hasSignal).customBlockState().handle(), UpdateOption.Flags.UPDATE_CLIENTS);
+        FastNMS.INSTANCE.method$LevelWriter$setBlock(level, blockPos, customState.with(this.poweredProperty, hasSignal).customBlockState().literalObject(), UpdateOption.Flags.UPDATE_CLIENTS);
     }
 
     private void toggle(ImmutableBlockState state, World world, BlockPos pos, @Nullable Player player) {
@@ -240,7 +237,7 @@ public class FenceGateBlockBehavior extends BukkitBlockBehavior {
             }
             newState = blockState.with(this.openProperty, true);
         }
-        FastNMS.INSTANCE.method$LevelWriter$setBlock(world.serverWorld(), LocationUtils.toBlockPos(pos), newState.customBlockState().handle(), UpdateOption.UPDATE_ALL.flags());
+        FastNMS.INSTANCE.method$LevelWriter$setBlock(world.serverWorld(), LocationUtils.toBlockPos(pos), newState.customBlockState().literalObject(), UpdateOption.UPDATE_ALL.flags());
         boolean open = isOpen(newState);
         ((org.bukkit.World) world.platformWorld()).sendGameEvent(
                 player != null ? (org.bukkit.entity.Player) player.platformPlayer() : null,
@@ -260,6 +257,22 @@ public class FenceGateBlockBehavior extends BukkitBlockBehavior {
                 world.playBlockSound(new Vec3d(pos.x() + 0.5, pos.y() + 0.5, pos.z() + 0.5), this.closeSound);
             }
         }
+    }
+
+    public static boolean connectsToDirection(BlockStateWrapper state, HorizontalDirection direction) {
+        FenceGateBlockBehavior fence = BlockStateUtils.getOptionalCustomBlockState(state.literalObject())
+                .map(ImmutableBlockState::behavior)
+                .flatMap(behavior -> behavior.getAs(FenceGateBlockBehavior.class))
+                .orElse(null);
+        if (fence == null) return false;
+        Direction facing = null;
+        ImmutableBlockState customState = BlockStateUtils.getOptionalCustomBlockState(state.literalObject()).orElse(null);
+        if (customState == null) return false;
+        Property<?> facingProperty = customState.owner().value().getProperty("facing");
+        if (facingProperty != null && facingProperty.valueClass() == HorizontalDirection.class) {
+            facing = ((HorizontalDirection) customState.get(facingProperty)).toDirection();
+        }
+        return facing != null && facing.axis() == direction.toDirection().clockWise().axis();
     }
 
     public static class Factory implements BlockBehaviorFactory {

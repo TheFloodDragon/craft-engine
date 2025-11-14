@@ -16,6 +16,7 @@ import net.momirealms.craftengine.core.util.UniqueKey;
 import net.momirealms.sparrow.nbt.Tag;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -147,6 +148,10 @@ public abstract class ItemFactory<W extends ItemWrapper<I>, I> {
 
     protected abstract void maxDamage(W item, Integer damage);
 
+    protected abstract Optional<List<Enchantment>> enchantments(W item);
+
+    protected abstract Optional<List<Enchantment>> storedEnchantments(W item);
+
     protected abstract void enchantments(W item, List<Enchantment> enchantments);
 
     protected abstract void storedEnchantments(W item, List<Enchantment> enchantments);
@@ -216,4 +221,8 @@ public abstract class ItemFactory<W extends ItemWrapper<I>, I> {
     protected abstract UniqueKey recipeIngredientID(W item);
 
     protected abstract void attributeModifiers(W item, List<AttributeModifier> modifiers);
+
+    protected abstract Optional<Map<String, String>> blockState(W item);
+
+    protected abstract void blockState(W item, Map<String, String> state);
 }

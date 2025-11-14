@@ -1,18 +1,22 @@
 package net.momirealms.craftengine.bukkit.block.behavior;
 
-import net.momirealms.craftengine.core.block.BlockBehavior;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.behavior.AbstractBlockBehavior;
+import net.momirealms.craftengine.core.block.behavior.EntityBlockBehavior;
+import net.momirealms.craftengine.core.block.behavior.FallOnBlockBehavior;
+import net.momirealms.craftengine.core.block.behavior.PlaceLiquidBlockBehavior;
 import net.momirealms.craftengine.core.entity.player.InteractionResult;
 import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
 import net.momirealms.craftengine.core.item.context.UseOnContext;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
-public class UnsafeCompositeBlockBehavior extends BukkitBlockBehavior {
+public class UnsafeCompositeBlockBehavior extends BukkitBlockBehavior
+        implements FallOnBlockBehavior, PlaceLiquidBlockBehavior {
     private final AbstractBlockBehavior[] behaviors;
 
     public UnsafeCompositeBlockBehavior(CustomBlock customBlock, List<AbstractBlockBehavior> behaviors) {
@@ -20,9 +24,29 @@ public class UnsafeCompositeBlockBehavior extends BukkitBlockBehavior {
         this.behaviors = behaviors.toArray(new AbstractBlockBehavior[0]);
     }
 
+    @Override
+    public boolean canPlaceLiquid(Object thisBlock, Object[] args, Callable<Object> superMethod) {
+        for (AbstractBlockBehavior behavior : behaviors) {
+            if (behavior instanceof PlaceLiquidBlockBehavior) {
+                return behavior.canPlaceLiquid(thisBlock, args, superMethod);
+            }
+        }
+        return super.canPlaceLiquid(thisBlock, args, superMethod);
+    }
+
+    @Override
+    public boolean placeLiquid(Object thisBlock, Object[] args, Callable<Object> superMethod) {
+        for (AbstractBlockBehavior behavior : behaviors) {
+            if (behavior instanceof PlaceLiquidBlockBehavior) {
+                return behavior.placeLiquid(thisBlock, args, superMethod);
+            }
+        }
+        return super.placeLiquid(thisBlock, args, superMethod);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
-    public <T extends BlockBehavior> Optional<T> getAs(Class<T> tClass) {
+    public <T> Optional<T> getAs(Class<T> tClass) {
         for (AbstractBlockBehavior behavior : this.behaviors) {
             if (tClass.isInstance(behavior)) {
                 return Optional.of((T) behavior);
@@ -31,15 +55,36 @@ public class UnsafeCompositeBlockBehavior extends BukkitBlockBehavior {
         return Optional.empty();
     }
 
+    @Nullable
+    @Override
+    public EntityBlockBehavior getEntityBehavior() {
+        EntityBlockBehavior target = null;
+        for (AbstractBlockBehavior behavior : this.behaviors) {
+            if (behavior instanceof EntityBlockBehavior entityBehavior) {
+                if (target == null) {
+                    target = entityBehavior;
+                } else {
+                    throw new IllegalArgumentException("Multiple entity block behaviors are not allowed");
+                }
+            }
+        }
+        return target;
+    }
+
     @Override
     public InteractionResult useOnBlock(UseOnContext context, ImmutableBlockState state) {
+        boolean hasPass = false;
         for (AbstractBlockBehavior behavior : this.behaviors) {
             InteractionResult result = behavior.useOnBlock(context, state);
-            if (result != InteractionResult.PASS && result != InteractionResult.TRY_EMPTY_HAND) {
+            if (result == InteractionResult.PASS) {
+                hasPass = true;
+                continue;
+            }
+            if (result != InteractionResult.TRY_EMPTY_HAND) {
                 return result;
             }
         }
-        return super.useOnBlock(context, state);
+        return hasPass ? InteractionResult.PASS : super.useOnBlock(context, state);
     }
 
     @Override
@@ -72,6 +117,18 @@ public class UnsafeCompositeBlockBehavior extends BukkitBlockBehavior {
             }
         }
         return previous;
+    }
+
+
+    @Override
+    public Object getContainer(Object thisBlock, Object[] args) throws Exception {
+        for (AbstractBlockBehavior behavior : this.behaviors) {
+            Object container = behavior.getContainer(thisBlock, args);
+            if (container != null) {
+                return container;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -195,13 +252,6 @@ public class UnsafeCompositeBlockBehavior extends BukkitBlockBehavior {
     }
 
     @Override
-    public void setPlacedBy(BlockPlaceContext context, ImmutableBlockState state) {
-        for (AbstractBlockBehavior behavior : this.behaviors) {
-            behavior.setPlacedBy(context, state);
-        }
-    }
-
-    @Override
     public boolean canBeReplaced(BlockPlaceContext context, ImmutableBlockState state) {
         for (AbstractBlockBehavior behavior : this.behaviors) {
             if (!behavior.canBeReplaced(context, state)) {
@@ -265,6 +315,30 @@ public class UnsafeCompositeBlockBehavior extends BukkitBlockBehavior {
     }
 
     @Override
+    public boolean hasAnalogOutputSignal(Object thisBlock, Object[] args) throws Exception {
+        for (AbstractBlockBehavior behavior : this.behaviors) {
+            if (behavior.hasAnalogOutputSignal(thisBlock, args)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(Object thisBlock, Object[] args) throws Exception {
+        int signal = 0;
+        int count = 0;
+        for (AbstractBlockBehavior behavior : this.behaviors) {
+            int s = behavior.getAnalogOutputSignal(thisBlock, args);
+            if (s != 0) {
+                signal += s;
+                count++;
+            }
+        }
+        return count == 0 ? 0 : signal / count;
+    }
+
+    @Override
     public Object playerWillDestroy(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
         Object previous = args[0];
         for (AbstractBlockBehavior behavior : this.behaviors) {
@@ -280,6 +354,49 @@ public class UnsafeCompositeBlockBehavior extends BukkitBlockBehavior {
     public void spawnAfterBreak(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
         for (AbstractBlockBehavior behavior : this.behaviors) {
             behavior.spawnAfterBreak(thisBlock, args, superMethod);
+        }
+    }
+
+    @Override
+    public void fallOn(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
+        for (AbstractBlockBehavior behavior : this.behaviors) {
+            if (behavior instanceof FallOnBlockBehavior f) {
+                f.fallOn(thisBlock, args, superMethod);
+                return;
+            }
+        }
+        FallOnBlockBehavior.super.fallOn(thisBlock, args, superMethod);
+    }
+
+    @Override
+    public void updateEntityMovementAfterFallOn(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
+        for (AbstractBlockBehavior behavior : this.behaviors) {
+            if (behavior instanceof FallOnBlockBehavior f) {
+                f.updateEntityMovementAfterFallOn(thisBlock, args, superMethod);
+                return;
+            }
+        }
+        FallOnBlockBehavior.super.updateEntityMovementAfterFallOn(thisBlock, args, superMethod);
+    }
+
+    @Override
+    public void stepOn(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
+        for (AbstractBlockBehavior behavior : this.behaviors) {
+            behavior.stepOn(thisBlock, args, superMethod);
+        }
+    }
+
+    @Override
+    public void onProjectileHit(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
+        for (AbstractBlockBehavior behavior : this.behaviors) {
+            behavior.onProjectileHit(thisBlock, args, superMethod);
+        }
+    }
+
+    @Override
+    public void setPlacedBy(Object thisBlock, Object[] args, Callable<Object> superMethod) throws Exception {
+        for (AbstractBlockBehavior behavior : this.behaviors) {
+            behavior.setPlacedBy(thisBlock, args, superMethod);
         }
     }
 }

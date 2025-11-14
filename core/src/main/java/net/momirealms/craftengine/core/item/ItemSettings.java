@@ -3,12 +3,13 @@ package net.momirealms.craftengine.core.item;
 import net.momirealms.craftengine.core.entity.Billboard;
 import net.momirealms.craftengine.core.entity.ItemDisplayContext;
 import net.momirealms.craftengine.core.entity.projectile.ProjectileMeta;
-import net.momirealms.craftengine.core.entity.projectile.ProjectileType;
 import net.momirealms.craftengine.core.item.equipment.ComponentBasedEquipment;
 import net.momirealms.craftengine.core.item.equipment.Equipment;
 import net.momirealms.craftengine.core.item.modifier.EquippableModifier;
 import net.momirealms.craftengine.core.item.modifier.FoodModifier;
 import net.momirealms.craftengine.core.item.modifier.ItemDataModifier;
+import net.momirealms.craftengine.core.item.recipe.remainder.CraftRemainder;
+import net.momirealms.craftengine.core.item.recipe.remainder.CraftRemainders;
 import net.momirealms.craftengine.core.item.setting.*;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.config.Config;
@@ -25,20 +26,21 @@ import java.util.stream.Collectors;
 public class ItemSettings {
     int fuelTime;
     Set<Key> tags = Set.of();
-    Tristate canRepair = Tristate.UNDEFINED;
+    Repairable repairable = Repairable.UNDEFINED;
     List<AnvilRepairItem> anvilRepairItems = List.of();
     boolean renameable = true;
-    boolean canPlaceRelatedVanillaBlock = false;
+    boolean disableVanillaBehavior = true;
     ProjectileMeta projectileMeta;
     Tristate dyeable = Tristate.UNDEFINED;
     Helmet helmet = null;
     FoodData foodData = null;
     Key consumeReplacement = null;
-    Key craftRemainder = null;
+    CraftRemainder craftRemainder = null;
     List<DamageSource> invulnerable = List.of();
     boolean canEnchant = true;
     float compostProbability= 0.5f;
     boolean respectRepairableComponent = false;
+    List<Key> ingredientSubstitutes = List.of();
     @Nullable
     ItemEquipment equipment;
     @Nullable
@@ -89,10 +91,10 @@ public class ItemSettings {
         newSettings.fuelTime = settings.fuelTime;
         newSettings.tags = settings.tags;
         newSettings.equipment = settings.equipment;
-        newSettings.canRepair = settings.canRepair;
+        newSettings.repairable = settings.repairable;
         newSettings.anvilRepairItems = settings.anvilRepairItems;
         newSettings.renameable = settings.renameable;
-        newSettings.canPlaceRelatedVanillaBlock = settings.canPlaceRelatedVanillaBlock;
+        newSettings.disableVanillaBehavior = settings.disableVanillaBehavior;
         newSettings.projectileMeta = settings.projectileMeta;
         newSettings.dyeable = settings.dyeable;
         newSettings.helmet = settings.helmet;
@@ -105,6 +107,7 @@ public class ItemSettings {
         newSettings.respectRepairableComponent = settings.respectRepairableComponent;
         newSettings.dyeColor = settings.dyeColor;
         newSettings.fireworkColor = settings.fireworkColor;
+        newSettings.ingredientSubstitutes = settings.ingredientSubstitutes;
         return newSettings;
     }
 
@@ -124,12 +127,12 @@ public class ItemSettings {
         return projectileMeta;
     }
 
-    public boolean canPlaceRelatedVanillaBlock() {
-        return canPlaceRelatedVanillaBlock;
+    public boolean disableVanillaBehavior() {
+        return disableVanillaBehavior;
     }
 
-    public Tristate canRepair() {
-        return canRepair;
+    public Repairable repairable() {
+        return repairable;
     }
 
     public int fuelTime() {
@@ -160,6 +163,10 @@ public class ItemSettings {
         return respectRepairableComponent;
     }
 
+    public List<Key> ingredientSubstitutes() {
+        return ingredientSubstitutes;
+    }
+
     @Nullable
     public FoodData foodData() {
         return foodData;
@@ -171,7 +178,7 @@ public class ItemSettings {
     }
 
     @Nullable
-    public Key craftRemainder() {
+    public CraftRemainder craftRemainder() {
         return craftRemainder;
     }
 
@@ -208,6 +215,11 @@ public class ItemSettings {
         return this;
     }
 
+    public ItemSettings ingredientSubstitutes(List<Key> substitutes) {
+        this.ingredientSubstitutes = substitutes;
+        return this;
+    }
+
     public ItemSettings dyeColor(Color color) {
         this.dyeColor = color;
         return this;
@@ -223,8 +235,8 @@ public class ItemSettings {
         return this;
     }
 
-    public ItemSettings craftRemainder(Key key) {
-        this.craftRemainder = key;
+    public ItemSettings craftRemainder(CraftRemainder craftRemainder) {
+        this.craftRemainder = craftRemainder;
         return this;
     }
 
@@ -233,8 +245,8 @@ public class ItemSettings {
         return this;
     }
 
-    public ItemSettings canRepair(Tristate canRepair) {
-        this.canRepair = canRepair;
+    public ItemSettings repairable(Repairable repairable) {
+        this.repairable = repairable;
         return this;
     }
 
@@ -253,8 +265,8 @@ public class ItemSettings {
         return this;
     }
 
-    public ItemSettings canPlaceRelatedVanillaBlock(boolean canPlaceRelatedVanillaBlock) {
-        this.canPlaceRelatedVanillaBlock = canPlaceRelatedVanillaBlock;
+    public ItemSettings disableVanillaBehavior(boolean disableVanillaBehavior) {
+        this.disableVanillaBehavior = disableVanillaBehavior;
         return this;
     }
 
@@ -315,8 +327,14 @@ public class ItemSettings {
 
         static {
             registerFactory("repairable", (value -> {
-                boolean bool = ResourceConfigUtils.getAsBoolean(value, "repairable");
-                return settings -> settings.canRepair(bool ? Tristate.TRUE : Tristate.FALSE);
+                if (value instanceof Map<?,?> mapValue) {
+                    Map<String, Object> repairableData = ResourceConfigUtils.getAsMap(mapValue, "repairable");
+                    Repairable repairable = Repairable.fromMap(repairableData);
+                    return settings -> settings.repairable(repairable);
+                } else {
+                    boolean bool = ResourceConfigUtils.getAsBoolean(value, "repairable");
+                    return settings -> settings.repairable(bool ? Repairable.TRUE : Repairable.FALSE);
+                }
             }));
             registerFactory("enchantable", (value -> {
                 boolean bool = ResourceConfigUtils.getAsBoolean(value, "enchantable");
@@ -347,7 +365,11 @@ public class ItemSettings {
             }));
             registerFactory("craft-remaining-item", (value -> settings -> {
                 if (value == null) settings.craftRemainder(null);
-                else settings.craftRemainder(Key.of(value.toString()));
+                else settings.craftRemainder(CraftRemainders.fromObject(value));
+            }));
+            registerFactory("craft-remainder", (value -> settings -> {
+                if (value == null) settings.craftRemainder(null);
+                else settings.craftRemainder(CraftRemainders.fromObject(value));
             }));
             registerFactory("tags", (value -> {
                 List<String> tags = MiscUtils.getAsStringList(value);
@@ -392,19 +414,22 @@ public class ItemSettings {
             }));
             registerFactory("can-place", (value -> {
                 boolean bool = ResourceConfigUtils.getAsBoolean(value, "can-place");
-                return settings -> settings.canPlaceRelatedVanillaBlock(bool);
+                return settings -> settings.disableVanillaBehavior(!bool);
+            }));
+            registerFactory("disable-vanilla-behavior", (value -> {
+                boolean bool = ResourceConfigUtils.getAsBoolean(value, "disable-vanilla-behavior");
+                return settings -> settings.disableVanillaBehavior(bool);
             }));
             registerFactory("projectile", (value -> {
                 Map<String, Object> args = MiscUtils.castToMap(value, false);
                 Key customTridentItemId = Key.of(ResourceConfigUtils.requireNonEmptyStringOrThrow(args.get("item"), "warning.config.item.settings.projectile.missing_item"));
                 ItemDisplayContext displayType = ItemDisplayContext.valueOf(args.getOrDefault("display-transform", "NONE").toString().toUpperCase(Locale.ENGLISH));
                 Billboard billboard = Billboard.valueOf(args.getOrDefault("billboard", "FIXED").toString().toUpperCase(Locale.ENGLISH));
-                Vector3f translation = MiscUtils.getAsVector3f(args.getOrDefault("translation", "0"), "translation");
-                Vector3f scale = MiscUtils.getAsVector3f(args.getOrDefault("scale", "1"), "scale");
-                Quaternionf rotation = MiscUtils.getAsQuaternionf(ResourceConfigUtils.get(args, "rotation-left", "rotation"), "rotation-left");
-                ProjectileType type = Optional.ofNullable(args.get("type")).map(String::valueOf).map(it -> ProjectileType.valueOf(it.toUpperCase(Locale.ENGLISH))).orElse(null);
+                Vector3f translation = ResourceConfigUtils.getAsVector3f(args.getOrDefault("translation", "0"), "translation");
+                Vector3f scale = ResourceConfigUtils.getAsVector3f(args.getOrDefault("scale", "1"), "scale");
+                Quaternionf rotation = ResourceConfigUtils.getAsQuaternionf(ResourceConfigUtils.get(args, "rotation"), "rotation");
                 double range = ResourceConfigUtils.getAsDouble(args.getOrDefault("range", 1), "range");
-                return settings -> settings.projectileMeta(new ProjectileMeta(customTridentItemId, displayType, billboard, scale, translation, rotation, range, type));
+                return settings -> settings.projectileMeta(new ProjectileMeta(customTridentItemId, displayType, billboard, scale, translation, rotation, range));
             }));
             registerFactory("helmet", (value -> {
                 Map<String, Object> args = MiscUtils.castToMap(value, false);
@@ -426,14 +451,14 @@ public class ItemSettings {
                 if (value instanceof Integer i) {
                     return settings -> settings.dyeColor(Color.fromDecimal(i));
                 } else {
-                    return settings -> settings.dyeColor(Color.fromVector3f(MiscUtils.getAsVector3f(value, "dye-color")));
+                    return settings -> settings.dyeColor(Color.fromVector3f(ResourceConfigUtils.getAsVector3f(value, "dye-color")));
                 }
             }));
             registerFactory("firework-color", (value -> {
                 if (value instanceof Integer i) {
                     return settings -> settings.fireworkColor(Color.fromDecimal(i));
                 } else {
-                    return settings -> settings.fireworkColor(Color.fromVector3f(MiscUtils.getAsVector3f(value, "firework-color")));
+                    return settings -> settings.fireworkColor(Color.fromVector3f(ResourceConfigUtils.getAsVector3f(value, "firework-color")));
                 }
             }));
             registerFactory("food", (value -> {
@@ -454,6 +479,7 @@ public class ItemSettings {
                 }).toList();
                 return settings -> settings.invulnerable(list);
             }));
+            registerFactory("ingredient-substitute", (value -> settings -> settings.ingredientSubstitutes(MiscUtils.getAsStringList(value).stream().map(Key::of).toList())));
         }
 
         private static void registerFactory(String id, ItemSettings.Modifier.Factory factory) {

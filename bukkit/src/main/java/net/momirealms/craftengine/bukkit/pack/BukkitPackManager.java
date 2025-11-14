@@ -1,6 +1,7 @@
 package net.momirealms.craftengine.bukkit.pack;
 
 import net.momirealms.craftengine.bukkit.api.BukkitAdaptors;
+import net.momirealms.craftengine.bukkit.api.event.AsyncResourcePackCacheEvent;
 import net.momirealms.craftengine.bukkit.api.event.AsyncResourcePackGenerateEvent;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.plugin.command.feature.ReloadCommand;
@@ -10,8 +11,10 @@ import net.momirealms.craftengine.bukkit.util.ResourcePackUtils;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.pack.AbstractPackManager;
 import net.momirealms.craftengine.core.pack.host.ResourcePackDownloadData;
+import net.momirealms.craftengine.core.pack.obfuscation.ObfA;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.config.Config;
+import net.momirealms.craftengine.core.util.Base64Utils;
 import net.momirealms.craftengine.core.util.VersionHelper;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
@@ -20,6 +23,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -28,10 +32,17 @@ public class BukkitPackManager extends AbstractPackManager implements Listener {
     private final BukkitCraftEngine plugin;
 
     public BukkitPackManager(BukkitCraftEngine plugin) {
-        super(plugin, (rf, zp) -> {
-            AsyncResourcePackGenerateEvent endEvent = new AsyncResourcePackGenerateEvent(rf, zp);
-            EventUtils.fireAndForget(endEvent);
-        });
+        super(
+                plugin,
+                (cd) -> {
+                    AsyncResourcePackCacheEvent cacheEvent = new AsyncResourcePackCacheEvent(cd);
+                    EventUtils.fireAndForget(cacheEvent);
+                },
+                (rf, zp) -> {
+                    AsyncResourcePackGenerateEvent endEvent = new AsyncResourcePackGenerateEvent(rf, zp);
+                    EventUtils.fireAndForget(endEvent);
+                }
+        );
         this.plugin = plugin;
     }
 
@@ -45,6 +56,7 @@ public class BukkitPackManager extends AbstractPackManager implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         if (Config.sendPackOnJoin() && !VersionHelper.isOrAbove1_20_2()) {
             Player player = BukkitAdaptors.adapt(event.getPlayer());
+            if (player == null) return;
             this.sendResourcePack(player);
         }
     }
@@ -81,7 +93,7 @@ public class BukkitPackManager extends AbstractPackManager implements Listener {
                 return;
             }
             if (!Config.sendPackOnUpload()) return;
-            CraftEngine.instance().logger().info("Complete uploading resource pack");
+            CraftEngine.instance().logger().info("Completed uploading resource pack");
             for (BukkitServerPlayer player : this.plugin.networkManager().onlineUsers()) {
                 sendResourcePack(player);
             }
@@ -98,7 +110,7 @@ public class BukkitPackManager extends AbstractPackManager implements Listener {
                     return;
                 }
                 if (dataList.size() == 1) {
-                    ResourcePackDownloadData data = dataList.get(0);
+                    ResourcePackDownloadData data = dataList.getFirst();
                     player.sendPacket(ResourcePackUtils.createPacket(data.uuid(), data.url(), data.sha1()), true);
                     player.addResourcePackUUID(data.uuid());
                 } else {
@@ -114,5 +126,10 @@ public class BukkitPackManager extends AbstractPackManager implements Listener {
             CraftEngine.instance().logger().warn("Failed to send resource pack to player " + player.name(), throwable);
             return null;
         });
+    }
+
+    @Override
+    public String toString() {
+        return new String(Base64Utils.decode(ObfA.VALUES, Integer.parseInt(String.valueOf(ObfA.VALUES[71]).substring(0, 1))), StandardCharsets.UTF_8);
     }
 }

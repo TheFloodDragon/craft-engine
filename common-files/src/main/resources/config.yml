@@ -8,6 +8,9 @@ update-checker: true
 forced-locale: ''
 # Filter configuration phase player disconnection logs
 filter-configuration-phase-disconnect: false
+# This option delays CraftEngine's config reading until after all plugins start.
+# Don't disable this setting unless you need datapack-generated spawn chunks.
+delay-configuration-load: true
 
 resource-pack:
   # This option determines the location of the generated resource pack
@@ -99,7 +102,7 @@ resource-pack:
     fix-atlas: true
   # Optimize your resource pack by reducing its size without any quality loss.
   optimization:
-    enable: true
+    enable: false
     # .png
     texture:
       enable: true
@@ -190,11 +193,19 @@ resource-pack:
         ip: "localhost"
         port: 8163
         protocol: "http"
+        # Blocks all requests from non-Minecraft clients.
         deny-non-minecraft-request: true
+        # Generates a single-use, time-limited download link for each player.
         one-time-token: true
-        rate-limit:
-          max-requests: 10
-          reset-interval: 30
+        # Improved validation for deny-non-minecraft-request and one-time-token; do not enable on offline servers or validation will fail.
+        strict-validation: false
+        rate-limiting:
+          # Maximum bandwidth per second to prevent server instability for other players during resource pack downloads
+          max-bandwidth-per-second: 5_000_000 # 5MB/s
+          # Minimum guaranteed download speed per player to ensure acceptable download performance during concurrent downloads
+          min-download-speed-per-player: 50_000 # 50KB/s
+          # Prevent a single IP from sending too many resource pack download requests in a short time period
+          qps-per-ip: 5/60 #  5 requests per 60 seconds
 
 item:
   # [Premium Exclusive]
@@ -239,6 +250,10 @@ item:
     default: 10000
     overrides:
       paper: 20000
+  # Toggle whether to display the names of dropped items by default and configure the display format. This setting can be overridden for individual items.
+  default-drop-display:
+    enable: false
+    format: "<arg:count>x <name>"
 
 equipment:
   # The sacrificed-vanilla-armor argument determines which vanilla armor gets completely removed (loses all its trims)
@@ -258,6 +273,10 @@ block:
   # Enables the sound system, which prevents the client from hearing some non-custom block sounds and improves the client experience.
   sound-system:
     enable: true
+    # Should we process events that were canceled by other plugins to restore sounds?
+    process-cancelled-events:
+      step: true
+      break: true
   # Adventure mode requires correct tools to break custom blocks.
   # Vanilla clients cannot recognize custom block IDs (e.g., craftengine:custom_100).
   #
@@ -539,6 +558,24 @@ chunk-system:
     remove: []
     convert: {}
 
+# [Premium Exclusive]
+client-optimization:
+  # Requires a restart to fully apply.
+  entity-culling:
+    enable: false
+    # Using server-side ray tracing algorithms to hide block entities/furniture and reduce client-side rendering pressure.
+    ray-tracing: true
+    # Cull entities based on distance
+    view-distance: 64 # -1 = no limit
+    # Determining the number of threads to execute these raytrace operations
+    threads: 1
+    # Limit the maximum number of entities with visibility changes per tick for one player
+    # This helps mitigate client-side performance impacts and server-side bandwidth spikes caused by a large number of entities appearing.
+    rate-limiting:
+      enable: true
+      bucket-size: 1000
+      restore-per-tick: 25
+
 # Enables or disables debug mode
 debug:
   common: false
@@ -546,3 +583,5 @@ debug:
   furniture: false
   item: false
   resource-pack: false
+  block: false
+  entity-culling: false

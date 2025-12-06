@@ -24,6 +24,7 @@ public class WallBlockItemBehavior extends BlockItemBehavior {
         return this.place(new BlockPlaceContext(context));
     }
 
+    @Override
     public InteractionResult place(BlockPlaceContext context) {
         if (context.getClickedFace().stepY() != 0) {
             return InteractionResult.PASS;

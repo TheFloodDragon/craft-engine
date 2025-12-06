@@ -40,7 +40,7 @@ public class FlintAndSteelItemBehavior extends ItemBehavior {
         if (player == null) return InteractionResult.PASS;
 
         BlockPos clickedPos = context.getClickedPos();
-        BukkitExistingBlock clicked = (BukkitExistingBlock) context.getLevel().getBlockAt(clickedPos);
+        BukkitExistingBlock clicked = (BukkitExistingBlock) context.getLevel().getBlock(clickedPos);
         Block block = clicked.block();
         BlockPos firePos = clickedPos.relative(context.getClickedFace());
         Direction direction = context.getHorizontalDirection();
@@ -77,10 +77,10 @@ public class FlintAndSteelItemBehavior extends ItemBehavior {
                 // 点击对象为自定义方块
                 ImmutableBlockState immutableBlockState = BukkitBlockManager.instance().getImmutableBlockStateUnsafe(stateId);
                 // 原版外观也可燃
-                if (BlockStateUtils.isBurnable(immutableBlockState.vanillaBlockState().literalObject())) {
+                if (BlockStateUtils.isBurnable(immutableBlockState.visualBlockState().literalObject())) {
                     return InteractionResult.PASS;
                 }
-                BlockData vanillaBlockState = BlockStateUtils.fromBlockData(immutableBlockState.vanillaBlockState().literalObject());
+                BlockData vanillaBlockState = BlockStateUtils.fromBlockData(immutableBlockState.visualBlockState().literalObject());
                 // 点击的是方块上面，则只需要判断shift和可交互
                 if (direction == Direction.UP) {
                     // 客户端层面必须可交互
@@ -95,7 +95,7 @@ public class FlintAndSteelItemBehavior extends ItemBehavior {
                 } else {
                     // 玩家觉得自定义方块不可燃，且点击了侧面，那么就要判断火源下方的方块是否可燃，如果不可燃，则补发声音
                     BlockPos belowFirePos = firePos.relative(Direction.DOWN);
-                    BukkitExistingBlock belowFireBlock = (BukkitExistingBlock) context.getLevel().getBlockAt(belowFirePos);
+                    BukkitExistingBlock belowFireBlock = (BukkitExistingBlock) context.getLevel().getBlock(belowFirePos);
                     boolean belowCanBurn;
                     try {
                         Block belowBlock = belowFireBlock.block();
@@ -134,7 +134,7 @@ public class FlintAndSteelItemBehavior extends ItemBehavior {
             for (Direction dir : Direction.values()) {
                 if (dir == relativeDirection) continue;
                 BlockPos relPos = firePos.relative(dir);
-                BukkitExistingBlock nearByBlock = (BukkitExistingBlock) context.getLevel().getBlockAt(relPos);
+                BukkitExistingBlock nearByBlock = (BukkitExistingBlock) context.getLevel().getBlock(relPos);
                 BlockData nearbyBlockData = nearByBlock.block().getBlockData();
                 Object nearbyBlockState = BlockStateUtils.blockDataToBlockState(nearbyBlockData);
                 int stateID = BlockStateUtils.blockStateToId(nearbyBlockState);

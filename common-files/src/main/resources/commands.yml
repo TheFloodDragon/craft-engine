@@ -43,6 +43,13 @@ give_item:
     - /craftengine item give
     - /ce item give
 
+clear_item:
+  enable: true
+  permission: ce.command.admin.clear_item
+  usage:
+    - /craftengine item clear
+    - /ce item clear
+
 item_browser_player:
   enable: true
   permission: ce.command.player.item_browser
@@ -121,6 +128,24 @@ unset_locale:
   permission: ce.command.admin.unset_locale
   usage:
     - /ce feature locale unset
+
+set_display_entity_view_distance_scale:
+  enable: true
+  permission: ce.command.admin.set_display_entity_view_distance_scale
+  usage:
+    - /ce feature display-entity-view-distance-scale set
+
+set_entity_culling_distance_scale:
+  enable: true
+  permission: ce.command.admin.set_entity_culling_distance_scale
+  usage:
+    - /ce feature entity-culling-distance-scale set
+
+toggle_entity_culling:
+  enable: true
+  permission: ce.command.admin.toggle_entity_culling
+  usage:
+    - /ce feature toggle-entity-culling
 
 # Debug commands
 debug_set_block:
@@ -230,12 +255,33 @@ debug_clean_cache:
     - /craftengine debug clean-cache
     - /ce debug clean-cache
 
+debug_custom_model_data:
+  enable: true
+  permission: ce.command.debug.custom_model_data
+  usage:
+    - /craftengine debug custom-model-data
+    - /ce debug custom-model-data
+
+debug_image:
+  enable: true
+  permission: ce.command.debug.image
+  usage:
+    - /craftengine debug image
+    - /ce debug image
+
 debug_generate_internal_assets:
   enable: false
   permission: ce.command.debug.generate_internal_assets
   usage:
     - /craftengine debug generate-internal-assets
     - /ce debug generate-internal-assets
+
+debug_furniture:
+  enable: true
+  permission: ce.command.debug.furniture
+  usage:
+    - /craftengine debug furniture
+    - /ce debug furniture
 
 debug_test:
   enable: true

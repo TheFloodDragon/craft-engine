@@ -2,11 +2,15 @@ package net.momirealms.craftengine.bukkit.compatibility;
 
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.momirealms.craftengine.bukkit.block.BukkitBlockManager;
+import net.momirealms.craftengine.bukkit.block.entity.renderer.element.BukkitBlockEntityElementConfigs;
+import net.momirealms.craftengine.bukkit.compatibility.bedrock.FloodgateUtils;
+import net.momirealms.craftengine.bukkit.compatibility.bedrock.GeyserUtils;
 import net.momirealms.craftengine.bukkit.compatibility.item.*;
 import net.momirealms.craftengine.bukkit.compatibility.legacy.slimeworld.LegacySlimeFormatStorageAdaptor;
 import net.momirealms.craftengine.bukkit.compatibility.leveler.*;
+import net.momirealms.craftengine.bukkit.compatibility.model.bettermodel.BetterModelBlockEntityElementConfig;
 import net.momirealms.craftengine.bukkit.compatibility.model.bettermodel.BetterModelModel;
-import net.momirealms.craftengine.bukkit.compatibility.model.bettermodel.BetterModelUtils;
+import net.momirealms.craftengine.bukkit.compatibility.model.modelengine.ModelEngineBlockEntityElementConfig;
 import net.momirealms.craftengine.bukkit.compatibility.model.modelengine.ModelEngineModel;
 import net.momirealms.craftengine.bukkit.compatibility.model.modelengine.ModelEngineUtils;
 import net.momirealms.craftengine.bukkit.compatibility.mythicmobs.MythicItemDropListener;
@@ -17,6 +21,7 @@ import net.momirealms.craftengine.bukkit.compatibility.quickshop.QuickShopItemEx
 import net.momirealms.craftengine.bukkit.compatibility.region.WorldGuardRegionCondition;
 import net.momirealms.craftengine.bukkit.compatibility.skript.SkriptHook;
 import net.momirealms.craftengine.bukkit.compatibility.slimeworld.SlimeFormatStorageAdaptor;
+import net.momirealms.craftengine.bukkit.compatibility.tag.CustomNameplateHatSettings;
 import net.momirealms.craftengine.bukkit.compatibility.tag.CustomNameplateProviders;
 import net.momirealms.craftengine.bukkit.compatibility.viaversion.ViaVersionUtils;
 import net.momirealms.craftengine.bukkit.compatibility.worldedit.WorldEditBlockRegister;
@@ -35,6 +40,7 @@ import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.plugin.context.Context;
 import net.momirealms.craftengine.core.plugin.context.condition.AlwaysFalseCondition;
 import net.momirealms.craftengine.core.plugin.context.event.EventConditions;
+import net.momirealms.craftengine.core.plugin.locale.TranslationManager;
 import net.momirealms.craftengine.core.plugin.text.minimessage.FormattedLine;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.VersionHelper;
@@ -51,6 +57,8 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
     private final Map<String, TagResolverProvider> tagResolverProviders;
     private TagResolverProvider[] tagResolverProviderArray = null;
     private boolean hasPlaceholderAPI;
+    private boolean hasGeyser;
+    private boolean hasFloodgate;
 
     public BukkitCompatibilityManager(BukkitCraftEngine plugin) {
         this.plugin = plugin;
@@ -69,15 +77,6 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
     @Override
     public void onEnable() {
         this.initSlimeWorldHook();
-        if (this.isPluginEnabled("PlaceholderAPI")) {
-            PlaceholderAPIUtils.registerExpansions(this.plugin);
-            this.hasPlaceholderAPI = true;
-            logHook("PlaceholderAPI");
-        }
-        if (this.isPluginEnabled("Skript")) {
-            SkriptHook.register();
-            logHook("Skript");
-        }
         // WorldEdit
         // FastAsyncWorldEdit
         if (this.isPluginEnabled("FastAsyncWorldEdit")) {
@@ -91,15 +90,53 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
             this.initWorldEditHook();
             logHook("WorldEdit");
         }
+        if (this.hasPlugin("BetterModel")) {
+            BukkitBlockEntityElementConfigs.register(Key.of("craftengine:better_model"), new BetterModelBlockEntityElementConfig.Factory());
+            logHook("BetterModel");
+        }
+        if (this.hasPlugin("ModelEngine")) {
+            BukkitBlockEntityElementConfigs.register(Key.of("craftengine:model_engine"), new ModelEngineBlockEntityElementConfig.Factory());
+            logHook("ModelEngine");
+        }
+        if (this.hasPlugin("CustomNameplates")) {
+            registerTagResolverProvider(new CustomNameplateProviders.Background());
+            registerTagResolverProvider(new CustomNameplateProviders.Nameplate());
+            registerTagResolverProvider(new CustomNameplateProviders.Bubble());
+            new CustomNameplateHatSettings().register();
+            logHook("CustomNameplates");
+        }
+        Key worldGuardRegion = Key.of("worldguard:region");
+        if (this.hasPlugin("WorldGuard")) {
+            EventConditions.register(worldGuardRegion, new WorldGuardRegionCondition.FactoryImpl<>());
+            LootConditions.register(worldGuardRegion, new WorldGuardRegionCondition.FactoryImpl<>());
+            logHook("WorldGuard");
+        } else {
+            EventConditions.register(worldGuardRegion, new AlwaysFalseCondition.FactoryImpl<>());
+            LootConditions.register(worldGuardRegion, new AlwaysFalseCondition.FactoryImpl<>());
+        }
+        if (this.isPluginEnabled("Geyser-Spigot")) {
+            this.hasGeyser = true;
+        }
+        if (this.isPluginEnabled("floodgate")) {
+            this.hasFloodgate = true;
+        }
     }
 
     @Override
     public void onDelayedEnable() {
+        if (this.isPluginEnabled("PlaceholderAPI")) {
+            PlaceholderAPIUtils.registerExpansions(this.plugin);
+            this.hasPlaceholderAPI = true;
+            logHook("PlaceholderAPI");
+        }
         this.initItemHooks();
-
         if (this.isPluginEnabled("LuckPerms")) {
             this.initLuckPermsHook();
             logHook("LuckPerms");
+        }
+        if (this.isPluginEnabled("Skript")) {
+            SkriptHook.register();
+            logHook("Skript");
         }
         if (this.isPluginEnabled("AuraSkills")) {
             this.registerLevelerProvider("AuraSkills", new AuraSkillsLevelerProvider());
@@ -133,32 +170,9 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
             new MythicItemDropListener(this.plugin);
             logHook("MythicMobs");
         }
-        Key worldGuardRegion = Key.of("worldguard:region");
-        if (this.isPluginEnabled("WorldGuard")) {
-            EventConditions.register(worldGuardRegion, new WorldGuardRegionCondition.FactoryImpl<>());
-            LootConditions.register(worldGuardRegion, new WorldGuardRegionCondition.FactoryImpl<>());
-            logHook("WorldGuard");
-        } else {
-            EventConditions.register(worldGuardRegion, new AlwaysFalseCondition.FactoryImpl<>());
-            LootConditions.register(worldGuardRegion, new AlwaysFalseCondition.FactoryImpl<>());
-        }
-        if (this.isPluginEnabled("BetterModel")) {
-            BetterModelUtils.registerConstantBlockEntityRender();
-            logHook("BetterModel");
-        }
-        if (this.isPluginEnabled("ModelEngine")) {
-            ModelEngineUtils.registerConstantBlockEntityRender();
-            logHook("ModelEngine");
-        }
         if (this.isPluginEnabled("QuickShop-Hikari")) {
             new QuickShopItemExpressionHandler(this.plugin).register();
             logHook("QuickShop-Hikari");
-        }
-        if (this.isPluginEnabled("CustomNameplates")) {
-            registerTagResolverProvider(new CustomNameplateProviders.Background());
-            registerTagResolverProvider(new CustomNameplateProviders.Nameplate());
-            registerTagResolverProvider(new CustomNameplateProviders.Bubble());
-            logHook("CustomNameplates");
         }
     }
 
@@ -180,7 +194,7 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
     }
 
     private void logHook(String plugin) {
-        this.plugin.logger().info("[Compatibility] " + plugin + " hooked");
+        this.plugin.logger().info(TranslationManager.instance().translateLog("info.compatibility", plugin));
     }
 
     @Override
@@ -233,7 +247,7 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
                 Bukkit.getPluginManager().registerEvents(adaptor, plugin.javaPlugin());
                 logHook("AdvancedSlimePaper");
             } catch (ClassNotFoundException ignored) {
-                if (Bukkit.getPluginManager().isPluginEnabled("SlimeWorldPlugin")) {
+                if (hasPlugin("SlimeWorldPlugin")) {
                     LegacySlimeFormatStorageAdaptor adaptor = new LegacySlimeFormatStorageAdaptor(worldManager, 2);
                     worldManager.setStorageAdaptor(adaptor);
                     Bukkit.getPluginManager().registerEvents(adaptor, plugin.javaPlugin());
@@ -251,8 +265,8 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
             if (VersionHelper.isOrAbove1_20_3()) {
                 this.plugin.logger().severe("");
                 if (Locale.getDefault() == Locale.SIMPLIFIED_CHINESE) {
-                    this.plugin.logger().severe("[Compatibility] 插件需要更新 FastAsyncWorldEdit 到 2.13.0 或更高版本，以获得更好的兼容性。(当前版本: " + version + ")");
-                    this.plugin.logger().severe("[Compatibility] 请前往 https://ci.athion.net/job/FastAsyncWorldEdit/ 下载最新版本");
+                    this.plugin.logger().severe("[兼容性] 插件需要更新 FastAsyncWorldEdit 到 2.13.0 或更高版本，以获得更好的兼容性。(当前版本: " + version + ")");
+                    this.plugin.logger().severe("[兼容性] 请前往 https://ci.athion.net/job/FastAsyncWorldEdit/ 下载最新版本");
                 } else {
                     this.plugin.logger().severe("[Compatibility] Update FastAsyncWorldEdit to v2.13.0+ for better compatibility (Current: " + version + ")");
                     this.plugin.logger().severe("[Compatibility] Download latest version: https://ci.athion.net/job/FastAsyncWorldEdit/");
@@ -363,5 +377,17 @@ public class BukkitCompatibilityManager implements CompatibilityManager {
             resolvers[i] = this.tagResolverProviderArray[i].getTagResolver(context);
         }
         return resolvers;
+    }
+
+    @Override
+    public boolean isBedrockPlayer(Player player) {
+        UUID uuid = player.uuid();
+        if (this.hasFloodgate) {
+            return FloodgateUtils.isFloodgatePlayer(uuid);
+        }
+        if (this.hasGeyser) {
+            return GeyserUtils.isGeyserPlayer(uuid);
+        }
+        return uuid.version() == 0;
     }
 }

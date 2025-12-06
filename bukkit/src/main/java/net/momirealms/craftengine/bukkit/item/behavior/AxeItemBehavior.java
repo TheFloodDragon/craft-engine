@@ -77,7 +77,7 @@ public class AxeItemBehavior extends ItemBehavior {
         }
 
         newState = newState.withProperties(behaviorOptional.get().filter(customState.propertiesNbt()));
-        BukkitExistingBlock clicked = (BukkitExistingBlock) context.getLevel().getBlockAt(context.getClickedPos());
+        BukkitExistingBlock clicked = (BukkitExistingBlock) context.getLevel().getBlock(context.getClickedPos());
         org.bukkit.entity.Player bukkitPlayer = null;
         if (player != null) {
             bukkitPlayer = ((org.bukkit.entity.Player) player.platformPlayer());
@@ -101,7 +101,7 @@ public class AxeItemBehavior extends ItemBehavior {
 
             // resend swing if it's not interactable on client side
             if (!InteractUtils.isInteractable(
-                    bukkitPlayer, BlockStateUtils.fromBlockData(customState.vanillaBlockState().literalObject()),
+                    bukkitPlayer, BlockStateUtils.fromBlockData(customState.visualBlockState().literalObject()),
                     context.getHitResult(), item
             ) || player.isSecondaryUseActive()) {
                 player.swingHand(context.getHand());

@@ -9,6 +9,7 @@ import net.momirealms.craftengine.core.block.BlockBehavior;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
+import net.momirealms.craftengine.core.block.behavior.IsPathFindableBlockBehavior;
 import net.momirealms.craftengine.core.block.properties.Property;
 import net.momirealms.craftengine.core.block.properties.type.SlabType;
 import net.momirealms.craftengine.core.item.CustomItem;
@@ -24,7 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
-public class SlabBlockBehavior extends BukkitBlockBehavior {
+public class SlabBlockBehavior extends BukkitBlockBehavior implements IsPathFindableBlockBehavior {
     public static final Factory FACTORY = new Factory();
     private final Property<SlabType> typeProperty;
 
@@ -60,7 +61,7 @@ public class SlabBlockBehavior extends BukkitBlockBehavior {
     @Override
     public ImmutableBlockState updateStateForPlacement(BlockPlaceContext context, ImmutableBlockState state) {
         BlockPos clickedPos = context.getClickedPos();
-        ImmutableBlockState blockState = context.getLevel().getBlockAt(clickedPos).customBlockState();
+        ImmutableBlockState blockState = context.getLevel().getBlock(clickedPos).customBlockState();
         if (blockState != null && blockState.owner().value() == super.customBlock) {
             if (super.waterloggedProperty != null)
                 blockState = blockState.with(super.waterloggedProperty, false);

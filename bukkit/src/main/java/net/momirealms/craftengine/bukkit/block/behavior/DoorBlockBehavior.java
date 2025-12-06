@@ -15,6 +15,7 @@ import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.UpdateOption;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
+import net.momirealms.craftengine.core.block.behavior.IsPathFindableBlockBehavior;
 import net.momirealms.craftengine.core.block.properties.Property;
 import net.momirealms.craftengine.core.block.properties.type.DoorHinge;
 import net.momirealms.craftengine.core.block.properties.type.DoubleBlockHalf;
@@ -46,7 +47,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 
 @SuppressWarnings("DuplicatedCode")
-public class DoorBlockBehavior extends AbstractCanSurviveBlockBehavior {
+public class DoorBlockBehavior extends AbstractCanSurviveBlockBehavior implements IsPathFindableBlockBehavior {
     public static final Factory FACTORY = new Factory();
     private final Property<DoubleBlockHalf> halfProperty;
     private final Property<HorizontalDirection> facingProperty;
@@ -169,7 +170,15 @@ public class DoorBlockBehavior extends AbstractCanSurviveBlockBehavior {
     }
 
     @Override
-    public void setPlacedBy(Object thisBlock, Object[] args, Callable<Object> superMethod) {
+    public boolean canPlaceMultiState(BlockAccessor accessor, BlockPos pos, ImmutableBlockState state) {
+        if (pos.y() >= accessor.worldHeight().getMaxBuildHeight() - 1) {
+            return false;
+        }
+        return accessor.getBlockState(pos.above()).isAir();
+    }
+
+    @Override
+    public void placeMultiState(Object thisBlock, Object[] args, Callable<Object> superMethod) {
         Object blockState = args[2];
         Object pos = args[1];
         Optional<ImmutableBlockState> immutableBlockState = BlockStateUtils.getOptionalCustomBlockState(blockState);
@@ -177,11 +186,16 @@ public class DoorBlockBehavior extends AbstractCanSurviveBlockBehavior {
     }
 
     @Override
+    public boolean hasMultiState(ImmutableBlockState baseState) {
+        return baseState.get(this.halfProperty) == DoubleBlockHalf.LOWER;
+    }
+
+    @Override
     public ImmutableBlockState updateStateForPlacement(BlockPlaceContext context, ImmutableBlockState state) {
         World world  = context.getLevel();
         Object level = world.serverWorld();
         BlockPos pos = context.getClickedPos();
-        if (pos.y() < context.getLevel().worldHeight().getMaxBuildHeight() && world.getBlockAt(pos.above()).canBeReplaced(context)) {
+        if (pos.y() < world.worldHeight().getMaxBuildHeight() - 1 && world.getBlock(pos.above()).canBeReplaced(context)) {
             boolean hasSignal = FastNMS.INSTANCE.method$SignalGetter$hasNeighborSignal(level, LocationUtils.toBlockPos(pos)) || FastNMS.INSTANCE.method$SignalGetter$hasNeighborSignal(level, LocationUtils.toBlockPos(pos.above()));
             return state.with(this.poweredProperty, hasSignal)
                     .with(this.facingProperty, context.getHorizontalDirection().toHorizontalDirection())

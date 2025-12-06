@@ -44,14 +44,14 @@ tasks.withType<JavaCompile> {
 }
 
 bukkit {
-    load = net.minecrell.pluginyml.bukkit.BukkitPluginDescription.PluginLoadOrder.POSTWORLD
+    load = net.minecrell.pluginyml.bukkit.BukkitPluginDescription.PluginLoadOrder.STARTUP
     main = "net.momirealms.craftengine.bukkit.plugin.BukkitCraftEnginePlugin"
     version = rootProject.properties["project_version"] as String
     name = "CraftEngine"
     apiVersion = "1.20"
     authors = listOf("XiaoMoMi")
     contributors = listOf("https://github.com/Xiao-MoMi/craft-engine/graphs/contributors")
-    softDepend = listOf("PlaceholderAPI", "WorldEdit", "FastAsyncWorldEdit", "Skript")
+    softDepend = listOf("WorldEdit", "FastAsyncWorldEdit")
     foliaSupported = true
 }
 
@@ -85,5 +85,6 @@ tasks {
         relocate("io.netty.handler.codec.rtsp", "net.momirealms.craftengine.libraries.netty.handler.codec.rtsp")
         relocate("io.netty.handler.codec.spdy", "net.momirealms.craftengine.libraries.netty.handler.codec.spdy")
         relocate("io.netty.handler.codec.http2", "net.momirealms.craftengine.libraries.netty.handler.codec.http2")
+        relocate("io.github.bucket4j", "net.momirealms.craftengine.libraries.bucket4j")
     }
 }

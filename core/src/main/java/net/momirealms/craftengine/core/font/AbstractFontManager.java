@@ -17,6 +17,7 @@ import net.momirealms.craftengine.core.plugin.text.component.ComponentProvider;
 import net.momirealms.craftengine.core.util.*;
 import org.ahocorasick.trie.Token;
 import org.ahocorasick.trie.Trie;
+import org.incendo.cloud.suggestion.Suggestion;
 import org.jetbrains.annotations.NotNull;
 
 import javax.imageio.ImageIO;
@@ -52,6 +53,8 @@ public abstract class AbstractFontManager implements FontManager {
     protected Map<String, Emoji> emojiMapper;
     protected List<Emoji> emojiList;
     protected List<String> allEmojiSuggestions;
+    // Cached command suggestions
+    protected final List<Suggestion> cachedImagesSuggestions = new ArrayList<>();
 
     public AbstractFontManager(CraftEngine plugin) {
         this.plugin = plugin;
@@ -95,6 +98,7 @@ public abstract class AbstractFontManager implements FontManager {
     public void unload() {
         this.fonts.clear();
         this.images.clear();
+        this.cachedImagesSuggestions.clear();
         this.illegalChars.clear();
         this.emojis.clear();
         this.networkTagTrie = null;
@@ -415,6 +419,12 @@ public abstract class AbstractFontManager implements FontManager {
         return Optional.ofNullable(this.fonts.get(id));
     }
 
+
+    @Override
+    public Collection<Suggestion> cachedImagesSuggestions() {
+        return Collections.unmodifiableCollection(this.cachedImagesSuggestions);
+    }
+
     private Font getOrCreateFont(Key key) {
         return this.fonts.computeIfAbsent(key, Font::new);
     }
@@ -433,8 +443,13 @@ public abstract class AbstractFontManager implements FontManager {
         }
 
         @Override
+        public int count() {
+            return AbstractFontManager.this.emojis.size();
+        }
+
+        @Override
         public void parseSection(Pack pack, Path path, String node, Key id, Map<String, Object> section) {
-            if (emojis.containsKey(id)) {
+            if (AbstractFontManager.this.emojis.containsKey(id)) {
                 throw new LocalizedResourceConfigException("warning.config.emoji.duplicate");
             }
             String permission = (String) section.get("permission");
@@ -498,6 +513,11 @@ public abstract class AbstractFontManager implements FontManager {
         @Override
         public int loadingSequence() {
             return LoadingSequence.IMAGE;
+        }
+
+        @Override
+        public int count() {
+            return AbstractFontManager.this.images.size();
         }
 
         @Override
@@ -712,6 +732,7 @@ public abstract class AbstractFontManager implements FontManager {
                 }
 
                 AbstractFontManager.this.images.put(id, bitmapImage);
+                AbstractFontManager.this.cachedImagesSuggestions.add(Suggestion.suggestion(id.asString()));
 
             }, () -> GsonHelper.get().toJson(section)));
         }

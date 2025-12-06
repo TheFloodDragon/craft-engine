@@ -1,25 +1,25 @@
 package net.momirealms.craftengine.bukkit.block.entity.renderer.element;
 
+import com.google.common.base.Objects;
 import net.kyori.adventure.text.Component;
+import net.momirealms.craftengine.bukkit.entity.data.ItemDisplayEntityData;
 import net.momirealms.craftengine.bukkit.entity.data.TextDisplayEntityData;
 import net.momirealms.craftengine.bukkit.util.ComponentUtils;
-import net.momirealms.craftengine.core.block.entity.render.element.BlockEntityElement;
 import net.momirealms.craftengine.core.block.entity.render.element.BlockEntityElementConfig;
 import net.momirealms.craftengine.core.block.entity.render.element.BlockEntityElementConfigFactory;
-import net.momirealms.craftengine.core.entity.Billboard;
+import net.momirealms.craftengine.core.entity.display.Billboard;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.plugin.context.PlayerOptionalContext;
 import net.momirealms.craftengine.core.util.AdventureHelper;
+import net.momirealms.craftengine.core.util.Color;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 import net.momirealms.craftengine.core.world.BlockPos;
 import net.momirealms.craftengine.core.world.World;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 public class TextDisplayBlockEntityElementConfig implements BlockEntityElementConfig<TextDisplayBlockEntityElement> {
@@ -33,6 +33,10 @@ public class TextDisplayBlockEntityElementConfig implements BlockEntityElementCo
     private final float yRot;
     private final Quaternionf rotation;
     private final Billboard billboard;
+    public final Color glowColor;
+    public final int blockLight;
+    public final int skyLight;
+    public final float viewRange;
 
     public TextDisplayBlockEntityElementConfig(String text,
                                                Vector3f scale,
@@ -41,7 +45,11 @@ public class TextDisplayBlockEntityElementConfig implements BlockEntityElementCo
                                                float xRot,
                                                float yRot,
                                                Quaternionf rotation,
-                                               Billboard billboard) {
+                                               Billboard billboard,
+                                               @Nullable Color glowColor,
+                                               int blockLight,
+                                               int skyLight,
+                                               float viewRange) {
         this.text = text;
         this.scale = scale;
         this.position = position;
@@ -50,13 +58,25 @@ public class TextDisplayBlockEntityElementConfig implements BlockEntityElementCo
         this.yRot = yRot;
         this.rotation = rotation;
         this.billboard = billboard;
+        this.glowColor = glowColor;
+        this.blockLight = blockLight;
+        this.skyLight = skyLight;
+        this.viewRange = viewRange;
         this.lazyMetadataPacket = player -> {
             List<Object> dataValues = new ArrayList<>();
-            TextDisplayEntityData.Text.addEntityDataIfNotDefaultValue(ComponentUtils.adventureToMinecraft(text(player)), dataValues);
-            TextDisplayEntityData.Scale.addEntityDataIfNotDefaultValue(this.scale, dataValues);
-            TextDisplayEntityData.RotationLeft.addEntityDataIfNotDefaultValue(this.rotation, dataValues);
-            TextDisplayEntityData.BillboardConstraints.addEntityDataIfNotDefaultValue(this.billboard.id(), dataValues);
-            TextDisplayEntityData.Translation.addEntityDataIfNotDefaultValue(this.translation, dataValues);
+            if (glowColor != null) {
+                ItemDisplayEntityData.SharedFlags.addEntityData((byte) 0x40, dataValues);
+                ItemDisplayEntityData.GlowColorOverride.addEntityData(glowColor.color(), dataValues);
+            }
+            TextDisplayEntityData.Text.addEntityData(ComponentUtils.adventureToMinecraft(text(player)), dataValues);
+            TextDisplayEntityData.Scale.addEntityData(this.scale, dataValues);
+            TextDisplayEntityData.RotationLeft.addEntityData(this.rotation, dataValues);
+            TextDisplayEntityData.BillboardConstraints.addEntityData(this.billboard.id(), dataValues);
+            TextDisplayEntityData.Translation.addEntityData(this.translation, dataValues);
+            if (this.blockLight != -1 && this.skyLight != -1) {
+                ItemDisplayEntityData.BrightnessOverride.addEntityData(this.blockLight << 4 | this.skyLight << 20, dataValues);
+            }
+            ItemDisplayEntityData.ViewRange.addEntityData((float) (this.viewRange * player.displayEntityViewDistance()), dataValues);
             return dataValues;
         };
     }
@@ -68,11 +88,19 @@ public class TextDisplayBlockEntityElementConfig implements BlockEntityElementCo
 
     @Override
     public TextDisplayBlockEntityElement create(World world, BlockPos pos, TextDisplayBlockEntityElement previous) {
-        Quaternionf previousRotation = previous.config.rotation;
-        if (previousRotation.x != 0 || previousRotation.y != 0 || previousRotation.z != 0 || previousRotation.w != 1) {
+        return new TextDisplayBlockEntityElement(this, pos, previous.entityId,
+                previous.config.yRot != this.yRot ||
+                        previous.config.xRot != this.xRot ||
+                        !previous.config.position.equals(this.position)
+        );
+    }
+
+    @Override
+    public TextDisplayBlockEntityElement createExact(World world, BlockPos pos, TextDisplayBlockEntityElement previous) {
+        if (!previous.config.isSamePosition(this)) {
             return null;
         }
-        return new TextDisplayBlockEntityElement(this, pos, previous.entityId, previous.config.yRot != this.yRot || previous.config.xRot != this.xRot || !previous.config.position.equals(this.position));
+        return new TextDisplayBlockEntityElement(this, pos, previous.entityId, false);
     }
 
     @Override
@@ -116,13 +144,21 @@ public class TextDisplayBlockEntityElementConfig implements BlockEntityElementCo
         return this.lazyMetadataPacket.apply(player);
     }
 
-    public static class Factory implements BlockEntityElementConfigFactory {
+    public boolean isSamePosition(TextDisplayBlockEntityElementConfig that) {
+        return Float.compare(xRot, that.xRot) == 0 &&
+                Float.compare(yRot, that.yRot) == 0 &&
+                Objects.equal(position, that.position) &&
+                Objects.equal(translation, that.translation) &&
+                Objects.equal(rotation, that.rotation);
+    }
 
-        @SuppressWarnings("unchecked")
+    public static class Factory implements BlockEntityElementConfigFactory<TextDisplayBlockEntityElement> {
+
         @Override
-        public <E extends BlockEntityElement> BlockEntityElementConfig<E> create(Map<String, Object> arguments) {
+        public TextDisplayBlockEntityElementConfig create(Map<String, Object> arguments) {
             String text = ResourceConfigUtils.requireNonEmptyStringOrThrow(arguments.get("text"), "warning.config.block.state.entity_renderer.text_display.missing_text");
-            return (BlockEntityElementConfig<E>) new TextDisplayBlockEntityElementConfig(
+            Map<String, Object> brightness = ResourceConfigUtils.getAsMap(arguments.getOrDefault("brightness", Map.of()), "brightness");
+            return new TextDisplayBlockEntityElementConfig(
                     text,
                     ResourceConfigUtils.getAsVector3f(arguments.getOrDefault("scale", 1f), "scale"),
                     ResourceConfigUtils.getAsVector3f(arguments.getOrDefault("position", 0.5f), "position"),
@@ -130,7 +166,11 @@ public class TextDisplayBlockEntityElementConfig implements BlockEntityElementCo
                     ResourceConfigUtils.getAsFloat(arguments.getOrDefault("pitch", 0f), "pitch"),
                     ResourceConfigUtils.getAsFloat(arguments.getOrDefault("yaw", 0f), "yaw"),
                     ResourceConfigUtils.getAsQuaternionf(arguments.getOrDefault("rotation", 0f), "rotation"),
-                    Billboard.valueOf(arguments.getOrDefault("billboard", "fixed").toString().toUpperCase(Locale.ROOT))
+                    Billboard.valueOf(arguments.getOrDefault("billboard", "fixed").toString().toUpperCase(Locale.ROOT)),
+                    Optional.ofNullable(arguments.get("glow-color")).map(it -> Color.fromStrings(it.toString().split(","))).orElse(null),
+                    ResourceConfigUtils.getAsInt(brightness.getOrDefault("block-light", -1), "block-light"),
+                    ResourceConfigUtils.getAsInt(brightness.getOrDefault("sky-light", -1), "sky-light"),
+                    ResourceConfigUtils.getAsFloat(arguments.getOrDefault("view-range", 1f), "view-range")
             );
         }
     }

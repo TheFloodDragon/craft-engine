@@ -30,7 +30,7 @@ public class TransformBlockFunction<CTX extends Context> extends AbstractConditi
     private final NumberProvider z;
     private final NumberProvider updateFlags;
 
-    public TransformBlockFunction(LazyReference<BlockStateWrapper> lazyBlockState, CompoundTag properties, NumberProvider x, NumberProvider y, NumberProvider z, NumberProvider updateFlags, List<Condition<CTX>> predicates) {
+    public TransformBlockFunction(List<Condition<CTX>> predicates, CompoundTag properties, NumberProvider x, NumberProvider y, NumberProvider z, NumberProvider updateFlags, LazyReference<BlockStateWrapper> lazyBlockState) {
         super(predicates);
         this.properties = properties;
         this.x = x;
@@ -45,10 +45,10 @@ public class TransformBlockFunction<CTX extends Context> extends AbstractConditi
         Optional<WorldPosition> optionalWorldPosition = ctx.getOptionalParameter(DirectContextParameters.POSITION);
         if (optionalWorldPosition.isPresent()) {
             World world = optionalWorldPosition.get().world();
-            int x = MiscUtils.fastFloor(this.x.getDouble(ctx));
-            int y = MiscUtils.fastFloor(this.y.getDouble(ctx));
-            int z = MiscUtils.fastFloor(this.z.getDouble(ctx));
-            BlockStateWrapper existingBlockState = world.getBlockAt(x, y, z).blockState().withProperties(this.properties);
+            int x = MiscUtils.floor(this.x.getDouble(ctx));
+            int y = MiscUtils.floor(this.y.getDouble(ctx));
+            int z = MiscUtils.floor(this.z.getDouble(ctx));
+            BlockStateWrapper existingBlockState = world.getBlock(x, y, z).blockState().withProperties(this.properties);
             CompoundTag newProperties = new CompoundTag();
             for (String propertyName : existingBlockState.getPropertyNames()) {
                 newProperties.putString(propertyName, String.valueOf(existingBlockState.getProperty(propertyName)).toLowerCase(Locale.ROOT));
@@ -58,7 +58,7 @@ public class TransformBlockFunction<CTX extends Context> extends AbstractConditi
                     newProperties.put(tagEntry.getKey(), tagEntry.getValue());
                 }
             }
-            world.setBlockAt(x, y, z, this.lazyBlockState.get().withProperties(newProperties), this.updateFlags.getInt(ctx));
+            world.setBlockState(x, y, z, this.lazyBlockState.get().withProperties(newProperties), this.updateFlags.getInt(ctx));
         }
     }
 
@@ -84,13 +84,8 @@ public class TransformBlockFunction<CTX extends Context> extends AbstractConditi
                 }
             }
             return new TransformBlockFunction<>(
-                    LazyReference.lazyReference(() -> CraftEngine.instance().blockManager().createBlockState(block)),
-                    properties,
-                    NumberProviders.fromObject(arguments.getOrDefault("x", "<arg:position.x>")),
-                    NumberProviders.fromObject(arguments.getOrDefault("y", "<arg:position.y>")),
-                    NumberProviders.fromObject(arguments.getOrDefault("z", "<arg:position.z>")),
-                    Optional.ofNullable(arguments.get("update-flags")).map(NumberProviders::fromObject).orElse(NumberProviders.direct(UpdateOption.UPDATE_ALL.flags())),
-                    getPredicates(arguments));
+                    getPredicates(arguments), properties, NumberProviders.fromObject(arguments.getOrDefault("x", "<arg:position.x>")), NumberProviders.fromObject(arguments.getOrDefault("y", "<arg:position.y>")), NumberProviders.fromObject(arguments.getOrDefault("z", "<arg:position.z>")), Optional.ofNullable(arguments.get("update-flags")).map(NumberProviders::fromObject).orElse(NumberProviders.direct(UpdateOption.UPDATE_ALL.flags())), LazyReference.lazyReference(() -> CraftEngine.instance().blockManager().createBlockState(block))
+            );
         }
     }
 }

@@ -11,6 +11,7 @@ import net.momirealms.craftengine.core.block.BlockStateWrapper;
 import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.behavior.BlockBehaviorFactory;
+import net.momirealms.craftengine.core.block.behavior.IsPathFindableBlockBehavior;
 import net.momirealms.craftengine.core.block.properties.BooleanProperty;
 import net.momirealms.craftengine.core.entity.player.InteractionHand;
 import net.momirealms.craftengine.core.entity.player.InteractionResult;
@@ -30,7 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
-public class FenceBlockBehavior extends BukkitBlockBehavior {
+public class FenceBlockBehavior extends BukkitBlockBehavior implements IsPathFindableBlockBehavior {
     public static final Factory FACTORY = new Factory();
     private final BooleanProperty northProperty;
     private final BooleanProperty eastProperty;
@@ -96,10 +97,10 @@ public class FenceBlockBehavior extends BukkitBlockBehavior {
         BlockPos blockPos1 = clickedPos.east();
         BlockPos blockPos2 = clickedPos.south();
         BlockPos blockPos3 = clickedPos.west();
-        BlockStateWrapper blockState = level.getBlockAt(blockPos).blockState();
-        BlockStateWrapper blockState1 = level.getBlockAt(blockPos1).blockState();
-        BlockStateWrapper blockState2 = level.getBlockAt(blockPos2).blockState();
-        BlockStateWrapper blockState3 = level.getBlockAt(blockPos3).blockState();
+        BlockStateWrapper blockState = level.getBlock(blockPos).blockState();
+        BlockStateWrapper blockState1 = level.getBlock(blockPos1).blockState();
+        BlockStateWrapper blockState2 = level.getBlock(blockPos2).blockState();
+        BlockStateWrapper blockState3 = level.getBlock(blockPos3).blockState();
         BooleanProperty waterlogged = (BooleanProperty) state.owner().value().getProperty("waterlogged");
         if (waterlogged != null) {
             state = state.with(waterlogged, FastNMS.INSTANCE.method$FluidState$getType(fluidState) == MFluids.WATER);

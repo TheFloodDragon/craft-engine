@@ -47,12 +47,15 @@ public class Config {
     protected boolean metrics;
     protected boolean filterConfigurationPhaseDisconnect;
     protected Locale forcedLocale;
+    protected boolean delayConfigurationLoad;
 
     protected boolean debug$common;
     protected boolean debug$packet;
     protected boolean debug$item;
     protected boolean debug$furniture;
     protected boolean debug$resource_pack;
+    protected boolean debug$block;
+    protected boolean debug$entity_culling;
 
     protected boolean resource_pack$remove_tinted_leaves_particle;
     protected boolean resource_pack$generate_mod_assets;
@@ -137,6 +140,8 @@ public class Config {
     protected ColliderType furniture$collision_entity_type;
 
     protected boolean block$sound_system$enable;
+    protected boolean block$sound_system$process_cancelled_events$step;
+    protected boolean block$sound_system$process_cancelled_events$break;
     protected boolean block$simplify_adventure_break_check;
     protected boolean block$simplify_adventure_place_check;
     protected boolean block$predict_breaking;
@@ -188,6 +193,8 @@ public class Config {
     protected Map<Key, Integer> item$custom_model_data_starting_value$overrides;
     protected boolean item$always_use_item_model;
     protected String item$default_material = "";
+    protected boolean item$default_drop_display$enable = false;
+    protected String item$default_drop_display$format = null;
 
     protected String equipment$sacrificed_vanilla_armor$type;
     protected Key equipment$sacrificed_vanilla_armor$asset_id;
@@ -199,6 +206,17 @@ public class Config {
     protected boolean emoji$contexts$anvil;
     protected boolean emoji$contexts$sign;
     protected int emoji$max_emojis_per_parse;
+
+    protected boolean client_optimization$entity_culling$enable;
+    protected int client_optimization$entity_culling$view_distance;
+    protected int client_optimization$entity_culling$threads;
+    protected boolean client_optimization$entity_culling$ray_tracing;
+    protected boolean client_optimization$entity_culling$rate_limiting$enable;
+    protected int client_optimization$entity_culling$rate_limiting$bucket_size;
+    protected int client_optimization$entity_culling$rate_limiting$restore_per_tick;
+
+    protected boolean bedrock_edition_support$enable;
+    protected String bedrock_edition_support$player_prefix;
 
     public Config(CraftEngine plugin) {
         this.plugin = plugin;
@@ -288,6 +306,7 @@ public class Config {
     public void loadFullSettings() {
         YamlDocument config = settings();
         forcedLocale = TranslationManager.parseLocale(config.getString("forced-locale", ""));
+        delayConfigurationLoad = config.getBoolean("delay-configuration-load", false);
 
         // basics
         metrics = config.getBoolean("metrics", false);
@@ -301,6 +320,8 @@ public class Config {
         debug$item = config.getBoolean("debug.item", false);
         debug$furniture = config.getBoolean("debug.furniture", false);
         debug$resource_pack = config.getBoolean("debug.resource-pack", false);
+        debug$block = config.getBoolean("debug.block", false);
+        debug$entity_culling = config.getBoolean("debug.entity-culling", false);
 
         // resource pack
         resource_pack$path = resolvePath(config.getString("resource-pack.path", "./generated/resource_pack.zip"));
@@ -455,6 +476,8 @@ public class Config {
         item$custom_model_data_starting_value$default = config.getInt("item.custom-model-data-starting-value.default", 10000);
         item$always_use_item_model = config.getBoolean("item.always-use-item-model", true) && VersionHelper.isOrAbove1_21_2();
         item$default_material = config.getString("item.default-material", "");
+        item$default_drop_display$enable = config.getBoolean("item.default-drop-display.enable", false);
+        item$default_drop_display$format = item$default_drop_display$enable ? config.getString("item.default-drop-display.format", "<arg:count>x <name>"): null;
 
         Section customModelDataOverridesSection = config.getSection("item.custom-model-data-starting-value.overrides");
         if (customModelDataOverridesSection != null) {
@@ -473,6 +496,8 @@ public class Config {
 
         // block
         block$sound_system$enable = config.getBoolean("block.sound-system.enable", true);
+        block$sound_system$process_cancelled_events$step = config.getBoolean("block.sound-system.process-cancelled-events.step", true);
+        block$sound_system$process_cancelled_events$break = config.getBoolean("block.sound-system.process-cancelled-events.break", true);
         block$simplify_adventure_break_check = config.getBoolean("block.simplify-adventure-break-check", false);
         block$simplify_adventure_place_check = config.getBoolean("block.simplify-adventure-place-check", false);
         block$predict_breaking = config.getBoolean("block.predict-breaking.enable", true);
@@ -556,6 +581,21 @@ public class Config {
         emoji$contexts$sign = config.getBoolean("emoji.contexts.sign", true);
         emoji$max_emojis_per_parse = config.getInt("emoji.max-emojis-per-parse", 32);
 
+        // client optimization
+        if (firstTime) {
+            client_optimization$entity_culling$enable = VersionHelper.PREMIUM && config.getBoolean("client-optimization.entity-culling.enable", false);
+        }
+        client_optimization$entity_culling$view_distance = config.getInt("client-optimization.entity-culling.view-distance", 64);
+        client_optimization$entity_culling$threads = config.getInt("client-optimization.entity-culling.threads", 1);
+        client_optimization$entity_culling$ray_tracing = client_optimization$entity_culling$enable && config.getBoolean("client-optimization.entity-culling.ray-tracing", true);
+        client_optimization$entity_culling$rate_limiting$enable = config.getBoolean("client-optimization.entity-culling.rate-limiting.enable", true);
+        client_optimization$entity_culling$rate_limiting$bucket_size = config.getInt("client-optimization.entity-culling.rate-limiting.bucket-size", 300);
+        client_optimization$entity_culling$rate_limiting$restore_per_tick = config.getInt("client-optimization.entity-culling.rate-limiting.restore-per-tick", 5);
+
+        // bedrock support
+        bedrock_edition_support$enable = config.getBoolean("bedrock-edition-support.enable", true);
+        bedrock_edition_support$player_prefix = config.getString("bedrock-edition-support.player-prefix", "!");
+
         firstTime = false;
     }
 
@@ -577,6 +617,10 @@ public class Config {
         return instance.configVersion;
     }
 
+    public static boolean delayConfigurationLoad() {
+        return instance.delayConfigurationLoad;
+    }
+
     public static boolean debugCommon() {
         return instance.debug$common;
     }
@@ -589,12 +633,12 @@ public class Config {
         return instance.debug$item;
     }
 
-    public static boolean debugBlockEntity() {
-        return false;
+    public static boolean debugBlock() {
+        return instance.debug$block;
     }
 
-    public static boolean debugBlock() {
-        return false;
+    public static boolean debugEntityCulling() {
+        return instance.debug$entity_culling;
     }
 
     public static boolean debugFurniture() {
@@ -667,6 +711,14 @@ public class Config {
 
     public static boolean enableSoundSystem() {
         return instance.block$sound_system$enable;
+    }
+
+    public static boolean processCancelledStep() {
+        return instance.block$sound_system$process_cancelled_events$step;
+    }
+
+    public static boolean processCancelledBreak() {
+        return instance.block$sound_system$process_cancelled_events$break;
     }
 
     public static boolean simplifyAdventureBreakCheck() {
@@ -1132,6 +1184,50 @@ public class Config {
 
     public static int zopfliIterations() {
         return instance.resource_pack$optimization$texture$zopfli_iterations;
+    }
+
+    public static boolean enableDefaultDropDisplay() {
+        return instance.item$default_drop_display$enable;
+    }
+
+    public static String defaultDropDisplayFormat() {
+        return instance.item$default_drop_display$format;
+    }
+
+    public static boolean enableEntityCulling() {
+        return instance.client_optimization$entity_culling$enable;
+    }
+
+    public static int entityCullingViewDistance() {
+        return instance.client_optimization$entity_culling$view_distance;
+    }
+
+    public static int entityCullingThreads() {
+        return instance.client_optimization$entity_culling$threads;
+    }
+
+    public static boolean enableEntityCullingRateLimiting() {
+        return instance.client_optimization$entity_culling$rate_limiting$enable;
+    }
+
+    public static int entityCullingRateLimitingBucketSize() {
+        return instance.client_optimization$entity_culling$rate_limiting$bucket_size;
+    }
+
+    public static int entityCullingRateLimitingRestorePerTick() {
+        return instance.client_optimization$entity_culling$rate_limiting$restore_per_tick;
+    }
+
+    public static boolean entityCullingRayTracing() {
+        return instance.client_optimization$entity_culling$ray_tracing;
+    }
+
+    public static boolean enableBedrockEditionSupport() {
+        return instance.bedrock_edition_support$enable;
+    }
+
+    public static String bedrockEditionPlayerPrefix() {
+        return instance.bedrock_edition_support$player_prefix;
     }
 
     public YamlDocument loadOrCreateYamlData(String fileName) {

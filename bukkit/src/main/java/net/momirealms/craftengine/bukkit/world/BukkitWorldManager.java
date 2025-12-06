@@ -6,6 +6,7 @@ import net.momirealms.craftengine.bukkit.plugin.injector.WorldStorageInjector;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.util.BlockStateUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
+import net.momirealms.craftengine.core.block.BlockStateWrapper;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.config.Config;
@@ -49,9 +50,6 @@ public class BukkitWorldManager implements WorldManager, Listener {
         this.plugin = plugin;
         this.worlds = ConcurrentUUID2ReferenceChainedHashTable.createWithCapacity(10, 0.5f);
         this.storageAdaptor = new DefaultStorageAdaptor();
-        for (World world : Bukkit.getWorlds()) {
-            this.worlds.put(world.getUID(), new BukkitCEWorld(new BukkitWorld(world), this.storageAdaptor));
-        }
     }
 
     @Override
@@ -76,6 +74,11 @@ public class BukkitWorldManager implements WorldManager, Listener {
         if (world != null) {
             this.lastWorldUUID = uuid;
             this.lastWorld = world;
+        } else {
+            World bukkitWorld = Bukkit.getWorld(uuid);
+            if (bukkitWorld != null) {
+                world = this.loadWorld(new BukkitWorld(bukkitWorld));
+            }
         }
         return world;
     }
@@ -90,7 +93,7 @@ public class BukkitWorldManager implements WorldManager, Listener {
     }
 
     public void delayedInit() {
-        // load loaded chunks
+        // 此时大概率为空，暂且保留代码
         for (World world : Bukkit.getWorlds()) {
             BukkitWorld wrappedWorld = new BukkitWorld(world);
             try {
@@ -98,6 +101,10 @@ public class BukkitWorldManager implements WorldManager, Listener {
                 injectChunkGenerator(ceWorld);
                 for (Chunk chunk : world.getLoadedChunks()) {
                     handleChunkLoad(ceWorld, chunk, false);
+                    CEChunk loadedChunk = ceWorld.getChunkAtIfLoaded(chunk.getChunkKey());
+                    if (loadedChunk != null) {
+                        loadedChunk.setEntitiesLoaded(true);
+                    }
                 }
                 ceWorld.setTicking(true);
             } catch (Exception e) {
@@ -133,14 +140,41 @@ public class BukkitWorldManager implements WorldManager, Listener {
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    public void onWorldInit(WorldInitEvent event) {
+        World world = event.getWorld();
+        UUID uuid = world.getUID();
+        if (this.worlds.containsKey(uuid)) return;
+        CEWorld ceWorld = new BukkitCEWorld(new BukkitWorld(world), this.storageAdaptor);
+        this.worlds.put(uuid, ceWorld);
+        this.resetWorldArray();
+        this.injectChunkGenerator(ceWorld);
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onWorldLoad(WorldLoadEvent event) {
-        this.loadWorld(new BukkitWorld(event.getWorld()));
+        World world = event.getWorld();
+        UUID uuid = world.getUID();
+        if (this.worlds.containsKey(uuid)) {
+            CEWorld ceWorld = this.worlds.get(uuid);
+            for (Chunk chunk : world.getLoadedChunks()) {
+                handleChunkLoad(ceWorld, chunk, true);
+                CEChunk loadedChunk = ceWorld.getChunkAtIfLoaded(chunk.getChunkKey());
+                if (loadedChunk != null) {
+                    loadedChunk.setEntitiesLoaded(true);
+                }
+            }
+            ceWorld.setTicking(true);
+        } else {
+            this.loadWorld(new BukkitWorld(world));
+        }
     }
 
     @Override
-    public void loadWorld(net.momirealms.craftengine.core.world.World world) {
+    public CEWorld loadWorld(net.momirealms.craftengine.core.world.World world) {
         UUID uuid = world.uuid();
-        if (this.worlds.containsKey(uuid)) return;
+        if (this.worlds.containsKey(uuid)) {
+            return this.worlds.get(uuid);
+        }
         CEWorld ceWorld = new BukkitCEWorld(world, this.storageAdaptor);
         this.worlds.put(uuid, ceWorld);
         this.resetWorldArray();
@@ -149,6 +183,7 @@ public class BukkitWorldManager implements WorldManager, Listener {
             handleChunkLoad(ceWorld, chunk, false);
         }
         ceWorld.setTicking(true);
+        return ceWorld;
     }
 
     @Override
@@ -270,9 +305,12 @@ public class BukkitWorldManager implements WorldManager, Listener {
                             for (int z = 0; z < 16; z++) {
                                 for (int y = 0; y < 16; y++) {
                                     ImmutableBlockState customState = ceSection.getBlockState(x, y, z);
-                                    if (!customState.isEmpty() && customState.vanillaBlockState() != null) {
-                                        FastNMS.INSTANCE.method$LevelChunkSection$setBlockState(section, x, y, z, customState.vanillaBlockState().literalObject(), false);
-                                        unsaved = true;
+                                    if (!customState.isEmpty()) {
+                                        BlockStateWrapper wrapper = customState.restoreBlockState();
+                                        if (wrapper != null) {
+                                            FastNMS.INSTANCE.method$LevelChunkSection$setBlockState(section, x, y, z, wrapper.literalObject(), false);
+                                            unsaved = true;
+                                        }
                                     }
                                 }
                             }

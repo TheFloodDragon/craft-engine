@@ -37,7 +37,7 @@ public class TranslationManagerImpl implements TranslationManager {
     private final Set<Locale> installed = ConcurrentHashMap.newKeySet();
     private final Path translationsDirectory;
     private final String langVersion;
-    private final String[] supportedLanguages;
+    private final Set<String> supportedLanguages;
     private final Map<String, String> translationFallback = new LinkedHashMap<>();
     private Locale selectedLocale = DEFAULT_LOCALE;
     private MiniMessageTranslationRegistry registry;
@@ -52,7 +52,7 @@ public class TranslationManagerImpl implements TranslationManager {
         this.plugin = plugin;
         this.translationsDirectory = this.plugin.dataFolderPath().resolve("translations");
         this.langVersion = PluginProperties.getValue("lang-version");
-        this.supportedLanguages = PluginProperties.getValue("supported-languages").split(",");
+        this.supportedLanguages = Arrays.stream(PluginProperties.getValue("supported-languages").split(",")).collect(Collectors.toSet());
         this.langParser = new LangParser();
         this.translationParser = new TranslationParser();
         Yaml yaml = new Yaml(new TranslationConfigConstructor(new LoaderOptions()));
@@ -201,7 +201,7 @@ public class TranslationManagerImpl implements TranslationManager {
                                 Map<String, String> data = yaml.load(inputStream);
                                 if (data == null) return FileVisitResult.CONTINUE;
                                 String langVersion = data.getOrDefault("lang-version", "");
-                                if (!langVersion.equals(TranslationManagerImpl.this.langVersion)) {
+                                if (!langVersion.equals(TranslationManagerImpl.this.langVersion) && TranslationManagerImpl.this.supportedLanguages.contains(localeName)) {
                                     data = updateLangFile(data, path);
                                 }
                                 cachedFile = new CachedTranslation(data, lastModifiedTime, size);
@@ -277,6 +277,7 @@ public class TranslationManagerImpl implements TranslationManager {
 
     public class TranslationParser extends IdSectionConfigParser {
         public static final String[] CONFIG_SECTION_NAME = new String[] {"translations", "translation", "l10n", "localization", "i18n", "internationalization"};
+        private int count;
 
         @Override
         public int loadingSequence() {
@@ -286,6 +287,16 @@ public class TranslationManagerImpl implements TranslationManager {
         @Override
         public String[] sectionId() {
             return CONFIG_SECTION_NAME;
+        }
+
+        @Override
+        public int count() {
+            return this.count;
+        }
+
+        @Override
+        public void preProcess() {
+            this.count = 0;
         }
 
         @Override
@@ -300,6 +311,7 @@ public class TranslationManagerImpl implements TranslationManager {
                 String key = entry.getKey();
                 bundle.put(key, entry.getValue().toString());
                 TranslationManagerImpl.this.translationKeys.add(key);
+                this.count++;
             }
 
             TranslationManagerImpl.this.registry.registerAll(locale, bundle);
@@ -313,6 +325,7 @@ public class TranslationManagerImpl implements TranslationManager {
             Component deserialize = AdventureHelper.miniMessage().deserialize(AdventureHelper.legacyToMiniMessage(s), ShiftTag.INSTANCE, ImageTag.INSTANCE);
             return AdventureHelper.getLegacy().serialize(deserialize);
         };
+        private int count;
 
         @Override
         public int loadingSequence() {
@@ -325,6 +338,16 @@ public class TranslationManagerImpl implements TranslationManager {
         }
 
         @Override
+        public int count() {
+            return this.count;
+        }
+
+        @Override
+        public void preProcess() {
+            this.count = 0;
+        }
+
+        @Override
         public void parseSection(Pack pack, Path path, String node, net.momirealms.craftengine.core.util.Key id, Map<String, Object> section) {
             String langId = id.value().toLowerCase(Locale.ENGLISH);
             Map<String, String> sectionData = section.entrySet().stream()
@@ -333,6 +356,7 @@ public class TranslationManagerImpl implements TranslationManager {
                             entry -> this.langProcessor.apply(String.valueOf(entry.getValue()))
                     ));
             TranslationManagerImpl.this.addClientTranslation(langId, sectionData);
+            this.count += sectionData.size();
         }
     }
 

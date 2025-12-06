@@ -33,6 +33,7 @@ public class BukkitCommandManager extends AbstractCommandManager<CommandSender> 
                 new ReloadCommand(this, plugin),
                 new GetItemCommand(this, plugin),
                 new GiveItemCommand(this, plugin),
+                new ClearItemCommand(this, plugin),
                 new ItemBrowserPlayerCommand(this, plugin),
                 new ItemBrowserAdminCommand(this, plugin),
                 new SearchRecipePlayerCommand(this, plugin),
@@ -41,12 +42,16 @@ public class BukkitCommandManager extends AbstractCommandManager<CommandSender> 
                 new SearchUsageAdminCommand(this, plugin),
                 new TestCommand(this, plugin),
                 new SetLocaleCommand(this, plugin),
+                new SetDisplayEntityViewDistanceScaleCommand(this, plugin),
+                new SetEntityCullingDistanceScaleCommand(this, plugin),
+                new ToggleEntityCullingCommand(this, plugin),
                 new UnsetLocaleCommand(this, plugin),
                 new DebugGetBlockStateRegistryIdCommand(this, plugin),
                 new DebugGetBlockInternalIdCommand(this, plugin),
                 new DebugAppearanceStateUsageCommand(this, plugin),
                 new DebugClearCooldownCommand(this, plugin),
                 new DebugEntityIdCommand(this, plugin),
+                new DebugFurnitureCommand(this, plugin),
                 new DebugRealStateUsageCommand(this, plugin),
                 new DebugItemDataCommand(this, plugin),
                 new DebugSetBlockCommand(this, plugin),
@@ -63,8 +68,9 @@ public class BukkitCommandManager extends AbstractCommandManager<CommandSender> 
                 new SendResourcePackCommand(this, plugin),
                 new DebugSaveDefaultResourcesCommand(this, plugin),
                 new DebugCleanCacheCommand(this, plugin),
-                new DebugGenerateInternalAssetsCommand(this, plugin)
-//                new OverrideGiveCommand(this, plugin)
+                new DebugGenerateInternalAssetsCommand(this, plugin),
+                new DebugCustomModelDataCommand(this, plugin),
+                new DebugImageCommand(this, plugin)
         ));
         final LegacyPaperCommandManager<CommandSender> manager = (LegacyPaperCommandManager<CommandSender>) getCommandManager();
         manager.settings().set(ManagerSetting.ALLOW_UNSAFE_REGISTRATION, true);

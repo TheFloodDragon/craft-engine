@@ -1,7 +1,7 @@
 package net.momirealms.craftengine.core.item;
 
-import net.momirealms.craftengine.core.entity.Billboard;
-import net.momirealms.craftengine.core.entity.ItemDisplayContext;
+import net.momirealms.craftengine.core.entity.display.Billboard;
+import net.momirealms.craftengine.core.entity.display.ItemDisplayContext;
 import net.momirealms.craftengine.core.entity.projectile.ProjectileMeta;
 import net.momirealms.craftengine.core.item.equipment.ComponentBasedEquipment;
 import net.momirealms.craftengine.core.item.equipment.Equipment;
@@ -47,6 +47,13 @@ public class ItemSettings {
     Color dyeColor;
     @Nullable
     Color fireworkColor;
+    float keepOnDeathChance = 0f;
+    float destroyOnDeathChance = 0f;
+    @Nullable
+    String dropDisplay = Config.defaultDropDisplayFormat();
+    @Nullable
+    LegacyChatFormatter glowColor = null;
+    Map<CustomDataType<?>, Object> customData = new IdentityHashMap<>(4);
 
     private ItemSettings() {}
 
@@ -108,6 +115,11 @@ public class ItemSettings {
         newSettings.dyeColor = settings.dyeColor;
         newSettings.fireworkColor = settings.fireworkColor;
         newSettings.ingredientSubstitutes = settings.ingredientSubstitutes;
+        newSettings.keepOnDeathChance = settings.keepOnDeathChance;
+        newSettings.destroyOnDeathChance = settings.destroyOnDeathChance;
+        newSettings.glowColor = settings.glowColor;
+        newSettings.dropDisplay = settings.dropDisplay;
+        newSettings.customData = new IdentityHashMap<>(settings.customData);
         return newSettings;
     }
 
@@ -123,73 +135,92 @@ public class ItemSettings {
         return settings;
     }
 
+    @SuppressWarnings("unchecked")
+    public <T> T getCustomData(CustomDataType<T> type) {
+        return (T) this.customData.get(type);
+    }
+
+    public void clearCustomData() {
+        this.customData.clear();
+    }
+
+    @Nullable
+    @SuppressWarnings("unchecked")
+    public <T> T removeCustomData(CustomDataType<?> type) {
+        return (T) this.customData.remove(type);
+    }
+
+    public <T> void addCustomData(CustomDataType<T> key, T value) {
+        this.customData.put(key, value);
+    }
+
     public ProjectileMeta projectileMeta() {
-        return projectileMeta;
+        return this.projectileMeta;
     }
 
     public boolean disableVanillaBehavior() {
-        return disableVanillaBehavior;
+        return this.disableVanillaBehavior;
     }
 
     public Repairable repairable() {
-        return repairable;
+        return this.repairable;
     }
 
     public int fuelTime() {
-        return fuelTime;
+        return this.fuelTime;
     }
 
     public boolean renameable() {
-        return renameable;
+        return this.renameable;
     }
 
     public Set<Key> tags() {
-        return tags;
+        return this.tags;
     }
 
     public Tristate dyeable() {
-        return dyeable;
+        return this.dyeable;
     }
 
     public boolean canEnchant() {
-        return canEnchant;
+        return this.canEnchant;
     }
 
     public List<AnvilRepairItem> repairItems() {
-        return anvilRepairItems;
+        return this.anvilRepairItems;
     }
 
     public boolean respectRepairableComponent() {
-        return respectRepairableComponent;
+        return this.respectRepairableComponent;
     }
 
     public List<Key> ingredientSubstitutes() {
-        return ingredientSubstitutes;
+        return this.ingredientSubstitutes;
     }
 
     @Nullable
     public FoodData foodData() {
-        return foodData;
+        return this.foodData;
     }
 
     @Nullable
     public Key consumeReplacement() {
-        return consumeReplacement;
+        return this.consumeReplacement;
     }
 
     @Nullable
     public CraftRemainder craftRemainder() {
-        return craftRemainder;
+        return this.craftRemainder;
     }
 
     @Nullable
     public Helmet helmet() {
-        return helmet;
+        return this.helmet;
     }
 
     @Nullable
     public ItemEquipment equipment() {
-        return equipment;
+        return this.equipment;
     }
 
     @Nullable
@@ -203,11 +234,29 @@ public class ItemSettings {
     }
 
     public List<DamageSource> invulnerable() {
-        return invulnerable;
+        return this.invulnerable;
     }
 
     public float compostProbability() {
-        return compostProbability;
+        return this.compostProbability;
+    }
+
+    public float keepOnDeathChance() {
+        return this.keepOnDeathChance;
+    }
+
+    public float destroyOnDeathChance() {
+        return this.destroyOnDeathChance;
+    }
+
+    @Nullable
+    public LegacyChatFormatter glowColor() {
+        return this.glowColor;
+    }
+
+    @Nullable
+    public String dropDisplay() {
+        return this.dropDisplay;
     }
 
     public ItemSettings fireworkColor(Color color) {
@@ -257,6 +306,11 @@ public class ItemSettings {
 
     public ItemSettings renameable(boolean renameable) {
         this.renameable = renameable;
+        return this;
+    }
+
+    public ItemSettings dropDisplay(String showName) {
+        this.dropDisplay = showName;
         return this;
     }
 
@@ -310,6 +364,21 @@ public class ItemSettings {
         return this;
     }
 
+    public ItemSettings keepOnDeathChance(float keepChance) {
+        this.keepOnDeathChance = keepChance;
+        return this;
+    }
+
+    public ItemSettings destroyOnDeathChance(float destroyChance) {
+        this.destroyOnDeathChance = destroyChance;
+        return this;
+    }
+
+    public ItemSettings glowColor(LegacyChatFormatter chatFormatter) {
+        this.glowColor = chatFormatter;
+        return this;
+    }
+
     @FunctionalInterface
     public interface Modifier {
 
@@ -340,19 +409,36 @@ public class ItemSettings {
                 boolean bool = ResourceConfigUtils.getAsBoolean(value, "enchantable");
                 return settings -> settings.canEnchant(bool);
             }));
+            registerFactory("keep-on-death-chance", (value -> {
+                float chance = ResourceConfigUtils.getAsFloat(value, "keep-on-death-chance");
+                return settings -> settings.keepOnDeathChance(MiscUtils.clamp(chance, 0, 1));
+            }));
+            registerFactory("destroy-on-death-chance", (value -> {
+                float chance = ResourceConfigUtils.getAsFloat(value, "destroy-on-death-chance");
+                return settings -> settings.destroyOnDeathChance(MiscUtils.clamp(chance, 0, 1));
+            }));
             registerFactory("renameable", (value -> {
                 boolean bool = ResourceConfigUtils.getAsBoolean(value, "renameable");
                 return settings -> settings.renameable(bool);
             }));
+            registerFactory("drop-display", (value -> {
+                if (value instanceof String name) {
+                    return settings -> settings.dropDisplay(name);
+                } else {
+                    boolean bool = ResourceConfigUtils.getAsBoolean(value, "drop-display");
+                    return settings -> settings.dropDisplay(bool ? "" : null);
+                }
+            }));
+            registerFactory("glow-color", (value -> {
+                LegacyChatFormatter chatFormatter = ResourceConfigUtils.getAsEnum(value, LegacyChatFormatter.class, LegacyChatFormatter.WHITE);
+                return settings -> settings.glowColor(chatFormatter);
+            }));
             registerFactory("anvil-repair-item", (value -> {
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> materials = (List<Map<String, Object>>) value;
-                List<AnvilRepairItem> anvilRepairItemList = new ArrayList<>();
-                for (Map<String, Object> material : materials) {
+                List<AnvilRepairItem> anvilRepairItemList = ResourceConfigUtils.parseConfigAsList(value, material -> {
                     int amount = ResourceConfigUtils.getAsInt(material.getOrDefault("amount", 0), "amount");
                     double percent = ResourceConfigUtils.getAsDouble(material.getOrDefault("percent", 0), "percent");
-                    anvilRepairItemList.add(new AnvilRepairItem(MiscUtils.getAsStringList(material.get("target")), amount, percent));
-                }
+                    return new AnvilRepairItem(MiscUtils.getAsStringList(material.get("target")), amount, percent);
+                });
                 return settings -> settings.repairItems(anvilRepairItemList);
             }));
             registerFactory("fuel-time", (value -> {
@@ -384,6 +470,9 @@ public class ItemSettings {
             registerFactory("equippable", (value -> {
                 Map<String, Object> args = MiscUtils.castToMap(value, false);
                 EquipmentData data = EquipmentData.fromMap(args);
+                if (data.assetId() == null) {
+                    throw new IllegalArgumentException("Please move 'equippable' option to 'data' section.");
+                }
                 ComponentBasedEquipment componentBasedEquipment = ComponentBasedEquipment.FACTORY.create(data.assetId(), args);
                 ((AbstractItemManager<?>) CraftEngine.instance().itemManager()).addOrMergeEquipment(componentBasedEquipment);
                 ItemEquipment itemEquipment = new ItemEquipment(Tristate.FALSE, data, componentBasedEquipment);
@@ -425,8 +514,8 @@ public class ItemSettings {
                 Key customTridentItemId = Key.of(ResourceConfigUtils.requireNonEmptyStringOrThrow(args.get("item"), "warning.config.item.settings.projectile.missing_item"));
                 ItemDisplayContext displayType = ItemDisplayContext.valueOf(args.getOrDefault("display-transform", "NONE").toString().toUpperCase(Locale.ENGLISH));
                 Billboard billboard = Billboard.valueOf(args.getOrDefault("billboard", "FIXED").toString().toUpperCase(Locale.ENGLISH));
-                Vector3f translation = ResourceConfigUtils.getAsVector3f(args.getOrDefault("translation", "0"), "translation");
-                Vector3f scale = ResourceConfigUtils.getAsVector3f(args.getOrDefault("scale", "1"), "scale");
+                Vector3f translation = ResourceConfigUtils.getAsVector3f(args.getOrDefault("translation", 0), "translation");
+                Vector3f scale = ResourceConfigUtils.getAsVector3f(args.getOrDefault("scale", 1), "scale");
                 Quaternionf rotation = ResourceConfigUtils.getAsQuaternionf(ResourceConfigUtils.get(args, "rotation"), "rotation");
                 double range = ResourceConfigUtils.getAsDouble(args.getOrDefault("range", 1), "range");
                 return settings -> settings.projectileMeta(new ProjectileMeta(customTridentItemId, displayType, billboard, scale, translation, rotation, range));
@@ -482,7 +571,7 @@ public class ItemSettings {
             registerFactory("ingredient-substitute", (value -> settings -> settings.ingredientSubstitutes(MiscUtils.getAsStringList(value).stream().map(Key::of).toList())));
         }
 
-        private static void registerFactory(String id, ItemSettings.Modifier.Factory factory) {
+        public static void registerFactory(String id, ItemSettings.Modifier.Factory factory) {
             FACTORIES.put(id, factory);
         }
     }

@@ -24,7 +24,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class ShulkerFurnitureHitbox extends AbstractFurnitureHitBox {
+public final class ShulkerFurnitureHitbox extends AbstractFurnitureHitBox {
     private final ShulkerFurnitureHitboxConfig config;
     private final List<FurnitureHitboxPart> parts;
     private final List<Collider> colliders;
@@ -32,7 +32,7 @@ public class ShulkerFurnitureHitbox extends AbstractFurnitureHitBox {
     private final Object despawnPacket;
     private final int[] entityIds;
 
-    public ShulkerFurnitureHitbox(Furniture furniture, ShulkerFurnitureHitboxConfig config) {
+    ShulkerFurnitureHitbox(Furniture furniture, ShulkerFurnitureHitboxConfig config) {
         super(furniture, config);
         this.config = config;
         this.entityIds = acquireEntityIds(CoreReflections.instance$Entity$ENTITY_COUNTER::incrementAndGet);
@@ -75,13 +75,9 @@ public class ShulkerFurnitureHitbox extends AbstractFurnitureHitBox {
             }
         }
         if (VersionHelper.isOrAbove1_20_5() && config.scale() != 1) {
-            try {
-                Object attributeInstance = CoreReflections.constructor$AttributeInstance.newInstance(MAttributeHolders.SCALE, (Consumer<?>) (o) -> {});
-                CoreReflections.method$AttributeInstance$setBaseValue.invoke(attributeInstance, config.scale());
-                packets.add(NetworkReflections.constructor$ClientboundUpdateAttributesPacket0.newInstance(entityIds[1], Collections.singletonList(attributeInstance)));
-            } catch (ReflectiveOperationException e) {
-                CraftEngine.instance().logger().warn("Failed to apply scale attribute", e);
-            }
+            Object attributeIns = FastNMS.INSTANCE.constructor$AttributeInstance(MAttributeHolders.SCALE, (Consumer<?>) (o) -> {});
+            FastNMS.INSTANCE.method$AttributeInstance$setBaseValue(attributeIns, config.scale());
+            packets.add(FastNMS.INSTANCE.constructor$ClientboundUpdateAttributesPacket(this.entityIds[1], Collections.singletonList(attributeIns)));
         }
         config.spawner().accept(entityIds, position.world(), x, y, z, yaw, offset, packets::add, colliders::add, parts::add);
         this.parts = parts;

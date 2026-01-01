@@ -10,12 +10,12 @@ import net.momirealms.craftengine.core.entity.player.InteractionResult;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
 import net.momirealms.craftengine.core.item.behavior.ItemBehaviorFactory;
-import net.momirealms.craftengine.core.item.context.UseOnContext;
 import net.momirealms.craftengine.core.pack.Pack;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.RandomUtils;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 import net.momirealms.craftengine.core.world.WorldEvents;
+import net.momirealms.craftengine.core.world.context.UseOnContext;
 import org.bukkit.GameEvent;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
@@ -28,7 +28,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 public class CompostableItemBehavior extends ItemBehavior {
-    public static final Factory FACTORY = new Factory();
+    public static final ItemBehaviorFactory<CompostableItemBehavior> FACTORY = new Factory();
     private final double chance;
 
     public CompostableItemBehavior(double chance) {
@@ -77,9 +77,9 @@ public class CompostableItemBehavior extends ItemBehavior {
         return InteractionResult.SUCCESS;
     }
 
-    public static class Factory implements ItemBehaviorFactory {
+    private static class Factory implements ItemBehaviorFactory<CompostableItemBehavior> {
         @Override
-        public ItemBehavior create(Pack pack, Path path, String node, Key key, Map<String, Object> arguments) {
+        public CompostableItemBehavior create(Pack pack, Path path, String node, Key key, Map<String, Object> arguments) {
             double chance = ResourceConfigUtils.getAsDouble(arguments.getOrDefault("chance", 0.55), "chance");
             return new CompostableItemBehavior(chance);
         }

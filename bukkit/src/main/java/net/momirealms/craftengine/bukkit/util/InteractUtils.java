@@ -1,6 +1,7 @@
 package net.momirealms.craftengine.bukkit.util;
 
 import io.papermc.paper.entity.Shearable;
+import net.momirealms.craftengine.bukkit.api.BukkitAdaptors;
 import net.momirealms.craftengine.bukkit.item.BukkitItemManager;
 import net.momirealms.craftengine.bukkit.item.behavior.BlockItemBehavior;
 import net.momirealms.craftengine.bukkit.item.behavior.FlintAndSteelItemBehavior;
@@ -15,8 +16,7 @@ import net.momirealms.craftengine.core.entity.player.InteractionHand;
 import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.item.ItemKeys;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
-import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
-import net.momirealms.craftengine.core.item.modifier.AttributeModifiersModifier;
+import net.momirealms.craftengine.core.item.processor.AttributeModifiersProcessor;
 import net.momirealms.craftengine.core.item.recipe.RecipeType;
 import net.momirealms.craftengine.core.item.recipe.UniqueIdItem;
 import net.momirealms.craftengine.core.item.recipe.input.SingleItemInput;
@@ -25,6 +25,7 @@ import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.util.*;
 import net.momirealms.craftengine.core.world.BlockHitResult;
 import net.momirealms.craftengine.core.world.BlockPos;
+import net.momirealms.craftengine.core.world.context.BlockPlaceContext;
 import org.bukkit.DyeColor;
 import org.bukkit.GameMode;
 import org.bukkit.Registry;
@@ -195,7 +196,7 @@ public final class InteractUtils {
                         && redstoneWire.getFace(BlockFace.WEST).equals(RedstoneWire.Connection.NONE);
                 if (isCross || isDot) {
                     BlockPos blockPos = result.getBlockPos();
-                    BukkitWorld bukkitWorld = new BukkitWorld(player.getWorld());
+                    BukkitWorld bukkitWorld = BukkitAdaptors.adapt(player.getWorld());
                     World world = bukkitWorld.platformWorld();
 
                     Direction[] directions = {Direction.EAST, Direction.WEST, Direction.SOUTH, Direction.NORTH};
@@ -1050,7 +1051,7 @@ public final class InteractUtils {
 
     public static boolean isFullHealth(Entity entity) {
         if (entity instanceof LivingEntity living) {
-            Key key = AttributeModifiersModifier.getNativeAttributeName(Key.of("max_health"));
+            Key key = AttributeModifiersProcessor.getNativeAttributeName(Key.of("max_health"));
             Attribute maxHealthAttr = Registry.ATTRIBUTE.get(KeyUtils.toNamespacedKey(key));
             if (maxHealthAttr == null) return false;
             AttributeInstance attribute = living.getAttribute(maxHealthAttr);

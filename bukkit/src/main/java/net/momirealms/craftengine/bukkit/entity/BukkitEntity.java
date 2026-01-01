@@ -1,9 +1,9 @@
 package net.momirealms.craftengine.bukkit.entity;
 
+import net.momirealms.craftengine.bukkit.api.BukkitAdaptors;
 import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.util.EntityUtils;
 import net.momirealms.craftengine.bukkit.util.LocationUtils;
-import net.momirealms.craftengine.bukkit.world.BukkitWorld;
 import net.momirealms.craftengine.core.entity.AbstractEntity;
 import net.momirealms.craftengine.core.entity.data.EntityData;
 import net.momirealms.craftengine.core.util.Direction;
@@ -62,7 +62,7 @@ public class BukkitEntity extends AbstractEntity {
 
     @Override
     public World world() {
-        return new BukkitWorld(platformEntity().getWorld());
+        return BukkitAdaptors.adapt(platformEntity().getWorld());
     }
 
     @Override

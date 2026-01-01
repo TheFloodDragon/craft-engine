@@ -4,10 +4,10 @@ import net.momirealms.craftengine.core.block.CustomBlock;
 import net.momirealms.craftengine.core.block.ImmutableBlockState;
 import net.momirealms.craftengine.core.block.behavior.*;
 import net.momirealms.craftengine.core.entity.player.InteractionResult;
-import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
-import net.momirealms.craftengine.core.item.context.UseOnContext;
 import net.momirealms.craftengine.core.world.BlockAccessor;
 import net.momirealms.craftengine.core.world.BlockPos;
+import net.momirealms.craftengine.core.world.context.BlockPlaceContext;
+import net.momirealms.craftengine.core.world.context.UseOnContext;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 
 public class UnsafeCompositeBlockBehavior extends BukkitBlockBehavior
-        implements FallOnBlockBehavior, PlaceLiquidBlockBehavior, IsPathFindableBlockBehavior {
+        implements FallOnBlockBehavior, PlaceLiquidBlockBehavior, IsPathFindableBlockBehavior, CanBeReplacedBlockBehavior {
     private final AbstractBlockBehavior[] behaviors;
 
     public UnsafeCompositeBlockBehavior(CustomBlock customBlock, List<AbstractBlockBehavior> behaviors) {
@@ -258,8 +258,8 @@ public class UnsafeCompositeBlockBehavior extends BukkitBlockBehavior
     @Override
     public boolean canBeReplaced(BlockPlaceContext context, ImmutableBlockState state) {
         for (AbstractBlockBehavior behavior : this.behaviors) {
-            if (!behavior.canBeReplaced(context, state)) {
-                return false;
+            if (behavior instanceof CanBeReplacedBlockBehavior canBeReplacedBlockBehavior) {
+                return canBeReplacedBlockBehavior.canBeReplaced(context, state);
             }
         }
         return super.canBeReplaced(context, state);

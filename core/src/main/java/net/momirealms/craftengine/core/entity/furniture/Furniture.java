@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.momirealms.craftengine.core.entity.AbstractEntity;
+import net.momirealms.craftengine.core.entity.Cullable;
 import net.momirealms.craftengine.core.entity.Entity;
 import net.momirealms.craftengine.core.entity.furniture.element.FurnitureElement;
 import net.momirealms.craftengine.core.entity.furniture.element.FurnitureElementConfig;
@@ -17,8 +18,8 @@ import net.momirealms.craftengine.core.entity.seat.Seat;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.entityculling.CullingData;
 import net.momirealms.craftengine.core.util.Key;
+import net.momirealms.craftengine.core.util.LazyReference;
 import net.momirealms.craftengine.core.util.QuaternionUtils;
-import net.momirealms.craftengine.core.world.Cullable;
 import net.momirealms.craftengine.core.world.Vec3d;
 import net.momirealms.craftengine.core.world.World;
 import net.momirealms.craftengine.core.world.WorldPosition;
@@ -28,16 +29,14 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public abstract class Furniture implements Cullable {
     public final CustomFurniture config;
     public final FurnitureDataAccessor dataAccessor;
     public final Entity metaDataEntity;
+    public final int metaDataEntityId;
 
     protected CullingData cullingData;
     protected FurnitureVariant currentVariant;
@@ -54,6 +53,7 @@ public abstract class Furniture implements Cullable {
         this.config = config;
         this.dataAccessor = data;
         this.metaDataEntity = metaDataEntity;
+        this.metaDataEntityId = metaDataEntity.entityId();
         this.setVariantInternal(config.getVariant(data));
     }
 
@@ -65,11 +65,21 @@ public abstract class Furniture implements Cullable {
         return this.currentVariant;
     }
 
-    public abstract boolean setVariant(String variantName);
+    public boolean setVariant(String variantName) {
+        return this.setVariant(variantName, false);
+    }
 
-    public abstract CompletableFuture<Boolean> moveTo(WorldPosition position);
+    public abstract boolean setVariant(String variantName, boolean force);
 
-    protected abstract void refresh();
+    public CompletableFuture<Boolean> moveTo(WorldPosition position) {
+        return this.moveTo(position, false);
+    }
+
+    public abstract CompletableFuture<Boolean> moveTo(WorldPosition position, boolean force);
+
+    public abstract void refresh();
+
+    public abstract void refresh(Player player);
 
     protected void clearColliders() {
         if (this.colliders != null) {
@@ -95,11 +105,23 @@ public abstract class Furniture implements Cullable {
         FurnitureHitBoxConfig<?>[] furnitureHitBoxConfigs = variant.hitBoxConfigs();
         ObjectArrayList<Collider> colliders = new ObjectArrayList<>(furnitureHitBoxConfigs.length);
         this.hitboxes = new FurnitureHitBox[furnitureHitBoxConfigs.length];
+        // 辅助map，用于排除重复的座椅
+        LazyReference<Map<Vector3f, Seat<FurnitureHitBox>>> seatMap = LazyReference.lazyReference(HashMap::new);
         for (int i = 0; i < furnitureHitBoxConfigs.length; i++) {
             FurnitureHitBox hitbox = furnitureHitBoxConfigs[i].create(this);
             this.hitboxes[i] = hitbox;
             for (FurnitureHitboxPart part : hitbox.parts()) {
                 this.hitboxMap.put(part.entityId(), hitbox);
+            }
+            Seat<FurnitureHitBox>[] seats = hitbox.seats();
+            for (int index = 0; index < seats.length; index++) {
+                Map<Vector3f, Seat<FurnitureHitBox>> tempMap = seatMap.get();
+                Vector3f seatPos = seats[index].config().position();
+                if (tempMap.containsKey(seatPos)) {
+                    seats[index] = tempMap.get(seatPos);
+                } else {
+                    tempMap.put(seatPos, seats[index]);
+                }
             }
             hitbox.collectVirtualEntityId(virtualEntityIds::addLast);
             colliders.addAll(hitbox.colliders());
@@ -274,11 +296,11 @@ public abstract class Furniture implements Cullable {
     }
 
     public int entityId() {
-        return this.metaDataEntity.entityId();
+        return this.metaDataEntityId;
     }
 
     public boolean hasExternalModel() {
-        return hasExternalModel;
+        return this.hasExternalModel;
     }
 
     public Vec3d getRelativePosition(Vector3f position) {

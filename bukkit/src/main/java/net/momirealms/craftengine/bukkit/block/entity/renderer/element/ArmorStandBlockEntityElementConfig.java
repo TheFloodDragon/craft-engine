@@ -8,10 +8,13 @@ import net.momirealms.craftengine.core.block.entity.render.element.BlockEntityEl
 import net.momirealms.craftengine.core.block.entity.render.element.BlockEntityElementConfigFactory;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.Item;
+import net.momirealms.craftengine.core.item.ItemKeys;
 import net.momirealms.craftengine.core.util.Key;
+import net.momirealms.craftengine.core.util.LegacyChatFormatter;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 import net.momirealms.craftengine.core.world.BlockPos;
 import net.momirealms.craftengine.core.world.World;
+import org.bukkit.inventory.ItemStack;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -21,21 +24,24 @@ import java.util.function.Function;
 
 public class ArmorStandBlockEntityElementConfig implements BlockEntityElementConfig<ArmorStandBlockEntityElement> {
     public static final Factory FACTORY = new Factory();
-    private final Function<Player, List<Object>> lazyMetadataPacket;
-    private final Function<Player, Item<?>> item;
-    private final Vector3f scale;
-    private final Vector3f position;
-    private final float xRot;
-    private final float yRot;
-    private final boolean small;
+    public final Function<Player, List<Object>> lazyMetadataPacket;
+    public final Key itemId;
+    public final float scale;
+    public final Vector3f position;
+    public final float xRot;
+    public final float yRot;
+    public final boolean small;
+    public final LegacyChatFormatter glowColor;
 
-    public ArmorStandBlockEntityElementConfig(Function<Player, Item<?>> item,
-                                              Vector3f scale,
+    public ArmorStandBlockEntityElementConfig(Key itemId,
+                                              float scale,
                                               Vector3f position,
                                               float xRot,
                                               float yRot,
-                                              boolean small) {
-        this.item = item;
+                                              boolean small,
+                                              LegacyChatFormatter glowColor) {
+        this.itemId = itemId;
+        this.glowColor = glowColor;
         this.scale = scale;
         this.position = position;
         this.xRot = xRot;
@@ -43,7 +49,11 @@ public class ArmorStandBlockEntityElementConfig implements BlockEntityElementCon
         this.small = small;
         this.lazyMetadataPacket = player -> {
             List<Object> dataValues = new ArrayList<>(2);
-            BaseEntityData.SharedFlags.addEntityData((byte) 0x20, dataValues);
+            if (glowColor != null) {
+                BaseEntityData.SharedFlags.addEntityData((byte) 0x60, dataValues);
+            } else {
+                BaseEntityData.SharedFlags.addEntityData((byte) 0x20, dataValues);
+            }
             if (small) {
                 ArmorStandData.ArmorStandFlags.addEntityData((byte) 0x01, dataValues);
             }
@@ -58,6 +68,9 @@ public class ArmorStandBlockEntityElementConfig implements BlockEntityElementCon
 
     @Override
     public ArmorStandBlockEntityElement create(World world, BlockPos pos, ArmorStandBlockEntityElement previous) {
+        if (previous.config.scale != scale || previous.config.glowColor != glowColor) {
+            return null;
+        }
         return new ArmorStandBlockEntityElement(this, pos, previous.entityId,
                 previous.config.yRot != this.yRot ||
                 previous.config.xRot != this.xRot ||
@@ -79,10 +92,15 @@ public class ArmorStandBlockEntityElementConfig implements BlockEntityElementCon
     }
 
     public Item<?> item(Player player) {
-        return this.item.apply(player);
+        Item<ItemStack> wrappedItem = BukkitItemManager.instance().createWrappedItem(this.itemId, player);
+        return wrappedItem == null ? BukkitItemManager.instance().createWrappedItem(ItemKeys.BARRIER, player) : wrappedItem ;
     }
 
-    public Vector3f scale() {
+    public Key itemId() {
+        return this.itemId;
+    }
+
+    public float scale() {
         return this.scale;
     }
 
@@ -116,14 +134,14 @@ public class ArmorStandBlockEntityElementConfig implements BlockEntityElementCon
 
         @Override
         public ArmorStandBlockEntityElementConfig create(Map<String, Object> arguments) {
-            Key itemId = Key.of(ResourceConfigUtils.requireNonEmptyStringOrThrow(arguments.get("item"), "warning.config.block.state.entity_renderer.armor_stand.missing_item"));
             return new ArmorStandBlockEntityElementConfig(
-                    player -> BukkitItemManager.instance().createWrappedItem(itemId, player),
-                    ResourceConfigUtils.getAsVector3f(arguments.getOrDefault("scale", 1f), "scale"),
+                    Key.of(ResourceConfigUtils.requireNonEmptyStringOrThrow(arguments.get("item"), "warning.config.block.state.entity_renderer.armor_stand.missing_item")),
+                    ResourceConfigUtils.getAsFloat(arguments.getOrDefault("scale", 1f), "scale"),
                     ResourceConfigUtils.getAsVector3f(arguments.getOrDefault("position", 0.5f), "position"),
                     ResourceConfigUtils.getAsFloat(arguments.getOrDefault("pitch", 0f), "pitch"),
                     ResourceConfigUtils.getAsFloat(arguments.getOrDefault("yaw", 0f), "yaw"),
-                    ResourceConfigUtils.getAsBoolean(arguments.getOrDefault("small", false), "small")
+                    ResourceConfigUtils.getAsBoolean(arguments.getOrDefault("small", false), "small"),
+                    ResourceConfigUtils.getAsEnum(arguments.get("glow-color"), LegacyChatFormatter.class, null)
             );
         }
     }

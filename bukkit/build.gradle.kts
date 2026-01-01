@@ -1,5 +1,5 @@
 plugins {
-    id("com.gradleup.shadow") version "9.2.2"
+    id("com.gradleup.shadow") version "9.3.0"
     id("maven-publish")
 }
 
@@ -9,6 +9,7 @@ repositories {
     maven("https://repo.momirealms.net/releases/")
     maven("https://libraries.minecraft.net/")
     maven("https://repo.papermc.io/repository/maven-public/")
+    maven("https://repo.gtemc.net/releases/")
 }
 
 dependencies {
@@ -62,6 +63,10 @@ dependencies {
     compileOnly("com.mojang:authlib:${rootProject.properties["authlib_version"]}")
     // concurrentutil
     compileOnly("ca.spottedleaf:concurrentutil:${rootProject.properties["concurrent_util_version"]}")
+    // ItemBridge
+    compileOnly("cn.gtemc:itembridge:${rootProject.properties["itembridge_version"]}")
+    // LevelerBridge
+    compileOnly("cn.gtemc:levelerbridge:${rootProject.properties["levelerbridge_version"]}")
 }
 
 java {
@@ -90,6 +95,8 @@ tasks {
         relocate("net.kyori", "net.momirealms.craftengine.libraries")
         relocate("net.momirealms.sparrow.nbt", "net.momirealms.craftengine.libraries.nbt")
         relocate("net.momirealms.antigrieflib", "net.momirealms.craftengine.libraries.antigrieflib")
+        relocate("cn.gtemc.itembridge", "net.momirealms.craftengine.libraries.itembridge")
+        relocate("cn.gtemc.levelerbridge", "net.momirealms.craftengine.libraries.levelerbridge")
         relocate("org.incendo", "net.momirealms.craftengine.libraries")
         relocate("dev.dejvokep", "net.momirealms.craftengine.libraries")
         relocate("org.bstats", "net.momirealms.craftengine.libraries.bstats")
@@ -128,7 +135,7 @@ publishing {
         }
     }
     publications {
-        create<MavenPublication>("mavenJava") {
+        create<MavenPublication>("bukkit") {
             groupId = "net.momirealms"
             artifactId = "craft-engine-bukkit"
             version = rootProject.properties["project_version"].toString()
@@ -146,7 +153,7 @@ publishing {
                 }
             }
         }
-        create<MavenPublication>("mavenJavaSnapshot") {
+        create<MavenPublication>("bukkitSnapshot") {
             groupId = "net.momirealms"
             artifactId = "craft-engine-bukkit"
             version = "${rootProject.properties["project_version"]}-SNAPSHOT"
@@ -170,11 +177,11 @@ publishing {
 tasks.register("publishRelease") {
     group = "publishing"
     description = "Publishes to the release repository"
-    dependsOn("publishMavenJavaPublicationToReleaseRepository")
+    dependsOn("publishBukkitPublicationToReleasesRepository")
 }
 
 tasks.register("publishSnapshot") {
     group = "publishing"
     description = "Publishes to the snapshot repository"
-    dependsOn("publishMavenJavaSnapshotPublicationToSnapshotRepository")
+    dependsOn("publishBukkitSnapshotPublicationToSnapshotRepository")
 }

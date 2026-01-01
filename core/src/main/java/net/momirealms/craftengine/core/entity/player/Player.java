@@ -45,9 +45,11 @@ public abstract class Player extends AbstractEntity implements NetWorkUser {
 
     public abstract void setClientSideCanBreakBlock(boolean canBreak);
 
-    public abstract void stopMiningBlock();
+    public abstract void finishMiningBlock();
 
     public abstract void preventMiningBlock();
+
+    public abstract void stopMiningBlock();
 
     public abstract void abortMiningBlock();
 
@@ -231,6 +233,8 @@ public abstract class Player extends AbstractEntity implements NetWorkUser {
     public abstract void clearTrackedBlockEntities();
 
     public abstract int clearOrCountMatchingInventoryItems(Key itemId, int count);
+
+    public abstract boolean isBedrock();
 
     @Override
     public void remove() {

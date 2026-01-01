@@ -23,14 +23,12 @@ import net.momirealms.craftengine.core.item.Item;
 import net.momirealms.craftengine.core.item.ItemBuildContext;
 import net.momirealms.craftengine.core.item.ItemSettings;
 import net.momirealms.craftengine.core.item.behavior.ItemBehavior;
-import net.momirealms.craftengine.core.item.context.BlockPlaceContext;
-import net.momirealms.craftengine.core.item.context.UseOnContext;
 import net.momirealms.craftengine.core.item.setting.FoodData;
 import net.momirealms.craftengine.core.item.updater.ItemUpdateResult;
 import net.momirealms.craftengine.core.plugin.config.Config;
 import net.momirealms.craftengine.core.plugin.context.ContextHolder;
+import net.momirealms.craftengine.core.plugin.context.EventTrigger;
 import net.momirealms.craftengine.core.plugin.context.PlayerOptionalContext;
-import net.momirealms.craftengine.core.plugin.context.event.EventTrigger;
 import net.momirealms.craftengine.core.plugin.context.parameter.DirectContextParameters;
 import net.momirealms.craftengine.core.sound.SoundSet;
 import net.momirealms.craftengine.core.sound.SoundSource;
@@ -38,6 +36,8 @@ import net.momirealms.craftengine.core.util.*;
 import net.momirealms.craftengine.core.world.BlockHitResult;
 import net.momirealms.craftengine.core.world.BlockPos;
 import net.momirealms.craftengine.core.world.Vec3d;
+import net.momirealms.craftengine.core.world.context.BlockPlaceContext;
+import net.momirealms.craftengine.core.world.context.UseOnContext;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -57,10 +57,7 @@ import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.*;
 
 import java.util.*;
@@ -192,6 +189,11 @@ public class ItemEventListener implements Listener {
                 boolean flag = player.isSneaking() && hasItem;
                 if (!flag) {
                     if (immutableBlockState.behavior() instanceof AbstractBlockBehavior behavior) {
+                        if (!BukkitCraftEngine.instance().antiGriefProvider().canInteract(player, block.getLocation())) {
+                            serverPlayer.updateLastSuccessfulInteractionTick(serverPlayer.gameTicks());
+                            event.setCancelled(true);
+                            return;
+                        }
                         InteractionResult result = behavior.useOnBlock(useOnContext, immutableBlockState);
                         if (result.success()) {
                             serverPlayer.updateLastSuccessfulInteractionTick(serverPlayer.gameTicks());
@@ -373,8 +375,9 @@ public class ItemEventListener implements Listener {
             return;
         Player player = event.getPlayer();
         BukkitServerPlayer serverPlayer = BukkitAdaptors.adapt(player);
-        if (serverPlayer.isSpectatorMode())
+        if (serverPlayer == null || serverPlayer.isSpectatorMode()) {
             return;
+        }
         // Gets the item in hand
         InteractionHand hand = event.getHand() == EquipmentSlot.HAND ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
         // prevents duplicated events
@@ -574,11 +577,14 @@ public class ItemEventListener implements Listener {
      */
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onDropItem(PlayerDropItemEvent event) {
+        BukkitServerPlayer serverPlayer = BukkitAdaptors.adapt(event.getPlayer());
+        if (serverPlayer == null) return;
+        serverPlayer.stopMiningBlock();
         if (!Config.triggerUpdateDrop()) return;
         org.bukkit.entity.Item itemDrop = event.getItemDrop();
         ItemStack itemStack = itemDrop.getItemStack();
         Item<ItemStack> wrapped = this.itemManager.wrap(itemStack);
-        ItemUpdateResult result = this.itemManager.updateItem(wrapped, () -> ItemBuildContext.of(BukkitAdaptors.adapt(event.getPlayer())));
+        ItemUpdateResult result = this.itemManager.updateItem(wrapped, () -> ItemBuildContext.of(serverPlayer));
         if (result.updated()) {
             itemDrop.setItemStack((ItemStack) result.finalItem().getItem());
         }
@@ -626,6 +632,14 @@ public class ItemEventListener implements Listener {
            return;
         }
         event.setCurrentItem((ItemStack) result.finalItem().getItem());
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerChangeWorld(PlayerChangedWorldEvent event) {
+        Player player = event.getPlayer();
+        BukkitServerPlayer serverPlayer = BukkitAdaptors.adapt(player);
+        if (serverPlayer == null) return;
+        serverPlayer.stopMiningBlock();
     }
 
     @SuppressWarnings("DuplicatedCode")

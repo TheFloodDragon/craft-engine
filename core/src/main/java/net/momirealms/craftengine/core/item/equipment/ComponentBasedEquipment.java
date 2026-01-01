@@ -2,8 +2,8 @@ package net.momirealms.craftengine.core.item.equipment;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.momirealms.craftengine.core.item.modifier.EquippableAssetIdModifier;
-import net.momirealms.craftengine.core.item.modifier.ItemDataModifier;
+import net.momirealms.craftengine.core.item.processor.EquippableAssetIdProcessor;
+import net.momirealms.craftengine.core.item.processor.ItemProcessor;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.MiscUtils;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
@@ -16,8 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-public class ComponentBasedEquipment extends AbstractEquipment implements Supplier<JsonObject> {
-    public static final Factory FACTORY = new Factory();
+public final class ComponentBasedEquipment extends AbstractEquipment implements Supplier<JsonObject> {
+    public static final EquipmentFactory<ComponentBasedEquipment> FACTORY = new Factory();
     private final EnumMap<EquipmentLayerType, List<Layer>> layers;
 
     public ComponentBasedEquipment(Key assetId) {
@@ -26,13 +26,8 @@ public class ComponentBasedEquipment extends AbstractEquipment implements Suppli
     }
 
     @Override
-    public Key type() {
-        return Equipments.COMPONENT;
-    }
-
-    @Override
-    public <I> List<ItemDataModifier<I>> modifiers() {
-        return List.of(new EquippableAssetIdModifier<>(this.assetId));
+    public List<ItemProcessor> modifiers() {
+        return List.of(new EquippableAssetIdProcessor(this.assetId));
     }
 
     public EnumMap<EquipmentLayerType, List<Layer>> layers() {
@@ -65,7 +60,7 @@ public class ComponentBasedEquipment extends AbstractEquipment implements Suppli
         layersJson.add(key, layersArray);
     }
 
-    public static class Factory implements EquipmentFactory {
+    private static class Factory implements EquipmentFactory<ComponentBasedEquipment> {
 
         @Override
         public ComponentBasedEquipment create(Key id, Map<String, Object> args) {

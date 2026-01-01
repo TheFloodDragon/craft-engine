@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CooldownData {
-    public static final Key COOLDOWN_KEY = Key.of("craftengine:cooldown");
+    public static final Key COOLDOWN_KEY = Key.ce("cooldown");
     private final Map<String, Long> cooldownMap = Collections.synchronizedMap(new HashMap<>());
 
     public boolean isOnCooldown(String key) {
@@ -42,6 +42,10 @@ public class CooldownData {
 
     public void clearCooldowns() {
         this.cooldownMap.clear();
+    }
+
+    public Long getCooldown(String key) {
+        return this.cooldownMap.get(key);
     }
 
     public static byte[] toBytes(CooldownData data) throws IOException {

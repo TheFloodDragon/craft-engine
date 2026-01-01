@@ -24,7 +24,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -67,8 +66,8 @@ public final class CoreReflections {
     
     public static final Class<?> clazz$ResourceLocation = requireNonNull(
             BukkitReflectionUtils.findReobfOrMojmapClass(
-                    "resources.MinecraftKey",
-                    "resources.ResourceLocation"
+                    List.of("resources.MinecraftKey"),
+                    List.of("resources.ResourceLocation", "resources.Identifier")
             )
     );
 
@@ -2863,12 +2862,12 @@ public final class CoreReflections {
     );
 
     // 1.20.5+
-    public static final Constructor<?> constructor$AttributeInstance =
-            ReflectionUtils.getConstructor(clazz$AttributeInstance, clazz$Holder, Consumer.class);
+//    public static final Constructor<?> constructor$AttributeInstance =
+//            ReflectionUtils.getConstructor(clazz$AttributeInstance, clazz$Holder, Consumer.class);
 
-    public static final Method method$AttributeInstance$setBaseValue = requireNonNull(
-            ReflectionUtils.getMethod(clazz$AttributeInstance, void.class, double.class)
-    );
+//    public static final Method method$AttributeInstance$setBaseValue = requireNonNull(
+//            ReflectionUtils.getMethod(clazz$AttributeInstance, void.class, double.class)
+//    );
 
     public static final Class<?> clazz$Rotation = requireNonNull(
             BukkitReflectionUtils.findReobfOrMojmapClass(
@@ -2957,8 +2956,8 @@ public final class CoreReflections {
 
     public static final Class<?> clazz$AbstractArrow = requireNonNull(
             BukkitReflectionUtils.findReobfOrMojmapClass(
-                    "world.entity.projectile.EntityArrow",
-                    "world.entity.projectile.AbstractArrow"
+                    List.of("world.entity.projectile.EntityArrow", "world.entity.projectile.arrow.EntityArrow"),
+                    List.of("world.entity.projectile.AbstractArrow", "world.entity.projectile.arrow.AbstractArrow")
             )
     );
 
@@ -2996,8 +2995,8 @@ public final class CoreReflections {
 
     public static final Class<?> clazz$AbstractArrow$Pickup = requireNonNull(
             BukkitReflectionUtils.findReobfOrMojmapClass(
-                    "world.entity.projectile.EntityArrow$PickupStatus",
-                    "world.entity.projectile.AbstractArrow$Pickup"
+                    List.of("world.entity.projectile.EntityArrow$PickupStatus", "world.entity.projectile.arrow.EntityArrow$PickupStatus"),
+                    List.of("world.entity.projectile.AbstractArrow$Pickup", "world.entity.projectile.arrow.AbstractArrow$Pickup")
             )
     );
 
@@ -4406,8 +4405,8 @@ public final class CoreReflections {
 
     public static final Class<?> clazz$ImpossibleTrigger = requireNonNull(
             BukkitReflectionUtils.findReobfOrMojmapClass(
-                    "advancements.critereon.CriterionTriggerImpossible",
-                    "advancements.critereon.ImpossibleTrigger"
+                    List.of("advancements.critereon.CriterionTriggerImpossible", "advancements.criterion.CriterionTriggerImpossible"),
+                    List.of("advancements.critereon.ImpossibleTrigger", "advancements.criterion.ImpossibleTrigger")
             )
     );
 
@@ -4417,8 +4416,8 @@ public final class CoreReflections {
 
     public static final Class<?> clazz$ImpossibleTrigger$TriggerInstance = requireNonNull(
             BukkitReflectionUtils.findReobfOrMojmapClass(
-                    "advancements.critereon.CriterionTriggerImpossible$a",
-                    "advancements.critereon.ImpossibleTrigger$TriggerInstance"
+                    List.of("advancements.critereon.CriterionTriggerImpossible$a", "advancements.criterion.CriterionTriggerImpossible$a"),
+                    List.of("advancements.critereon.ImpossibleTrigger$TriggerInstance", "advancements.criterion.ImpossibleTrigger$TriggerInstance")
             )
     );
 
@@ -4645,4 +4644,51 @@ public final class CoreReflections {
                     "world.scores.PlayerTeam"
             )
     );
+
+    public static final Class<?> clazz$Rotations = requireNonNull(
+            BukkitReflectionUtils.findReobfOrMojmapClass(
+                    "core.Vector3f",
+                    "core.Rotations"
+            )
+    );
+
+    public static final Constructor<?> constructor$Rotations = requireNonNull(
+            ReflectionUtils.getConstructor(clazz$Rotations, float.class, float.class, float.class)
+    );
+
+    public static final Object instance$ArmorStand$DEFAULT_HEAD_POSE;
+    public static final Object instance$ArmorStand$DEFAULT_BODY_POSE;
+    public static final Object instance$ArmorStand$DEFAULT_LEFT_ARM_POSE;
+    public static final Object instance$ArmorStand$DEFAULT_RIGHT_ARM_POSE;
+    public static final Object instance$ArmorStand$DEFAULT_LEFT_LEG_POSE;
+    public static final Object instance$ArmorStand$DEFAULT_RIGHT_LEG_POSE;
+
+    static {
+        try {
+            instance$ArmorStand$DEFAULT_HEAD_POSE = constructor$Rotations.newInstance(0.0F, 0.0F, 0.0F);
+            instance$ArmorStand$DEFAULT_BODY_POSE = constructor$Rotations.newInstance(0.0F, 0.0F, 0.0F);
+            instance$ArmorStand$DEFAULT_LEFT_ARM_POSE = constructor$Rotations.newInstance(-10.0F, 0.0F, -10.0F);
+            instance$ArmorStand$DEFAULT_RIGHT_ARM_POSE = constructor$Rotations.newInstance(-15.0F, 0.0F, 10.0F);
+            instance$ArmorStand$DEFAULT_LEFT_LEG_POSE = constructor$Rotations.newInstance(-1.0F, 0.0F, -1.0F);
+            instance$ArmorStand$DEFAULT_RIGHT_LEG_POSE = constructor$Rotations.newInstance(1.0F, 0.0F, 1.0F);
+        } catch (ReflectiveOperationException e) {
+            throw new ReflectionInitException("Failed to init ArmorStand", e);
+        }
+    }
+
+    public static final Field field$DedicatedServerProperties$enforceSecureProfile = requireNonNull(
+            ReflectionUtils.getDeclaredField(
+                    clazz$DedicatedServerProperties, VersionHelper.isOrAbove1_21_11() ? new String[]{"enforceSecureProfile", "ag"}
+                            : VersionHelper.isOrAbove1_21_9() ? new String[]{"enforceSecureProfile", "af"}
+                            : VersionHelper.isOrAbove1_21_2() ? new String[]{"enforceSecureProfile", "X"}
+                            : VersionHelper.isOrAbove1_21() ? new String[]{"enforceSecureProfile", "Y"}
+                            : VersionHelper.isOrAbove1_20_5() ? new String[]{"enforceSecureProfile", "X"}
+                            : new String[]{"enforceSecureProfile", "W"}
+            )
+    );
+
+    public static final MethodHandle methodHandle$DedicatedServerProperties$enforceSecureProfileSetter = requireNonNull(
+            ReflectionUtils.unreflectSetter(field$DedicatedServerProperties$enforceSecureProfile)
+    ).asType(MethodType.methodType(void.class, Object.class, boolean.class));
+
 }

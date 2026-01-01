@@ -11,22 +11,32 @@ import java.util.Map;
 import java.util.Optional;
 
 public class FurnitureElementConfigs {
-    public static final Key ITEM_DISPLAY = Key.of("craftengine:item_display");
-    public static final Key TEXT_DISPLAY = Key.of("craftengine:text_display");
-    public static final Key ITEM = Key.of("craftengine:item");
+    protected FurnitureElementConfigs() {}
 
-    public static void register(Key key, FurnitureElementConfigFactory<?> type) {
-        ((WritableRegistry<FurnitureElementConfigFactory<?>>) BuiltInRegistries.FURNITURE_ELEMENT_TYPE)
+    public static <E extends FurnitureElement> FurnitureElementConfigType<E> register(Key key, FurnitureElementConfigFactory<E> factory) {
+        FurnitureElementConfigType<E> type = new FurnitureElementConfigType<>(key, factory);
+        ((WritableRegistry<FurnitureElementConfigType<? extends FurnitureElement>>) BuiltInRegistries.FURNITURE_ELEMENT_TYPE)
                 .register(ResourceKey.create(Registries.FURNITURE_ELEMENT_TYPE.location(), key), type);
+        return type;
     }
 
+    @SuppressWarnings("unchecked")
     public static <E extends FurnitureElement> FurnitureElementConfig<E> fromMap(Map<String, Object> arguments) {
-        Key type = Optional.ofNullable(arguments.get("type")).map(String::valueOf).map(it -> Key.withDefaultNamespace(it, "craftengine")).orElse(ITEM_DISPLAY);
-        @SuppressWarnings("unchecked")
-        FurnitureElementConfigFactory<E> factory = (FurnitureElementConfigFactory<E>) BuiltInRegistries.FURNITURE_ELEMENT_TYPE.getValue(type);
-        if (factory == null) {
+        Key type = guessType(arguments);
+        FurnitureElementConfigType<E> configType = (FurnitureElementConfigType<E>) BuiltInRegistries.FURNITURE_ELEMENT_TYPE.getValue(type);
+        if (configType == null) {
             throw new LocalizedResourceConfigException("warning.config.furniture.element.invalid_type", type.toString());
         }
-        return factory.create(arguments);
+        return configType.factory().create(arguments);
+    }
+
+    private static Key guessType(Map<String, Object> arguments) {
+        return Key.ce(Optional.ofNullable(arguments.get("type")).map(String::valueOf).orElseGet(() -> {
+            if (arguments.containsKey("text")) {
+                return "text_display";
+            } else {
+                return "item_display";
+            }
+        }));
     }
 }

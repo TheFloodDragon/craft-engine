@@ -5,12 +5,10 @@ import net.momirealms.craftengine.bukkit.nms.FastNMS;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.CoreReflections;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MAttributeHolders;
 import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.MEntityTypes;
-import net.momirealms.craftengine.bukkit.plugin.reflection.minecraft.NetworkReflections;
 import net.momirealms.craftengine.core.entity.furniture.Collider;
 import net.momirealms.craftengine.core.entity.furniture.Furniture;
 import net.momirealms.craftengine.core.entity.furniture.hitbox.FurnitureHitboxPart;
 import net.momirealms.craftengine.core.entity.player.Player;
-import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.world.Vec3d;
 import net.momirealms.craftengine.core.world.WorldPosition;
 import net.momirealms.craftengine.core.world.collision.AABB;
@@ -21,7 +19,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public class HappyGhastFurnitureHitbox extends AbstractFurnitureHitBox {
+public final class HappyGhastFurnitureHitbox extends AbstractFurnitureHitBox {
     private final HappyGhastFurnitureHitboxConfig config;
     private final Collider collider;
     private final Object despawnPacket;
@@ -31,7 +29,7 @@ public class HappyGhastFurnitureHitbox extends AbstractFurnitureHitBox {
     private final int entityId;
     private final float yaw;
 
-    public HappyGhastFurnitureHitbox(Furniture furniture, HappyGhastFurnitureHitboxConfig config) {
+    HappyGhastFurnitureHitbox(Furniture furniture, HappyGhastFurnitureHitboxConfig config) {
         super(furniture, config);
         this.config = config;
         WorldPosition position = furniture.position();
@@ -43,13 +41,9 @@ public class HappyGhastFurnitureHitbox extends AbstractFurnitureHitBox {
         this.packets = new ArrayList<>(3);
         this.packets.add(FastNMS.INSTANCE.constructor$ClientboundSetEntityDataPacket(this.entityId, config.cachedValues()));
         if (config.scale() != 1) {
-            try {
-                Object attributeInstance = CoreReflections.constructor$AttributeInstance.newInstance(MAttributeHolders.SCALE, (Consumer<?>) (o) -> {});
-                CoreReflections.method$AttributeInstance$setBaseValue.invoke(attributeInstance, config.scale());
-                this.packets.add(NetworkReflections.constructor$ClientboundUpdateAttributesPacket0.newInstance(this.entityId, Collections.singletonList(attributeInstance)));
-            } catch (ReflectiveOperationException e) {
-                CraftEngine.instance().logger().warn("Failed to apply scale attribute", e);
-            }
+            Object attributeIns = FastNMS.INSTANCE.constructor$AttributeInstance(MAttributeHolders.SCALE, (Consumer<?>) (o) -> {});
+            FastNMS.INSTANCE.method$AttributeInstance$setBaseValue(attributeIns, config.scale());
+            this.packets.add(FastNMS.INSTANCE.constructor$ClientboundUpdateAttributesPacket(this.entityId, Collections.singletonList(attributeIns)));
         }
         this.packets.add(FastNMS.INSTANCE.constructor$ClientboundEntityPositionSyncPacket(this.entityId, this.pos.x, this.pos.y, this.pos.z, 0, position.yRot, false));
         this.collider = createCollider(furniture.world(), this.pos, aabb, config.hardCollision(), config.blocksBuilding(), config.canBeHitByProjectile());

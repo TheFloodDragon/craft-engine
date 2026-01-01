@@ -14,7 +14,7 @@ import dev.dejvokep.boostedyaml.utils.format.NodeRole;
 import net.kyori.adventure.text.Component;
 import net.momirealms.craftengine.core.entity.furniture.ColliderType;
 import net.momirealms.craftengine.core.pack.AbstractPackManager;
-import net.momirealms.craftengine.core.pack.conflict.resolution.ResolutionConditional;
+import net.momirealms.craftengine.core.pack.conflict.resolution.ConditionalResolution;
 import net.momirealms.craftengine.core.plugin.CraftEngine;
 import net.momirealms.craftengine.core.plugin.PluginProperties;
 import net.momirealms.craftengine.core.plugin.context.number.NumberProvider;
@@ -45,9 +45,11 @@ public class Config {
     protected boolean firstTime = true;
     protected boolean checkUpdate;
     protected boolean metrics;
-    protected boolean filterConfigurationPhaseDisconnect;
     protected Locale forcedLocale;
-    protected boolean delayConfigurationLoad;
+
+    protected boolean misc$filterConfigurationPhaseDisconnect;
+    protected boolean misc$delayConfigurationLoad;
+    protected boolean misc$inject_packet_vents;
 
     protected boolean debug$common;
     protected boolean debug$packet;
@@ -56,15 +58,17 @@ public class Config {
     protected boolean debug$resource_pack;
     protected boolean debug$block;
     protected boolean debug$entity_culling;
+    protected Set<String> debug$ignored_packets;
 
     protected boolean resource_pack$remove_tinted_leaves_particle;
     protected boolean resource_pack$generate_mod_assets;
     protected boolean resource_pack$override_uniform_font;
-    protected List<ResolutionConditional> resource_pack$duplicated_files_handler;
+    protected List<ConditionalResolution> resource_pack$duplicated_files_handler;
     protected List<String> resource_pack$merge_external_folders;
     protected List<String> resource_pack$merge_external_zips;
     protected Set<String> resource_pack$exclude_file_extensions;
     protected Path resource_pack$path;
+    protected String resource_pack$description;
 
     protected boolean resource_pack$protection$crash_tools$method_1;
     protected boolean resource_pack$protection$crash_tools$method_2;
@@ -88,9 +92,11 @@ public class Config {
     protected boolean resource_pack$protection$obfuscation$path$anti_unzip;
     protected boolean resource_pack$protection$incorrect_crc;
     protected boolean resource_pack$protection$fake_file_size;
+    protected NumberProvider resource_pack$protection$obfuscation$overlay$length;
     protected NumberProvider resource_pack$protection$obfuscation$namespace$length;
     protected int resource_pack$protection$obfuscation$namespace$amount;
-    protected String resource_pack$protection$obfuscation$path$source;
+    protected String resource_pack$protection$obfuscation$path$block_source;
+    protected String resource_pack$protection$obfuscation$path$item_source;
     protected NumberProvider resource_pack$protection$obfuscation$path$depth;
     protected NumberProvider resource_pack$protection$obfuscation$path$length;
     protected int resource_pack$protection$obfuscation$atlas$images_per_canvas;
@@ -103,9 +109,11 @@ public class Config {
     protected boolean resource_pack$optimization$enable;
     protected boolean resource_pack$optimization$texture$enable;
     protected Set<String> resource_pack$optimization$texture$exlude;
+    protected Set<String> resource_pack$optimization$texture$exclude_path;
     protected int resource_pack$optimization$texture$zopfli_iterations;
     protected boolean resource_pack$optimization$json$enable;
     protected Set<String> resource_pack$optimization$json$exclude;
+    protected Set<String> resource_pack$optimization$json$exclude_path;
 
     protected MinecraftVersion resource_pack$supported_version$min;
     protected MinecraftVersion resource_pack$supported_version$max;
@@ -182,6 +190,7 @@ public class Config {
     protected boolean network$intercept_packets$advancement;
     protected boolean network$intercept_packets$player_chat;
     protected boolean network$disable_item_operations;
+    protected boolean network$disable_chat_report;
 
     protected boolean item$client_bound_model;
     protected boolean item$non_italic_tag;
@@ -306,13 +315,14 @@ public class Config {
     public void loadFullSettings() {
         YamlDocument config = settings();
         forcedLocale = TranslationManager.parseLocale(config.getString("forced-locale", ""));
-        delayConfigurationLoad = config.getBoolean("delay-configuration-load", false);
+        misc$delayConfigurationLoad = config.getBoolean("misc.delay-configuration-load", false);
+        misc$inject_packet_vents = config.getBoolean("misc.inject-packetevents", false);
 
         // basics
         metrics = config.getBoolean("metrics", false);
         checkUpdate = config.getBoolean("update-checker", false);
-        filterConfigurationPhaseDisconnect = config.getBoolean("filter-configuration-phase-disconnect", false);
-        DisconnectLogFilter.instance().setEnable(filterConfigurationPhaseDisconnect);
+        misc$filterConfigurationPhaseDisconnect = config.getBoolean("misc.filter-configuration-phase-disconnect", false);
+        DisconnectLogFilter.instance().setEnable(misc$filterConfigurationPhaseDisconnect);
 
         // debug
         debug$common = config.getBoolean("debug.common", false);
@@ -322,9 +332,11 @@ public class Config {
         debug$resource_pack = config.getBoolean("debug.resource-pack", false);
         debug$block = config.getBoolean("debug.block", false);
         debug$entity_culling = config.getBoolean("debug.entity-culling", false);
+        debug$ignored_packets = new HashSet<>(config.getStringList("debug.ignored-packets"));
 
         // resource pack
         resource_pack$path = resolvePath(config.getString("resource-pack.path", "./generated/resource_pack.zip"));
+        resource_pack$description = config.getString("resource-pack.description", "<gray>CraftEngine ResourcePack</gray>");
         resource_pack$override_uniform_font = config.getBoolean("resource-pack.override-uniform-font", false);
         resource_pack$generate_mod_assets = config.getBoolean("resource-pack.generate-mod-assets", false);
         resource_pack$remove_tinted_leaves_particle = config.getBoolean("resource-pack.remove-tinted-leaves-particle", true);
@@ -362,9 +374,11 @@ public class Config {
         resource_pack$protection$fake_file_size = config.getBoolean("resource-pack.protection.fake-file-size", false);
         resource_pack$protection$obfuscation$namespace$amount = config.getInt("resource-pack.protection.obfuscation.namespace.amount", 32);
         resource_pack$protection$obfuscation$namespace$length = NumberProviders.fromObject(config.get("resource-pack.protection.obfuscation.namespace.length", 2));
+        resource_pack$protection$obfuscation$overlay$length = NumberProviders.fromObject(config.get("resource-pack.protection.obfuscation.overlay.length", 4));
         resource_pack$protection$obfuscation$path$depth = NumberProviders.fromObject(config.get("resource-pack.protection.obfuscation.path.depth", 4));
         resource_pack$protection$obfuscation$path$length = NumberProviders.fromObject(config.get("resource-pack.protection.obfuscation.path.length", 2));
-        resource_pack$protection$obfuscation$path$source = config.getString("resource-pack.protection.obfuscation.path.source", "obf");
+        resource_pack$protection$obfuscation$path$block_source = config.getString("resource-pack.protection.obfuscation.path.block-source", "obf_block");
+        resource_pack$protection$obfuscation$path$item_source = config.getString("resource-pack.protection.obfuscation.path.block-source", "obf_item");
         resource_pack$protection$obfuscation$path$anti_unzip = config.getBoolean("resource-pack.protection.obfuscation.path.anti-unzip", false);
         resource_pack$protection$obfuscation$atlas$images_per_canvas = config.getInt("resource-pack.protection.obfuscation.atlas.images-per-canvas", 256);
         resource_pack$protection$obfuscation$atlas$prefix = config.getString("resource-pack.protection.obfuscation.atlas.prefix", "atlas");
@@ -379,9 +393,17 @@ public class Config {
             if (!p.endsWith(".png")) return p + ".png";
             return p;
         }).collect(Collectors.toSet());
+        resource_pack$optimization$texture$exclude_path = config.getStringList("resource-pack.optimization.texture.exclude-path").stream().map(p -> {
+            if (p.endsWith("/")) return p.substring(0, p.length() - 1);
+            return p;
+        }).collect(Collectors.toSet());
         resource_pack$optimization$json$enable = config.getBoolean("resource-pack.optimization.json.enable", true);
         resource_pack$optimization$json$exclude = config.getStringList("resource-pack.optimization.json.exclude").stream().map(p -> {
             if (!p.endsWith(".json") && !p.endsWith(".mcmeta")) return p + ".json";
+            return p;
+        }).collect(Collectors.toSet());
+        resource_pack$optimization$json$exclude_path = config.getStringList("resource-pack.optimization.json.exclude-path").stream().map(p -> {
+            if (p.endsWith("/")) return p.substring(0, p.length() - 1);
             return p;
         }).collect(Collectors.toSet());
         resource_pack$validation$enable = config.getBoolean("resource-pack.validation.enable", true);
@@ -395,7 +417,7 @@ public class Config {
         try {
             resource_pack$duplicated_files_handler = config.getMapList("resource-pack.duplicated-files-handler").stream().map(it -> {
                 Map<String, Object> args = MiscUtils.castToMap(it, false);
-                return ResolutionConditional.FACTORY.create(args);
+                return (ConditionalResolution) ConditionalResolution.FACTORY.create(args);
             }).toList();
         } catch (LocalizedResourceConfigException e) {
             TranslationManager.instance().log(e.node(), e.arguments());
@@ -556,6 +578,9 @@ public class Config {
             image$codepoint_starting_value$overrides = Map.of();
         }
 
+        if (firstTime) {
+            network$disable_chat_report = config.getBoolean("network.disable-chat-report", false);
+        }
         network$disable_item_operations = config.getBoolean("network.disable-item-operations", false);
         network$intercept_packets$system_chat = config.getBoolean("network.intercept-packets.system-chat", true);
         network$intercept_packets$tab_list = config.getBoolean("network.intercept-packets.tab-list", true);
@@ -601,12 +626,12 @@ public class Config {
 
     private static MinecraftVersion getVersion(String version) {
         if (version.equalsIgnoreCase("latest")) {
-            return new MinecraftVersion(PluginProperties.getValue("latest-version"));
+            return MinecraftVersion.byName(PluginProperties.getValue("latest-version"));
         }
         if (version.equalsIgnoreCase("server")) {
             return VersionHelper.MINECRAFT_VERSION;
         }
-        return MinecraftVersion.parse(version);
+        return MinecraftVersion.byName(version);
     }
 
     public static Locale forcedLocale() {
@@ -618,7 +643,11 @@ public class Config {
     }
 
     public static boolean delayConfigurationLoad() {
-        return instance.delayConfigurationLoad;
+        return instance.misc$delayConfigurationLoad;
+    }
+
+    public static boolean injectPacketEvents() {
+        return instance.misc$inject_packet_vents;
     }
 
     public static boolean debugCommon() {
@@ -666,7 +695,7 @@ public class Config {
     }
 
     public static boolean filterConfigurationPhaseDisconnect() {
-        return instance.filterConfigurationPhaseDisconnect;
+        return instance.misc$filterConfigurationPhaseDisconnect;
     }
 
     public static boolean resourcePack$overrideUniform() {
@@ -796,7 +825,7 @@ public class Config {
         return instance.resource_pack$delivery$file_to_upload;
     }
 
-    public static List<ResolutionConditional> resolutions() {
+    public static List<ConditionalResolution> resolutions() {
         return instance.resource_pack$duplicated_files_handler;
     }
 
@@ -864,8 +893,12 @@ public class Config {
         return instance.resource_pack$protection$obfuscation$namespace$amount;
     }
 
-    public static String atlasSource() {
-        return instance.resource_pack$protection$obfuscation$path$source;
+    public static String blockAtlasSource() {
+        return instance.resource_pack$protection$obfuscation$path$block_source;
+    }
+
+    public static String itemAtlasSource() {
+        return instance.resource_pack$protection$obfuscation$path$item_source;
     }
 
     public static NumberProvider pathDepth() {
@@ -874,6 +907,10 @@ public class Config {
 
     public static NumberProvider pathLength() {
         return instance.resource_pack$protection$obfuscation$path$length;
+    }
+
+    public static NumberProvider overlayLength() {
+        return instance.resource_pack$protection$obfuscation$overlay$length;
     }
 
     public static boolean antiUnzip() {
@@ -968,6 +1005,10 @@ public class Config {
             id = 4;
         }
         return id;
+    }
+
+    public static boolean disableChatReport() {
+        return instance.network$disable_chat_report;
     }
 
     public static boolean disableItemOperations() {
@@ -1114,6 +1155,10 @@ public class Config {
         return instance.equipment$sacrificed_vanilla_armor$humanoid_leggings;
     }
 
+    public static String packDescription() {
+        return instance.resource_pack$description;
+    }
+
     public static String sacrificedVanillaArmorType() {
         return instance.equipment$sacrificed_vanilla_armor$type;
     }
@@ -1174,12 +1219,20 @@ public class Config {
         return instance.resource_pack$optimization$texture$exlude;
     }
 
+    public static Set<String> optimizeTextureExcludePath() {
+        return instance.resource_pack$optimization$texture$exclude_path;
+    }
+
     public static boolean optimizeJson() {
         return instance.resource_pack$optimization$json$enable;
     }
 
     public static Set<String> optimizeJsonExclude() {
         return instance.resource_pack$optimization$json$exclude;
+    }
+
+    public static Set<String> optimizeJsonExcludePath() {
+        return instance.resource_pack$optimization$json$exclude_path;
     }
 
     public static int zopfliIterations() {
@@ -1220,6 +1273,10 @@ public class Config {
 
     public static boolean entityCullingRayTracing() {
         return instance.client_optimization$entity_culling$ray_tracing;
+    }
+
+    public static boolean isPacketIgnored(Class<?> clazz) {
+        return instance.debug$ignored_packets.contains(clazz.toString());
     }
 
     public static boolean enableBedrockEditionSupport() {

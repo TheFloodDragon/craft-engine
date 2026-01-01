@@ -4,6 +4,7 @@ import net.kyori.adventure.util.Index;
 import net.momirealms.craftengine.bukkit.api.BukkitAdaptors;
 import net.momirealms.craftengine.bukkit.plugin.BukkitCraftEngine;
 import net.momirealms.craftengine.bukkit.plugin.command.feature.*;
+import net.momirealms.craftengine.bukkit.plugin.user.BukkitServerPlayer;
 import net.momirealms.craftengine.core.plugin.command.AbstractCommandManager;
 import net.momirealms.craftengine.core.plugin.command.CommandFeature;
 import net.momirealms.craftengine.core.plugin.command.sender.Sender;
@@ -60,10 +61,12 @@ public class BukkitCommandManager extends AbstractCommandManager<CommandSender> 
                 new DebugIsSectionInjectedCommand(this, plugin),
                 new DebugMigrateTemplatesCommand(this, plugin),
                 new DebugIsChunkPersistentLoadedCommand(this, plugin),
+                new DebugOptimizeFurnitureStructureCommand(this, plugin),
                 new TotemAnimationCommand(this, plugin),
                 new EnableResourceCommand(this, plugin),
                 new DisableResourceCommand(this, plugin),
                 new ListResourceCommand(this, plugin),
+                new CreateResourceCommand(this, plugin),
                 new UploadPackCommand(this, plugin),
                 new SendResourcePackCommand(this, plugin),
                 new DebugSaveDefaultResourcesCommand(this, plugin),
@@ -85,7 +88,9 @@ public class BukkitCommandManager extends AbstractCommandManager<CommandSender> 
     @Override
     protected Locale getLocale(CommandSender sender) {
         if (sender instanceof Player player) {
-            return BukkitAdaptors.adapt(player).selectedLocale();
+            BukkitServerPlayer serverPlayer = BukkitAdaptors.adapt(player);
+            if (serverPlayer == null) return null;
+            return serverPlayer.selectedLocale();
         }
         return null;
     }

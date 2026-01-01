@@ -9,11 +9,13 @@ import net.momirealms.craftengine.core.entity.display.Billboard;
 import net.momirealms.craftengine.core.entity.display.ItemDisplayContext;
 import net.momirealms.craftengine.core.entity.player.Player;
 import net.momirealms.craftengine.core.item.Item;
+import net.momirealms.craftengine.core.item.ItemKeys;
 import net.momirealms.craftengine.core.util.Color;
 import net.momirealms.craftengine.core.util.Key;
 import net.momirealms.craftengine.core.util.ResourceConfigUtils;
 import net.momirealms.craftengine.core.world.BlockPos;
 import net.momirealms.craftengine.core.world.World;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -26,24 +28,24 @@ import java.util.function.Function;
 
 public class ItemDisplayBlockEntityElementConfig implements BlockEntityElementConfig<ItemDisplayBlockEntityElement> {
     public static final Factory FACTORY = new Factory();
-    private final Function<Player, List<Object>> lazyMetadataPacket;
-    private final Function<Player, Item<?>> item;
-    private final Vector3f scale;
-    private final Vector3f position;
-    private final Vector3f translation;
-    private final float xRot;
-    private final float yRot;
-    private final Quaternionf rotation;
-    private final ItemDisplayContext displayContext;
-    private final Billboard billboard;
-    private final float shadowRadius;
-    private final float shadowStrength;
-    private final Color glowColor;
-    private final int blockLight;
-    private final int skyLight;
-    private final float viewRange;
+    public final Function<Player, List<Object>> lazyMetadataPacket;
+    public final Key itemId;
+    public final Vector3f scale;
+    public final Vector3f position;
+    public final Vector3f translation;
+    public final float xRot;
+    public final float yRot;
+    public final Quaternionf rotation;
+    public final ItemDisplayContext displayContext;
+    public final Billboard billboard;
+    public final float shadowRadius;
+    public final float shadowStrength;
+    public final Color glowColor;
+    public final int blockLight;
+    public final int skyLight;
+    public final float viewRange;
 
-    public ItemDisplayBlockEntityElementConfig(Function<Player, Item<?>> item,
+    public ItemDisplayBlockEntityElementConfig(Key itemId,
                                                Vector3f scale,
                                                Vector3f position,
                                                Vector3f translation,
@@ -58,7 +60,7 @@ public class ItemDisplayBlockEntityElementConfig implements BlockEntityElementCo
                                                int blockLight,
                                                int skyLight,
                                                float viewRange) {
-        this.item = item;
+        this.itemId = itemId;
         this.scale = scale;
         this.position = position;
         this.translation = translation;
@@ -78,8 +80,15 @@ public class ItemDisplayBlockEntityElementConfig implements BlockEntityElementCo
             if (glowColor != null) {
                 ItemDisplayEntityData.SharedFlags.addEntityData((byte) 0x40, dataValues);
                 ItemDisplayEntityData.GlowColorOverride.addEntityData(glowColor.color(), dataValues);
+            } else {
+                ItemDisplayEntityData.SharedFlags.addEntityData((byte) 0x0, dataValues);
+                ItemDisplayEntityData.GlowColorOverride.addEntityData(-1, dataValues);
             }
-            ItemDisplayEntityData.DisplayedItem.addEntityData(item.apply(player).getLiteralObject(), dataValues);
+            Item<ItemStack> wrappedItem = BukkitItemManager.instance().createWrappedItem(itemId, player);
+            if (wrappedItem == null) {
+                wrappedItem = java.util.Objects.requireNonNull(BukkitItemManager.instance().createWrappedItem(ItemKeys.BARRIER, player));
+            }
+            ItemDisplayEntityData.DisplayedItem.addEntityData(wrappedItem.getLiteralObject(), dataValues);
             ItemDisplayEntityData.Scale.addEntityData(this.scale, dataValues);
             ItemDisplayEntityData.RotationLeft.addEntityData(this.rotation, dataValues);
             ItemDisplayEntityData.BillboardConstraints.addEntityData(this.billboard.id(), dataValues);
@@ -89,6 +98,8 @@ public class ItemDisplayBlockEntityElementConfig implements BlockEntityElementCo
             ItemDisplayEntityData.ShadowStrength.addEntityData(this.shadowStrength, dataValues);
             if (this.blockLight != -1 && this.skyLight != -1) {
                 ItemDisplayEntityData.BrightnessOverride.addEntityData(this.blockLight << 4 | this.skyLight << 20, dataValues);
+            } else {
+                ItemDisplayEntityData.BrightnessOverride.addEntityData(-1, dataValues);
             }
             ItemDisplayEntityData.ViewRange.addEntityData((float) (this.viewRange * player.displayEntityViewDistance()), dataValues);
             return dataValues;
@@ -122,8 +133,12 @@ public class ItemDisplayBlockEntityElementConfig implements BlockEntityElementCo
         return ItemDisplayBlockEntityElement.class;
     }
 
-    public Item<?> item(Player player) {
-        return this.item.apply(player);
+    public Color glowColor() {
+        return glowColor;
+    }
+
+    public Key itemId() {
+        return itemId;
     }
 
     public Vector3f scale() {
@@ -182,10 +197,9 @@ public class ItemDisplayBlockEntityElementConfig implements BlockEntityElementCo
 
         @Override
         public ItemDisplayBlockEntityElementConfig create(Map<String, Object> arguments) {
-            Key itemId = Key.of(ResourceConfigUtils.requireNonEmptyStringOrThrow(arguments.get("item"), "warning.config.block.state.entity_renderer.item_display.missing_item"));
             Map<String, Object> brightness = ResourceConfigUtils.getAsMap(arguments.getOrDefault("brightness", Map.of()), "brightness");
             return new ItemDisplayBlockEntityElementConfig(
-                    player -> BukkitItemManager.instance().createWrappedItem(itemId, player),
+                    Key.of(ResourceConfigUtils.requireNonEmptyStringOrThrow(arguments.get("item"), "warning.config.block.state.entity_renderer.item_display.missing_item")),
                     ResourceConfigUtils.getAsVector3f(arguments.getOrDefault("scale", 1f), "scale"),
                     ResourceConfigUtils.getAsVector3f(arguments.getOrDefault("position", 0.5f), "position"),
                     ResourceConfigUtils.getAsVector3f(arguments.get("translation"), "translation"),
